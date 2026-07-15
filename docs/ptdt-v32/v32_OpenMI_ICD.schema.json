@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PTDT OpenMI v32 Exchange Item",
+  "description": "JSON Schema defining the structure of data exchanged between solvers when utilizing REST/JSON bindings over the OpenMI interface.",
+  "type": "object",
+  "properties": {
+    "model_id": {
+      "type": "string",
+      "description": "Unique identifier for the source or target model instance (e.g., 'hec-ras-2d-reach1')."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "The exact simulation time (ISO 8601) corresponding to this data exchange."
+    },
+    "quantity_id": {
+      "type": "string",
+      "enum": ["WaterLevel", "Discharge", "VelocityX", "VelocityY", "GroundwaterHead", "PorePressure", "BedShearStress"],
+      "description": "The physical quantity being exchanged. Must map to the PTDT global ontology."
+    },
+    "element_set_id": {
+      "type": "string",
+      "description": "Identifier for the spatial elements (e.g., 'BoundaryNodes_East', 'CellMesh2D')."
+    },
+    "values": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "description": "The ordered array of scalar values corresponding one-to-one with the element set."
+    },
+    "units": {
+      "type": "string",
+      "description": "SI units of the values (e.g., 'm', 'm3/s', 'm/s', 'Pa').",
+      "enum": ["m", "m3/s", "m/s", "Pa", "N/m2"]
+    }
+  },
+  "required": [
+    "model_id",
+    "timestamp",
+    "quantity_id",
+    "element_set_id",
+    "values",
+    "units"
+  ]
+}

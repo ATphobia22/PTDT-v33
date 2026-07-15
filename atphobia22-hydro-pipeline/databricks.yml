@@ -1,0 +1,35 @@
+bundle:
+  name: atphobia22-flood-pipeline
+
+targets:
+  production:
+    workspace:
+      host: https://databricks.com
+
+resources:
+  pipelines:
+    atphobia_hydro_engine:
+      name: "ATphobia22 Hydro Inundation Engine"
+      target: production_atphobia_catalog
+      edition: PRO
+      photon: true
+      continuous: false
+      libraries:
+        - notebook:
+            path: ./src/pipeline_engine.py
+      clusters:
+        - label: default
+          node_type_id: r6i.2xlarge
+          driver_node_type_id: r6i.2xlarge
+          autoscale:
+            min_workers: 2
+            max_workers: 8
+          mode: LEGACY
+          docker_image:
+            url: "your-registry.azurecr.io/dnr/ras2fim-dlt-core:v1.0.0"
+      spark_env_vars:
+        NOTIFICATION_WEBHOOK_URL: ${bundle.environment.NOTIFICATION_WEBHOOK_URL}
+      configuration:
+        pipelines.channel: "29.1"
+        spark.sql.streaming.forceDeleteTempCheckpointLocation: "true"
+        spark.databricks.delta.schema.autoMerge.enabled: "false"

@@ -269,12 +269,15 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
         outSR: "4326",
         f: "geojson"
       });
-      const response = await fetch(`${url}?${params.toString()}`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      const response = await fetch(`${url}?${params.toString()}`, { signal: controller.signal });
+      clearTimeout(timeoutId);
       if (!response.ok) throw new Error(`FEMA API responded with status: ${response.status}`);
       const data = await response.json();
       res.json(data);
     } catch (error: any) {
-      console.error("FEMA Proxy Error:", error.message, "- Falling back to mock data");
+      console.log("[FEMA Proxy] Status:", error.message || String(error), "- using local offline fallback layer");
       res.json({
         type: "FeatureCollection",
         features: [
@@ -333,7 +336,7 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
       const data = await response.json();
       res.json(data);
     } catch (error: any) {
-      console.error("Historic Sites Proxy Error:", error.message, "- Falling back to mock data");
+      console.log("[Historic Sites Proxy] Status:", error.message || String(error), "- using local offline fallback layer");
       res.json({
         type: "FeatureCollection",
         features: [

@@ -1,0 +1,44 @@
+-- =====================================================================
+-- SURREALDB SOVEREIGN PANTHEON SCHEMA (PTDT v25 MATERIAL TRUTH ENGINE)
+-- =====================================================================
+
+DEFINE TABLE parcel SCHEMAFULL;
+DEFINE FIELD lineage_group ON TABLE parcel TYPE string;
+DEFINE FIELD owner_address ON TABLE parcel TYPE string;
+DEFINE FIELD dynamic_risk_index ON TABLE parcel TYPE float;
+
+DEFINE TABLE ancestor SCHEMAFULL;
+DEFINE FIELD name ON TABLE ancestor TYPE string;
+DEFINE FIELD side ON TABLE ancestor TYPE string; -- "paternal" | "maternal" | "community"
+DEFINE FIELD generation ON TABLE ancestor TYPE int;
+DEFINE FIELD anchor_cemetery ON TABLE ancestor TYPE string;
+
+DEFINE TABLE protects SCHEMAMANY; -- Edge definition linking ancestors to lands
+
+-- Ingest Paternal Tucker Lineage Anchors
+CREATE ancestor:anthony_john_tucker SET name = "Anthony John Tucker", side = "paternal", generation = 0, anchor_cemetery = "N/A";
+CREATE ancestor:william_harrison_tucker_father SET name = "William Harrison Tucker (Father)", side = "paternal", generation = 1, anchor_cemetery = "N/A";
+CREATE ancestor:allen_junior_tucker SET name = "Allen Junior Tucker", side = "paternal", generation = 2, anchor_cemetery = "N/A";
+CREATE ancestor:william_harrison_tucker_sr SET name = "William Harrison Tucker Sr.", side = "paternal", generation = 3, anchor_cemetery = "N/A";
+CREATE ancestor:martha_etta_perry SET name = "Martha Etta Perry", side = "paternal", generation = 4, anchor_cemetery = "N/A";
+
+-- Ingest Maternal Yeida Spine Anchors
+CREATE ancestor:beverly_ann_yeida_mother SET name = "Beverly Ann Yeida (Mother)", side = "maternal", generation = 1, anchor_cemetery = "N/A";
+CREATE ancestor:william_glenn_yeida SET name = "William Glenn Bud Yeida", side = "maternal", generation = 2, anchor_cemetery = "Weiss Cemetery";
+CREATE ancestor:william_h_yeida SET name = "William H. Yeida", side = "maternal", generation = 3, anchor_cemetery = "Weiss Cemetery";
+CREATE ancestor:henry_yeida SET name = "Henry Yeida", side = "maternal", generation = 4, anchor_cemetery = "Weiss Cemetery";
+CREATE ancestor:louisa_lou_yeida SET name = "Louisa Lou Yeida", side = "maternal", generation = 5, anchor_cemetery = "Weiss Cemetery";
+
+-- Ingest Community & Church Anchor Entities
+CREATE ancestor:church_nazarene SET name = "Point Township Church of the Nazarene", side = "community", generation = 0, anchor_cemetery = "N/A";
+
+-- Initialize Target Protected Property Land Parcels at 13101 Bonebank Road
+CREATE parcel:bonebank_13101 SET lineage_group = "TUCKER", owner_address = "13101 Bonebank Road", dynamic_risk_index = 0.0;
+CREATE parcel:weiss_cemetery_tract SET lineage_group = "YEIDA_MERCER", owner_address = "Weiss Cemetery Ground", dynamic_risk_index = 0.0;
+CREATE parcel:church_property_tract SET lineage_group = "CHURCH_NAZARENE", owner_address = "Wabash-Ohio Confluence Boundary", dynamic_risk_index = 0.0;
+
+-- Relate Ancestor Node Matrices directly to Land Tracts via Graph Edges
+RELATE ancestor:anthony_john_tucker -> protects -> parcel:bonebank_13101;
+RELATE ancestor:william_harrison_tucker_father -> protects -> parcel:bonebank_13101;
+RELATE ancestor:louisa_lou_yeida -> protects -> parcel:weiss_cemetery_tract;
+RELATE ancestor:church_nazarene -> protects -> parcel:church_property_tract;

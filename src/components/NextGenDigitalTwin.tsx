@@ -241,7 +241,7 @@ export default function NextGenDigitalTwin() {
   };
 
   return (
-    <div className="w-screen h-screen overflow-hidden bg-black text-slate-200 font-sans relative">
+    <div className="w-screen h-screen overflow-hidden bg-black dark:text-slate-200 text-slate-800 font-sans relative">
       <div ref={containerRef} className="absolute inset-0 z-0" />
       
       {/* HUD Overlay */}
@@ -249,7 +249,7 @@ export default function NextGenDigitalTwin() {
         
         {/* Top Header */}
         <header className="flex justify-between items-start pointer-events-auto">
-          <div className="backdrop-blur-xl bg-slate-900/60 border border-slate-700/50 p-4 rounded-xl shadow-2xl flex items-center gap-4">
+          <div className="backdrop-blur-xl dark:bg-slate-900 bg-slate-100/60 border border-slate-700/50 p-4 rounded-xl shadow-2xl flex items-center gap-4">
             <div className="bg-cyan-500/20 p-2 rounded-lg">
               <Map className="w-6 h-6 text-cyan-400" />
             </div>
@@ -257,7 +257,7 @@ export default function NextGenDigitalTwin() {
               <h1 className="text-xl font-bold tracking-tight text-white drop-shadow-md">
                 Tri-State Digital Twin <span className="text-cyan-400 text-sm align-top">v23</span>
               </h1>
-              <p className="text-xs text-slate-400 font-mono tracking-widest">
+              <p className="text-xs dark:text-slate-400 text-slate-500 font-mono tracking-widest">
                 CIVIL ENGINEERING • MOUNT VERNON, IN
               </p>
             </div>
@@ -282,10 +282,10 @@ export default function NextGenDigitalTwin() {
 
         {/* Sidebar Controls */}
         <aside className="w-80 flex flex-col gap-4 pointer-events-auto mt-auto self-start">
-          <div className="backdrop-blur-xl bg-slate-900/60 border border-slate-700/50 rounded-xl shadow-2xl overflow-hidden">
-            <div className="p-3 border-b border-slate-700/50 bg-slate-800/40 flex items-center gap-2">
-              <Layers className="w-4 h-4 text-slate-300" />
-              <h2 className="text-sm font-bold text-slate-200">Data Integration Layers</h2>
+          <div className="backdrop-blur-xl dark:bg-slate-900 bg-slate-100/60 border border-slate-700/50 rounded-xl shadow-2xl overflow-hidden">
+            <div className="p-3 border-b border-slate-700/50 dark:bg-slate-800 bg-white/40 flex items-center gap-2">
+              <Layers className="w-4 h-4 dark:text-slate-300 text-slate-700" />
+              <h2 className="text-sm font-bold dark:text-slate-200 text-slate-800">Data Integration Layers</h2>
             </div>
             <div className="p-2 flex flex-col gap-1">
               <LayerToggle 
@@ -343,7 +343,7 @@ export default function NextGenDigitalTwin() {
         {/* Bottom Bar / Status */}
         <div className="flex justify-between items-end pointer-events-none mt-auto">
           <div />
-          <div className="backdrop-blur-md bg-slate-900/40 border border-slate-700/30 px-4 py-2 rounded-lg text-xs font-mono text-slate-400 pointer-events-auto">
+          <div className="backdrop-blur-md dark:bg-slate-900 bg-slate-100/40 border border-slate-700/30 px-4 py-2 rounded-lg text-xs font-mono dark:text-slate-400 text-slate-500 pointer-events-auto">
             System Operational • Rendering engine: WebGL 2.0 • Data sources: WTH GIS, FEMA, INDNR
           </div>
         </div>
@@ -357,10 +357,10 @@ function LayerToggle({ active, onClick, icon, label }: { active: boolean, onClic
     <button 
       onClick={onClick}
       className={`flex items-center gap-3 w-full p-2.5 rounded-lg text-left transition-all ${
-        active ? "bg-cyan-500/10 text-cyan-300" : "hover:bg-slate-800/50 text-slate-400"
+        active ? "bg-cyan-500/10 text-cyan-300" : "hover:dark:bg-slate-800 hover:bg-slate-200 dark:text-slate-400 text-slate-500"
       }`}
     >
-      <div className={`w-4 h-4 ${active ? "text-cyan-400" : "text-slate-500"}`}>
+      <div className={`w-4 h-4 ${active ? "text-cyan-400" : "dark:text-slate-500 text-slate-400"}`}>
         {React.cloneElement(icon as React.ReactElement, { size: 16 })}
       </div>
       <span className="text-xs font-medium tracking-wide flex-1">{label}</span>

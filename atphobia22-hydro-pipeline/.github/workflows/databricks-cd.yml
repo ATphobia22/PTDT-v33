@@ -1,0 +1,31 @@
+name: Deploy ATphobia22 Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test_and_deploy:
+    name: "Validate Framework and Deploy Bundle"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository Code
+        uses: actions/checkout@v4
+      - name: Set up Python Environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Run Local Pre-Deployment Unit Tests
+        run: |
+          pip install pytest pandas pyspark
+          pytest src/test_pipeline_engine.py -v
+      - name: Setup Databricks CLI Environment
+        uses: databricks/setup-cli@v1
+      - name: Sync and Deploy Bundle Assets
+        run: |
+          databricks bundle deploy --target production
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+          NOTIFICATION_WEBHOOK_URL: ${{ secrets.NOTIFICATION_WEBHOOK_URL }}
