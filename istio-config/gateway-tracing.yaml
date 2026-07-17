@@ -1,0 +1,39 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: ptdt-gateway
+  namespace: ptdt-v32
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 443
+      name: https
+      protocol: HTTPS
+    tls:
+      mode: SIMPLE
+      credentialName: ptdt-tls-secret
+    hosts:
+    - twin.tucker.gov
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: openmi-grpc-vs
+  namespace: ptdt-v32
+spec:
+  hosts:
+  - openmi-grpc-service.ptdt-v32.svc.cluster.local
+  http:
+  - match:
+    - uri:
+        prefix: "/"
+    route:
+    - destination:
+        host: openmi-grpc-service.ptdt-v32.svc.cluster.local
+        port:
+          number: 50051
+    retries:
+      attempts: 3
+      perTryTimeout: 5s

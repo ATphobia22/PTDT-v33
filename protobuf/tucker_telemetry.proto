@@ -1,0 +1,31 @@
+syntax = "proto3";
+package tucker.telemetry.v32;
+option go_package = "tucker/telemetry/v32;telemetryv32";
+
+message LatLng {
+  double latitude = 1;
+  double longitude = 2;
+  float elevation_navd88_m = 3;
+}
+
+message PhysicsMetrics {
+  float surface_discharge_cms = 1;
+  float surface_water_depth_m = 2;
+  float velocity_ms = 3;
+  float phreatic_head_m = 4;
+  float pore_pressure_kpa = 5;
+  float slope_factor_of_safety = 6;
+}
+
+message LiveFramePayload {
+  string run_id = 1;
+  uint64 step_index = 2;
+  double timestamp_epoch = 3;
+  PhysicsMetrics metrics = 4;
+  repeated LatLng contour_points = 5;
+}
+
+message SignedTelemetryFrame {
+  bytes payload_bin = 1; 
+  string jws_signature_compact = 2; 
+}

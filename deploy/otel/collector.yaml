@@ -1,0 +1,59 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: ptdt-otel-collector
+  namespace: ptdt-v32
+spec:
+  mode: deployment
+  config: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+      istio:
+        endpoint: 0.0.0.0:15000
+    processors:
+      batch:
+        send_batch_size: 512
+        timeout: 2s
+      memory_limiter:
+        limit_percentage: 75
+        check_interval: 1s
+      attributes:
+        actions:
+          - key: "service.name"
+            action: "upsert"
+            value: "ptdt-v32"
+          - key: "deployment.environment"
+            action: "upsert"
+            value: "production"
+    exporters:
+      jaeger:
+        endpoint: jaeger-collector.istio-system.svc.cluster.local:14250
+        tls:
+          insecure: true
+      prometheus:
+        endpoint: 0.0.0.0:9090
+        resource_to_telemetry_conversion:
+          enabled: true
+      otlphttp:
+        endpoint: "https://your-logging-backend.example.com"
+        tls:
+          insecure: true
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp, istio]
+          processors: [memory_limiter, batch, attributes]
+          exporters: [jaeger]
+        metrics:
+          receivers: [otlp, prometheus, istio]
+          processors: [memory_limiter, batch, attributes]
+          exporters: [prometheus]
+        logs:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [otlphttp]

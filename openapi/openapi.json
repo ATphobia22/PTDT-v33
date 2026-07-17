@@ -1,0 +1,96 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Sovereign Citadel Twin Gateway",
+    "version": "32.1.0",
+    "description": "API Gateway for the DLT Multi-Physics Tri-State Confluence Digital Twin (PTDT)."
+  },
+  "paths": {
+    "/api/v1/twin/run": {
+      "post": {
+        "summary": "Execute Multi-Physics Coupling Loop",
+        "operationId": "run_scenario",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SimulationRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Simulation initialization response.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SimulationResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/evidence/package/{run_id}": {
+      "post": {
+        "summary": "Generate Detached ECDSA-Signed Evidence Package",
+        "operationId": "generate_package",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Evidence package manifest.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/EvidencePackage" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SimulationRequest": {
+        "type": "object",
+        "required": ["scenario", "mesh"],
+        "properties": {
+          "scenario": {
+            "type": "string",
+            "enum": ["100-year-flood", "500-year-flood", "historical-1937"]
+          },
+          "mesh": {
+            "type": "string",
+            "default": "point_township_v32"
+          }
+        }
+      },
+      "SimulationResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "status": { "type": "string" },
+          "timestep_seconds": { "type": "number" },
+          "max_steps": { "type": "integer" }
+        }
+      },
+      "EvidencePackage": {
+        "type": "object",
+        "properties": {
+          "run_id": { "type": "string" },
+          "timestamp_utc": { "type": "string" },
+          "canonical_hash_sha256": { "type": "string" },
+          "ecdsa_signature_der": { "type": "string" },
+          "signer_public_key": { "type": "string" },
+          "statutory_decision": { "type": "string" }
+        }
+      }
+    }
+  }
+}

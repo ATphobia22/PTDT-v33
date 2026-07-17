@@ -1,0 +1,6 @@
+apiVersion: v2
+name: tucker-citadel
+description: Helm chart for deploying the sovereign multi-physics tucker digital twin.
+type: application
+version: 32.1.0
+appVersion: "32.1.0"

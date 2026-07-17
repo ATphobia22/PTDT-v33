@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tucker.gov/schemas/tucker_v32.json",
+  "title": "Tucker Platform Consolidated Schema",
+  "type": "object",
+  "properties": {
+    "SimulationRequest": {
+      "type": "object",
+      "required": ["scenario", "mesh"],
+      "properties": {
+        "scenario": {
+          "type": "string",
+          "enum": ["100-year-flood", "500-year-flood", "historical-1937"]
+        },
+        "mesh": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_-]+_v[0-9]+$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "EvidencePackage": {
+      "type": "object",
+      "required": ["run_id", "timestamp_utc", "canonical_hash_sha256", "jws_signature_compact", "signer_public_key_pem", "statutory_decision"],
+      "properties": {
+        "run_id": { "type": "string", "format": "uuid" },
+        "timestamp_utc": { "type": "string", "format": "date-time" },
+        "canonical_hash_sha256": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$" },
+        "jws_signature_compact": { "type": "string" },
+        "signer_public_key_pem": { "type": "string" },
+        "statutory_decision": { "type": "string", "enum": ["APPROVED", "VIOLATION", "HIGH_RISK_SUSPENDED"] }
+      },
+      "additionalProperties": false
+    }
+  }
+}

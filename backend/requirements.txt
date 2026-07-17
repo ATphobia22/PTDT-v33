@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+pydantic-settings
+python-jose[cryptography]
+surrealdb
+asyncpg
+httpx
+numpy
+scipy
+shapely
+SQLAlchemy
+alembic

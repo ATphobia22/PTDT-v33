@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package ptdt.openmi.v32;
+
+message Timestamp {
+  int64 seconds = 1;
+  int32 nanos = 2;
+}
+
+message Vector3D {
+  double x = 1;
+  double y = 2;
+  double z = 3;
+}
+
+message BoundaryCondition {
+  string node_id = 1;
+  double flow_rate_cms = 2;
+  double head_elevation_m = 3;
+}
+
+message OpenMIExchange {
+  string component_id = 1;
+  Timestamp timestamp = 2;
+  repeated BoundaryCondition boundary_conditions = 3;
+  repeated Vector3D velocity_vectors = 4;
+  map<string, double> scalar_values = 5;
+}
+
+message InitializeRequest {
+  string run_id = 1;
+  string scenario = 2;
+  string mesh = 3;
+  double timestep_seconds = 4;
+  int32 max_steps = 5;
+}
+
+message InitializeResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message TimeStepRequest {
+  string run_id = 1;
+}
+
+message TimeStepResponse {
+  bool success = 1;
+  int32 current_step = 2;
+  bool completed = 3;
+}
+
+message GetValuesRequest {
+  string run_id = 1;
+  double timestamp_epoch = 2;
+}
+
+message FinishRequest {
+  string run_id = 1;
+}
+
+message FinishResponse {
+  bool success = 1;
+}
+
+service ModelIntegration {
+  rpc Initialize(InitializeRequest) returns (InitializeResponse);
+  rpc PerformTimeStep(TimeStepRequest) returns (TimeStepResponse);
+  rpc GetValues(GetValuesRequest) returns (OpenMIExchange);
+  rpc Finish(FinishRequest) returns (FinishResponse);
+}
