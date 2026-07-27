@@ -188,6 +188,7 @@ def generate_unified_regulatory_package(output_dir: str, custom_params: Optional
             "03_IDNR_No_Rise_Certification.pdf",
             "05_FEMA_LOMA_Forensic_Case_Study.pdf",
             "bca_elevation_data.json",
+            "bca_storage_data.json",
             "bca_summary.csv"
         ],
         "integrity_standard": "SHA-256"
@@ -209,7 +210,7 @@ def generate_unified_regulatory_package(output_dir: str, custom_params: Optional
 
 
 # --- 4. FASTAPI LIVE ENDPOINT ROUTING ---
-app = FastAPI(title="PTDT v32 Live Package Generation API", version="32.4.0")
+app = FastAPI(title="PTDT v32 Live Package Generation API", version="32.5.0")
 
 @app.get("/api/v1/health")
 async def health_check():

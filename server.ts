@@ -428,12 +428,14 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
   app.get("/api/usgs-telemetry", async (req, res) => {
     const fallbackData = [
       {
-        gauge_id: "USGS-03377500",
+        gauge_id: "USGS-03378500",
         name: "Wabash River at New Harmony, IN",
         timestamp: new Date().toISOString(),
         water_level_stage_ft: 18.42,
         discharge_cfs: 45100.0,
         temperature_c: 16.5,
+        lat: 38.1292,
+        lng: -87.9353,
         seal_hash: ""
       },
       {
@@ -443,6 +445,8 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
         water_level_stage_ft: 24.85,
         discharge_cfs: 115000.0,
         temperature_c: 15.2,
+        lat: 37.7948,
+        lng: -87.9945,
         seal_hash: ""
       }
     ];
@@ -456,7 +460,7 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
       
-      const url = "https://waterservices.usgs.gov/nwis/iv/?format=json&sites=03377500,03322000&parameterCd=00060,00065&siteStatus=all";
+      const url = "https://waterservices.usgs.gov/nwis/iv/?format=json&sites=03378500,03322000&parameterCd=00060,00065&siteStatus=all";
       const response = await fetch(url, { 
         headers: { "User-Agent": "PTDT-v23-Tri-State-Twin (admin@pointtownship.gov)" },
         signal: controller.signal 
@@ -485,11 +489,13 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
         if (!parsedResults[siteCode]) {
           parsedResults[siteCode] = {
             gauge_id: `USGS-${siteCode}`,
-            name: siteCode === "03377500" ? "Wabash River at New Harmony, IN" : (siteCode === "03322000" ? "Ohio River at Uniontown Dam, IN" : siteName),
+            name: siteCode === "03378500" ? "Wabash River at New Harmony, IN" : (siteCode === "03322000" ? "Ohio River at Uniontown Dam, IN" : siteName),
             timestamp: tsStr,
             water_level_stage_ft: 0.0,
             discharge_cfs: 0.0,
-            temperature_c: siteCode === "03377500" ? 16.5 : 15.2
+            temperature_c: siteCode === "03378500" ? 16.5 : 15.2,
+            lat: siteCode === "03378500" ? 38.1292 : 37.7948,
+            lng: siteCode === "03378500" ? -87.9353 : -87.9945
           };
         }
 
@@ -507,8 +513,8 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
 
       // Add missing fields and cryptographic seals
       const sealedData = dataArray.map((record: any) => {
-        const wl = record.water_level_stage_ft || (record.gauge_id === "USGS-03377500" ? 18.42 : 24.85);
-        const q = record.discharge_cfs || (record.gauge_id === "USGS-03377500" ? 45100.0 : 115000.0);
+        const wl = record.water_level_stage_ft || (record.gauge_id === "USGS-03378500" ? 18.42 : 24.85);
+        const q = record.discharge_cfs || (record.gauge_id === "USGS-03378500" ? 45100.0 : 115000.0);
         return {
           ...record,
           water_level_stage_ft: wl,
@@ -718,6 +724,7 @@ Structure your response with clear headers and bullet points. End with "SYSTEM_S
         "03_IDNR_No_Rise_Certification.pdf",
         "05_FEMA_LOMA_Forensic_Case_Study.pdf",
         "bca_elevation_data.json",
+        "bca_storage_data.json",
         "bca_summary.csv"
     ];
 
@@ -757,6 +764,32 @@ Structure your response with clear headers and bullet points. End with "SYSTEM_S
             statutory_authority: "REGISTERED PROFESSIONAL ENGINEER (IN)"
         }
     });
+  });
+
+  app.get("/api/turbovec/backup", async (req, res) => {
+    try {
+      const zip = new JSZip();
+      const timestamp = new Date().toISOString();
+      const backupData = {
+        node: "13101_BONEBANK_RD",
+        timestamp,
+        version: "32.5.0",
+        state: "NOMINAL",
+        integrity_hash: crypto.createHash('sha256').update(timestamp).digest('hex')
+      };
+
+      zip.file("node_metadata.json", JSON.stringify(backupData, null, 2));
+      zip.file("README_BACKUP.txt", "Sovereign Hydrodynamic Pipeline Backup\nPoint Township Section 35\nTarget: 13101 Bonebank Rd");
+      
+      const content = await zip.generateAsync({ type: "nodebuffer" });
+      
+      res.setHeader("Content-Type", "application/zip");
+      res.setHeader("Content-Disposition", `attachment; filename=digital_twin_backup_${new Date().toISOString().slice(0,10)}.zip`);
+      res.send(content);
+    } catch (error) {
+      console.error("Backup generation failed:", error);
+      res.status(500).json({ error: "Backup generation failed" });
+    }
   });
 
   app.get("/api/nws-alerts", (req, res) => {
