@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Activity, Database, MonitorPlay, Network, Shield, AlertTriangle, Cpu, Globe, Sun, Moon, Map, Maximize2, Minimize2, Server, Zap, Settings, X, Music, Volume2, VolumeX, Power, Eye, EyeOff, Ruler, Download, MousePointer2, FileText } from 'lucide-react';
+import { Activity, Database, MonitorPlay, Network, Shield, AlertTriangle, Cpu, Globe, Sun, Moon, Map, Maximize2, Minimize2, Server, Zap, Settings, X, Music, Volume2, VolumeX, Power, Eye, EyeOff, Ruler, Download, MousePointer2, FileText, RefreshCw } from 'lucide-react';
 import { AssimilationView } from './AssimilationView';
 import { EvidenceView } from './EvidenceView';
 import { SystemTelemetry } from './SystemTelemetry';
@@ -14,11 +14,12 @@ import { TurbovecScorePlot } from './TurbovecScorePlot';
 import { MapComponent } from './MapComponent';
 import { AiPdfAnalyzer } from './AiPdfAnalyzer';
 import { ArchimedesConsole } from './ArchimedesConsole';
+import NcatTransformer from './NcatTransformer';
 import { useTheme } from '../context/ThemeContext';
 import { useAudioSystem } from '../context/AudioContext';
 
 export function Dashboard() {
-  const [activePanel, setActivePanel] = useState<'telemetry' | 'evidence' | 'system' | 'upgrades' | 'ai' | 'archimedes'>('telemetry');
+  const [activePanel, setActivePanel] = useState<'telemetry' | 'evidence' | 'system' | 'upgrades' | 'ai' | 'archimedes' | 'datum'>('telemetry');
   const { theme, setTheme, toggleTheme } = useTheme();
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [zenMode, setZenMode] = useState(false);
@@ -165,7 +166,7 @@ export function Dashboard() {
             
             {/* HUD Tab Bar Navigation */}
             <div className="flex dark:bg-[#001428]/90 bg-white/95 backdrop-blur-md dark:border-slate-700 border-slate-200 border rounded-lg p-1.5 gap-1 shadow-xl">
-              {(['telemetry', 'evidence', 'system', 'upgrades', 'ai', 'archimedes'] as const).map((panel) => {
+              {(['telemetry', 'evidence', 'system', 'upgrades', 'ai', 'archimedes', 'datum'] as const).map((panel) => {
                 const isActive = activePanel === panel;
                 let Icon = Activity;
                 if (panel === 'evidence') Icon = Database;
@@ -173,6 +174,7 @@ export function Dashboard() {
                 if (panel === 'upgrades') Icon = Zap;
                 if (panel === 'ai') Icon = FileText;
                 if (panel === 'archimedes') Icon = Shield;
+                if (panel === 'datum') Icon = RefreshCw;
                 
                 return (
                   <button
@@ -187,7 +189,7 @@ export function Dashboard() {
                   >
                     <Icon size={14} className={isActive ? 'animate-pulse text-[#00D4FF]' : ''} />
                     <span className="text-[8px] font-mono font-bold uppercase tracking-wider">
-                      {panel === 'ai' ? 'Forensic' : panel === 'archimedes' ? 'Archimedes' : panel}
+                      {panel === 'ai' ? 'Forensic' : panel === 'archimedes' ? 'Archimedes' : panel === 'datum' ? 'NCAT' : panel}
                     </span>
                   </button>
                 );
@@ -233,6 +235,13 @@ export function Dashboard() {
               <Card className="dark:bg-slate-900/80 bg-white/90 backdrop-blur-md dark:border-slate-700 border-slate-200 dark:text-slate-100 text-slate-900 h-[600px] flex flex-col shadow-xl transition-all duration-300">
                 <CardContent className="p-0 h-full flex flex-col">
                   <ArchimedesConsole />
+                </CardContent>
+              </Card>
+            )}
+            {activePanel === 'datum' && (
+              <Card className="dark:bg-slate-900/80 bg-white/90 backdrop-blur-md dark:border-slate-700 border-slate-200 dark:text-slate-100 text-slate-900 h-[600px] flex flex-col shadow-xl transition-all duration-300">
+                <CardContent className="p-0 h-full flex flex-col">
+                  <NcatTransformer />
                 </CardContent>
               </Card>
             )}

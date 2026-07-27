@@ -535,7 +535,73 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
     }
   });
 
-    app.post("/api/v1/twin/simulate", (req, res) => {
+    app.get("/api/transform-elevation", async (req, res) => {
+    const { lat, lon, height, inDatum, outDatum } = req.query;
+    
+    if (!lat || !lon || !height) {
+      return res.status(400).json({ error: "Missing required parameters: lat, lon, height" });
+    }
+
+    const inD = (inDatum as string || "ngvd29").toLowerCase();
+    const outD = (outDatum as string || "navd88").toLowerCase();
+    const h = parseFloat(height as string);
+    const l = parseFloat(lat as string);
+    const ln = parseFloat(lon as string);
+
+    // NCAT API usually requires orthometric height in meters
+    const heightMeters = h * 0.3048;
+
+    // Use NGS NCAT API (Coordinate Conversion and Transformation Tool)
+    const url = `https://geodesy.noaa.gov/api/ncat/llh?lat=${l}&lon=${ln}&in_datum=${inD}&out_datum=${outD}&in_ortho_ht=${heightMeters}&f=json`;
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      
+      const response = await fetch(url, {
+        headers: { "User-Agent": "PTDT-v23-NCAT-Bridge (admin@pointtownship.gov)" },
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`NCAT API responded with status: ${response.status}`);
+      }
+
+      const data: any = await response.json();
+      
+      // NCAT returns outOrthoHt in meters
+      const outHeightMeters = parseFloat(data.outOrthoHt || "0");
+      const outHeightFeet = outHeightMeters / 0.3048;
+      const shiftMeters = parseFloat(data.vertShift || "0");
+      const shiftFeet = shiftMeters / 0.3048;
+
+      res.json({
+        success: true,
+        input: { lat: l, lon: ln, height_ft: h, datum: inD },
+        output: {
+          height_ft: parseFloat(outHeightFeet.toFixed(3)),
+          datum: outD,
+          shift_ft: parseFloat(shiftFeet.toFixed(3)),
+          uncertainty_m: data.vertUncertainty || 0.02
+        },
+        meta: {
+          src: "NGS NCAT / VERTCON 3.0",
+          engine: "NOAA/NGS Official Web Service",
+          disclaimer: "Calculated for Point Township Section 35 specifically."
+        }
+      });
+    } catch (error: any) {
+      console.error("NCAT Transformation failed:", error);
+      res.status(500).json({ 
+        error: "Transformation failed", 
+        message: error.message,
+        fallback_shift_ft: -0.53 // Approximate for Posey County
+      });
+    }
+  });
+
+  app.post("/api/v1/twin/simulate", (req, res) => {
     const payload = req.body || {};
     const stage_ft = payload.usgs_stage_ft ?? 381.2;
     const flow_cfs = payload.discharge_cfs ?? 142000.0;
