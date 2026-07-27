@@ -1,4 +1,5 @@
 version: '3.8'
+
 services:
   web:
     build: .
@@ -7,3 +8,18 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
+    depends_on:
+      - archimedes
+
+  archimedes:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    command: >
+      bash -c "pip install --no-cache-dir -r requirements.txt &&
+               python archimedes_engine.py"
+    environment:
+      - PYTHONUNBUFFERED=1

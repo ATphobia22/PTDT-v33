@@ -1,7 +1,33 @@
 node_modules/
 build/
+dist/
 coverage/
 .DS_Store
 *.log
 .env*
 !.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Package outputs (regenerate locally)
+05_final_portal_package/*.pdf
+05_final_portal_package/*.json
+05_final_portal_package/*.csv
+!05_final_portal_package/.gitkeep
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+*.swo
