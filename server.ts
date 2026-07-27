@@ -529,7 +529,7 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
     }
   });
 
-    app.post("/api/v1/twin/simulation", (req, res) => {
+    app.post("/api/v1/twin/simulate", (req, res) => {
     const payload = req.body || {};
     const stage_ft = payload.usgs_stage_ft ?? 381.2;
     const flow_cfs = payload.discharge_cfs ?? 142000.0;
