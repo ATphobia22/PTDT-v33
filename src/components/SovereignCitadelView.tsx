@@ -29,7 +29,8 @@ export function SovereignCitadelView() {
         usgs_stage_ft: 381.2,
         discharge_cfs: 142000,
         soil_saturation: 82.5,
-        target_bfe: 383.0,
+        target_bfe: 375.0, // Match PDF Section 5.1
+        lowest_adjacent_grade: 377.2, // Match PDF Section 5.1
         location: "13101 Bonebank Rd, Mount Vernon, IN"
       });
       
@@ -192,6 +193,10 @@ export function SovereignCitadelView() {
                   <span className="text-slate-400 text-sm font-mono">Target BFE (FEMA/IN)</span>
                   <span className="text-lg font-semibold text-rose-400">{telemetry.target_bfe.toFixed(1)}'</span>
                 </div>
+                <div className="flex justify-between items-center bg-slate-950 p-3 rounded-lg border border-slate-800">
+                  <span className="text-slate-400 text-sm font-mono">Property LAG (Certified)</span>
+                  <span className="text-lg font-semibold text-emerald-400">{telemetry.lowest_adjacent_grade.toFixed(1)}'</span>
+                </div>
               
             {simulationResult && (
               <button 
@@ -323,6 +328,25 @@ export function SovereignCitadelView() {
                   <div className="flex items-center gap-2 mt-4 text-xs font-mono bg-slate-950 p-2 rounded border border-slate-800">
                     <Lock className="h-4 w-4 text-slate-500" />
                     <span className="text-slate-500 truncate">SHA256: {simulationResult.governance.cryptographic_hash}</span>
+                  </div>
+
+                  {/* Compensatory Storage Display */}
+                  <div className="mt-4 p-3 bg-slate-950 border border-slate-800 rounded-lg">
+                    <h4 className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-2">Compensatory Storage (312 IAC 10-5)</h4>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Fill:</span>
+                        <span className="text-rose-400 font-bold">{simulationResult.compensatory_storage.displacement_cu_yds} yd³</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Cut:</span>
+                        <span className="text-emerald-400 font-bold">{simulationResult.compensatory_storage.excavation_cu_yds} yd³</span>
+                      </div>
+                      <div className="col-span-2 flex justify-between border-t border-slate-800 pt-1 mt-1">
+                        <span className="text-slate-400">Net Balance:</span>
+                        <span className="text-blue-400 font-bold">{simulationResult.compensatory_storage.net_balance_cu_yds} yd³</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ) : (

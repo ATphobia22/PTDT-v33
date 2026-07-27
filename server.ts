@@ -536,11 +536,13 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
 
     const depth_ft = Math.max(0.5, stage_ft - 370.0);
     
+    // PDF Constants (Section 3.A)
     const manning_n_floodplain = 0.045;
     const river_slope = 0.00015;
     
     let velocity = 0.0;
     if (depth_ft > 0.0) {
+        // V = (1.486 / n) * R_h^(2/3) * S^(1/2)
         velocity = (1.486 / manning_n_floodplain) * Math.pow(depth_ft, 2.0 / 3.0) * Math.pow(river_slope, 0.5);
         velocity = Math.round(velocity * 1000) / 1000;
     }
@@ -555,18 +557,30 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
         velocity_ms
     };
 
+    // Compensatory Storage Calculation (PDF 2)
+    const berm_length_ft = 300;
+    const berm_width_ft = 10;
+    const berm_height_ft = 3;
+    const displacement_cu_ft = berm_length_ft * berm_width_ft * berm_height_ft;
+    const excavation_cu_ft = displacement_cu_ft * 1.20; // 1.20x safety factor
+    
+    const compensatory_storage = {
+        displacement_cu_yds: Math.round((displacement_cu_ft / 27.0) * 100) / 100,
+        excavation_cu_yds: Math.round((excavation_cu_ft / 27.0) * 100) / 100,
+        net_balance_cu_yds: Math.round(((excavation_cu_ft - displacement_cu_ft) / 27.0) * 100) / 100
+    };
+
     const sim_depth_ft = water_depth_m * 3.28084;
     const calculated_rise_ft = Math.max(0.0, sim_depth_ft - stage_ft);
     
     let audit_trail = [];
     let is_compliant = true;
     
+    // Indiana No-Rise Threshold (PDF 2: 0.14)
     if (calculated_rise_ft > 0.14) {
         is_compliant = false;
         audit_trail.push(`IN-312-IAC-10 BREACH: Stage rise of ${calculated_rise_ft.toFixed(4)}ft violates strict state No-Rise Mandate.`);
     } else {
-        // As per PDF: "IN-312-IAC-10 PASS: Structural footprint meets zero surcharge displacement criteria." (Wait, what was the exact text?
-        // Let's check the OCR: "IN-312-IAC-10 PASS: Structural footprint meets zero surcharge displacement criteria.")
         audit_trail.push("IN-312-IAC-10 PASS: Structural footprint meets zero surcharge displacement criteria.");
     }
     
@@ -587,6 +601,7 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
         node: "13101_BONEBANK_RD",
         timestamp,
         metrics: hydraulic_state,
+        compensatory_storage,
         governance
     });
   });
