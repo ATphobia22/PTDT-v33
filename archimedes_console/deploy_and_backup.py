@@ -1,4 +1,3 @@
-# archimedes_console/sovereign_backup.py
 import os
 import shutil
 import hashlib
@@ -6,6 +5,7 @@ import datetime
 import json
 import sys
 
+# --- CONFIGURATION ---
 SOURCE_DIR = os.path.dirname(os.path.abspath(__file__))
 EXTERNAL_DRIVE_LABEL = "SOVEREIGN_DRIVE"
 
@@ -19,11 +19,11 @@ def create_directory_structure():
         "05_final_portal_package"
     ]
     for folder in directories:
-        target_path = os.path.join(SOURCE_DIR, folder)
-        os.makedirs(target_path, exist_ok=True)
+        os.makedirs(os.path.join(SOURCE_DIR, folder), exist_ok=True)
         print(f" [+] Created workspace directory: {folder}")
 
 def get_external_drive_path():
+    """Auto-detects the external drive path based on the label."""
     system_platform = sys.platform
     if system_platform == "win32":
         import string
@@ -40,18 +40,14 @@ def get_external_drive_path():
                 return path
         return None
     else:
+        # Linux / Mac
         potential_path = f"/Volumes/{EXTERNAL_DRIVE_LABEL}"
         if os.path.exists(potential_path):
             return potential_path
-        try:
-            potential_path = f"/media/{os.getlogin()}/{EXTERNAL_DRIVE_LABEL}"
-            if os.path.exists(potential_path):
-                return potential_path
-        except Exception:
-            pass
         return None
 
 def generate_file_hash(filepath):
+    """Generates a SHA-256 hash to prove data integrity."""
     hasher = hashlib.sha256()
     with open(filepath, 'rb') as f:
         buf = f.read(65536)
@@ -81,9 +77,8 @@ def execute_vault_backup():
     }
 
     try:
-        shutil.copytree(SOURCE_DIR, destination_path, ignore=shutil.ignore_patterns('*.pyc', '__pycache__', '.git', 'sovereign_backup.py'))
+        shutil.copytree(SOURCE_DIR, destination_path, ignore=shutil.ignore_patterns('*.pyc', '__pycache__', '.git'))
         print(" [+] Data Mirroring Complete. Verifying Integrity...")
-
         for root, dirs, files in os.walk(destination_path):
             for file in files:
                 full_path = os.path.join(root, file)

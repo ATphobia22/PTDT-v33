@@ -3,6 +3,7 @@ import math
 import logging
 import redis.asyncio as aioredis
 from shapely.geometry import Point, Polygon
+import geopandas as gpd
 from pydantic import BaseModel, Field
 from typing import Dict, Any
 
