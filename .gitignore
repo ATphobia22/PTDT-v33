@@ -1,6 +1,6 @@
 node_modules/
-build/
 dist/
+build/
 coverage/
 .DS_Store
 *.log
@@ -11,23 +11,10 @@ coverage/
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
-.Python
-.venv/
+.venv
 venv/
-env/
-*.egg-info/
-.pytest_cache/
-.mypy_cache/
+ENV/
+*.whl
 
-# Package outputs (regenerate locally)
-05_final_portal_package/*.pdf
-05_final_portal_package/*.json
-05_final_portal_package/*.csv
-!05_final_portal_package/.gitkeep
-
-# IDE / OS
-.idea/
-.vscode/
-*.swp
-*.swo
+# Regulatory Artifacts
+05_final_portal_package/
