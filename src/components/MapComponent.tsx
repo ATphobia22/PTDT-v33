@@ -134,6 +134,11 @@ type TileSourceType = 'openfreemap' | 'overture';
 type BuildingTheme = 'thematic' | 'cyber' | 'warm' | 'glass';
 
 interface MapComponentProps {
+  layerOpacities?: {
+    geospatial: number;
+    hydrodynamic: number;
+    structural: number;
+  };
   layers?: {
     geospatial: boolean;
     hydrodynamic: boolean;
@@ -142,7 +147,7 @@ interface MapComponentProps {
   };
 }
 
-export function MapComponent({ layers: externalLayers }: MapComponentProps) {
+export function MapComponent({ layers: externalLayers, layerOpacities }: MapComponentProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const protocolAdded = useRef(false);
@@ -219,6 +224,28 @@ export function MapComponent({ layers: externalLayers }: MapComponentProps) {
       }
     }
   }, []);
+
+  
+  useEffect(() => {
+    if (!mapLoaded || !mapRef.current || !layerOpacities) return;
+    
+    // We assume Mapbox is loaded
+    const externalLayers = [
+      { id: 'geo-mesh-data', key: 'geospatial' },
+      { id: 'hydro-live-data', key: 'hydrodynamic' },
+      { id: 'structural-live-data', key: 'structural' }
+    ];
+    
+    externalLayers.forEach(layer => {
+      if (mapRef.current!.getLayer(layer.id)) {
+        const op = (layerOpacities as any)[layer.key] / 100;
+        mapRef.current!.setPaintProperty(layer.id, 'fill-opacity', op);
+        if (mapRef.current!.getLayer(layer.id + '-line')) {
+           mapRef.current!.setPaintProperty(layer.id + '-line', 'line-opacity', op);
+        }
+      }
+    });
+  }, [layerOpacities, mapLoaded]);
 
   // Main Map Re-initialization when theme, source type, or intersection changes
   useEffect(() => {

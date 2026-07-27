@@ -3,11 +3,17 @@ import { Layers } from 'lucide-react';
 
 export function MultiphysicsControls({ 
   layers, 
-  setLayers 
+  setLayers, 
+  layerOpacities, 
+  setLayerOpacity 
 }: { 
-  layers: { geospatial: boolean, hydrodynamic: boolean, structural: boolean }, 
-  setLayers: (layers: any) => void 
+  layers: { geospatial: boolean, hydrodynamic: boolean, structural: boolean },
+   layerOpacities?: { geospatial: number, hydrodynamic: number, structural: number },
+   setLayerOpacity?: (layerKey: string, value: number) => void, 
+  setLayers: (layers: any) => void
+ 
 }) {
+  const getOpacity = (layerKey: string) => layerOpacities ? (layerOpacities as any)[layerKey] : 100;
   const toggleLayer = (layerKey: string) => {
     setLayers((prev: any) => ({ ...prev, [layerKey]: !prev[layerKey] }));
   };

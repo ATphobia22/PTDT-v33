@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Activity, Database, MonitorPlay, Network, Shield, AlertTriangle, Cpu, Globe, Sun, Moon, Map, Maximize2, Server, Zap, Settings, X, Music, Volume2, VolumeX, Power } from 'lucide-react';
+import { Activity, Database, MonitorPlay, Network, Shield, AlertTriangle, Cpu, Globe, Sun, Moon, Map, Maximize2, Minimize2, Server, Zap, Settings, X, Music, Volume2, VolumeX, Power, Eye, EyeOff, Ruler, Download, MousePointer2 } from 'lucide-react';
 import { AssimilationView } from './AssimilationView';
 import { EvidenceView } from './EvidenceView';
 import { SystemTelemetry } from './SystemTelemetry';
@@ -19,11 +19,23 @@ export function Dashboard() {
   const [activePanel, setActivePanel] = useState<'telemetry' | 'evidence' | 'system' | 'upgrades' | null>('telemetry');
   const { theme, setTheme, toggleTheme } = useTheme();
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [zenMode, setZenMode] = useState(false);
+  const [activeTool, setActiveTool] = useState<string | null>(null);
   const { isMuted, toggleMute, volume, setVolume, setSystemOn, currentSoundscape, setSoundscape } = useAudioSystem();
 
   const [telemetryRate, setTelemetryRate] = useState<'live' | '15s' | '60s' | 'manual'>('live');
   const [meshDensity, setMeshDensity] = useState<'low' | 'medium' | 'high'>('medium');
   const [vectorSearchTolerance, setVectorSearchTolerance] = useState<number>(0.15);
+
+  const [layerOpacities, setLayerOpacities] = useState({
+    geospatial: 100,
+    hydrodynamic: 100,
+    structural: 100
+  });
+
+  const handleOpacityChange = (layerKey: string, value: number) => {
+    setLayerOpacities(prev => ({ ...prev, [layerKey]: value }));
+  };
 
   const [layers, setLayers] = useState({
     geospatial: true,
@@ -81,8 +93,31 @@ export function Dashboard() {
   return (
     <div className="relative w-full h-screen overflow-hidden dark:bg-slate-950 bg-slate-100 dark:text-slate-100 text-slate-900 font-sans transition-colors duration-300">
       {/* Background Map - Full Screen */}
+      
+      {/* Floating Map Toolbox */}
+      
+      <div className="absolute right-6 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2 pointer-events-auto">
+        {[
+          { id: "select", icon: MousePointer2, label: "Select Feature" },
+          { id: "measure", icon: Ruler, label: "Measure Distance/Area" },
+          { id: "export", icon: Download, label: "Export Spatial Data" }
+        ].map((tool) => (
+          <button 
+            key={tool.id} 
+            title={tool.label} 
+            onClick={() => setActiveTool(activeTool === tool.id ? null : tool.id)}
+            className={`p-2 backdrop-blur-md border rounded shadow-xl transition-colors cursor-pointer ${
+              activeTool === tool.id 
+                ? "bg-indigo-600 border-indigo-500 text-white" 
+                : "dark:bg-slate-900/80 bg-white/90 dark:border-slate-700 border-slate-200 dark:text-slate-300 text-slate-700 hover:dark:text-[#00D4FF] hover:text-indigo-600 hover:dark:bg-slate-800"
+            }`}>
+            <tool.icon size={18} />
+          </button>
+        ))}
+      </div>
+
       <div className="absolute inset-0 z-0">
-        <MapComponent layers={layers} />
+        <MapComponent layers={layers} layerOpacities={layerOpacities} />
       </div>
 
       {/* HUD - Overlay */}
@@ -98,6 +133,12 @@ export function Dashboard() {
             </div>
           </div>
           <div className="flex gap-2">
+            <button 
+              onClick={() => setZenMode(!zenMode)} 
+              className={`p-2 border rounded transition-colors shadow-xl cursor-pointer mr-2 ${zenMode ? "bg-indigo-600 border-indigo-500 text-white" : "dark:bg-[#001428]/85 bg-white dark:border-slate-700/50 border-slate-200 hover:dark:bg-[#003366] hover:bg-slate-50 dark:text-[#00D4FF] text-indigo-600"}`} 
+              title="Toggle Zen Mode (Hide Panels)"> 
+              {zenMode ? <EyeOff size={18} /> : <Eye size={18} />} 
+            </button>
             <button 
               onClick={() => setShowSettingsModal(true)} 
               className="p-2 dark:bg-[#001428]/85 bg-white dark:border-slate-700/50 border-slate-200 border rounded hover:dark:bg-[#003366] hover:bg-slate-50 dark:text-[#00D4FF] text-indigo-600 transition-colors shadow-xl cursor-pointer"
@@ -115,6 +156,7 @@ export function Dashboard() {
           </div>
         </header>
 
+        {!zenMode && (<>
         {/* Side Panels - HUD */}
         <div className="flex-1 flex gap-6 mt-6 pointer-events-none">
           <div className="w-96 flex flex-col gap-4 pointer-events-auto overflow-y-auto max-h-full pr-2 pb-16 scrollbar-hide">
@@ -181,7 +223,7 @@ export function Dashboard() {
           <div className="w-80 pointer-events-auto">
             <Card className="dark:bg-slate-900/80 bg-white/90 backdrop-blur-md dark:border-slate-700 border-slate-200 dark:text-slate-100 text-slate-900 shadow-xl transition-all duration-300">
               <CardContent className="p-4">
-                <MultiphysicsControls layers={layers} setLayers={setLayers} />
+                <MultiphysicsControls layers={layers} setLayers={setLayers} layerOpacities={layerOpacities} setLayerOpacity={handleOpacityChange} />
               </CardContent>
             </Card>
           </div>
@@ -262,6 +304,8 @@ export function Dashboard() {
             <DepthLegend />
           </div>
         </div>
+        </>
+      )}
       </div>
 
       {/* System Settings & Ambient Music Config Overlay */}
