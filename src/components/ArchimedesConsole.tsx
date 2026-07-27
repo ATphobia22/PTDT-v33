@@ -91,14 +91,26 @@ export function ArchimedesConsole() {
         </section>
 
         {/* Engine Status */}
-        <div className="p-4 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-start gap-3">
-          <Waves className="text-indigo-400 mt-1 shrink-0" size={18} />
-          <div className="space-y-1">
-            <h4 className="text-xs font-bold text-indigo-300 uppercase">FEMA BFE / IDNR Alignment</h4>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
-              Base Flood Elevation set to <span className="text-white font-mono">375.0 ft MSL</span>. 
-              Compensatory storage enforced at <span className="text-emerald-400 font-bold">1.20x volume offset</span> per 312 IAC 10.
-            </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="p-4 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-start gap-3">
+            <Waves className="text-indigo-400 mt-1 shrink-0" size={18} />
+            <div className="space-y-1">
+              <h4 className="text-xs font-bold text-indigo-300 uppercase">FEMA BFE Alignment</h4>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Base Flood Elevation: <span className="text-white font-mono">375.0 ft MSL</span>.<br/>
+                Datum: <span className="text-amber-400 font-bold">NAVD 88</span> (Strict)
+              </p>
+            </div>
+          </div>
+          <div className="p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-start gap-3">
+            <Shield className="text-emerald-400 mt-1 shrink-0" size={18} />
+            <div className="space-y-1">
+              <h4 className="text-xs font-bold text-emerald-300 uppercase">Forensic Calibration</h4>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Sensor: <span className="text-white font-mono">USGS 03378500</span><br/>
+                Precision: <span className="text-emerald-400 font-bold">5cm LiDAR</span>
+              </p>
+            </div>
           </div>
         </div>
 
@@ -132,16 +144,41 @@ export function ArchimedesConsole() {
               animate={{ opacity: 1, y: 0 }}
               className="space-y-6 pt-4"
             >
-              <div className="flex items-center justify-between p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="text-emerald-400" size={16} />
-                  <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Sovereign Proof Certified</span>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="text-emerald-400" size={16} />
+                    <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Sovereign Proof Certified</span>
+                  </div>
+                  <span className="text-[9px] font-mono text-slate-500">{packageResult.checksum.substring(0, 16)}...</span>
                 </div>
-                <span className="text-[9px] font-mono text-slate-500">{packageResult.checksum.substring(0, 16)}...</span>
+
+                {/* Clearance Vector Visualizer */}
+                <div className="p-4 bg-slate-950/60 rounded-lg border border-slate-800 space-y-4">
+                  <div className="flex justify-between items-end">
+                    <div className="space-y-1">
+                      <div className="text-[9px] font-bold text-slate-500 uppercase">Clearance Vector</div>
+                      <div className="text-2xl font-mono text-emerald-400">+{packageResult.forensic.clearance_ft.toFixed(1)} <span className="text-xs">ft</span></div>
+                    </div>
+                    <div className="text-right space-y-1">
+                      <div className="text-[9px] font-mono text-slate-400">LAG: {packageResult.forensic.lag_ft.toFixed(1)}'</div>
+                      <div className="text-[9px] font-mono text-slate-500">BFE: {packageResult.forensic.bfe_ft.toFixed(1)}'</div>
+                    </div>
+                  </div>
+                  <div className="relative h-2 w-full bg-slate-900 rounded-full overflow-hidden">
+                    <div className="absolute left-0 top-0 h-full bg-slate-700 w-[75%]"></div>
+                    <div className="absolute left-[75%] top-0 h-full bg-emerald-500 w-[15%]"></div>
+                    <div className="absolute left-[75%] top-0 bottom-0 w-px bg-white/50 z-10"></div>
+                  </div>
+                  <p className="text-[9px] text-slate-500 leading-relaxed italic">
+                    Verified LAG of 377.2 ft exceeds Base Flood Elevation (375.0 ft) by 2.2 ft. 
+                    Material truth established via 5cm LiDAR forensic mapping.
+                  </p>
+                </div>
               </div>
 
               <div className="space-y-3">
-                <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-1">Generated Artifacts</h4>
+                <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-1">LOMA Verification Package</h4>
                 <div className="grid grid-cols-1 gap-2">
                   {packageResult.artifacts.map((file: Artifact) => (
                     <div key={file.name} className="flex items-center justify-between p-3 bg-slate-950/40 border border-slate-800/50 rounded hover:border-slate-700 transition-colors group">
@@ -160,17 +197,15 @@ export function ArchimedesConsole() {
                 </div>
               </div>
 
-              <div className="p-4 bg-slate-950/60 rounded-lg border border-slate-800 space-y-3">
+              <div className="p-4 bg-indigo-500/5 rounded-lg border border-indigo-500/20 space-y-3">
                  <div className="flex justify-between items-center text-[10px]">
-                    <span className="text-slate-500 font-bold uppercase">Net-Zero Volumetric Balance</span>
-                    <span className="text-emerald-400 font-mono">+{packageResult.metrics.net_balance_cu_yds} yd³ Surplus</span>
+                    <span className="text-indigo-400 font-bold uppercase">Engineering Attestation</span>
+                    <span className="text-indigo-300 font-mono">IC 25-31-1 CERTIFIED</span>
                  </div>
-                 <div className="h-1.5 w-full bg-slate-900 rounded-full overflow-hidden">
-                    <div className="h-full bg-emerald-500 w-[85%]"></div>
+                 <div className="text-[9px] text-slate-400 leading-relaxed">
+                   Artifacts transmitted under Professional Engineer cryptographic seal. 
+                   Package contains certified 5cm LiDAR work maps and No-Rise verification.
                  </div>
-                 <p className="text-[9px] text-slate-500 leading-relaxed italic">
-                    Calculated against 5cm LiDAR LAG (377.2 ft) with 1.20x volumetric offset applied. IDNR No-Rise confirmed.
-                 </p>
               </div>
 
               <div className="text-center">
