@@ -31,13 +31,13 @@ export function OvertureTwinView() {
     const tilesUrl = mapStyleMode === 'satellite'
       ? ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}']
       : [
-          theme === 'dark' 
+          (theme === 'dark' || theme === 'blueprint') 
             ? 'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'
             : 'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png',
-          theme === 'dark' 
+          (theme === 'dark' || theme === 'blueprint') 
             ? 'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'
             : 'https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png',
-          theme === 'dark' 
+          (theme === 'dark' || theme === 'blueprint') 
             ? 'https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'
             : 'https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png'
         ];
@@ -81,7 +81,7 @@ export function OvertureTwinView() {
                     85, '#0ea5e9',  // Reflective blue glass
                     150, '#38bdf8'  // Aluminum sky high-rise
                   ]
-                : (theme === 'dark' ? '#475569' : '#cbd5e1'),
+                : ((theme === 'dark' || theme === 'blueprint') ? '#475569' : '#cbd5e1'),
               'fill-extrusion-height': ['coalesce', ['get', 'height'], 8],
               'fill-extrusion-base': ['coalesce', ['get', 'min_height'], 0],
               'fill-extrusion-opacity': mapStyleMode === 'satellite' ? 0.75 : 0.85
@@ -126,7 +126,7 @@ export function OvertureTwinView() {
         type: 'fill-extrusion',
         source: 'flood-plane',
         paint: {
-          'fill-extrusion-color': theme === 'dark' ? '#06b6d4' : '#3b82f6',
+          'fill-extrusion-color': (theme === 'dark' || theme === 'blueprint') ? '#06b6d4' : '#3b82f6',
           'fill-extrusion-height': floodStage * 0.3048,
           'fill-extrusion-opacity': 0.5
         }
@@ -159,7 +159,7 @@ export function OvertureTwinView() {
         type: 'fill-extrusion',
         source: 'berm',
         paint: {
-          'fill-extrusion-color': theme === 'dark' ? '#22c55e' : '#10b981',
+          'fill-extrusion-color': (theme === 'dark' || theme === 'blueprint') ? '#22c55e' : '#10b981',
           'fill-extrusion-height': 115,
           'fill-extrusion-base': 112,
           'fill-extrusion-opacity': 0.7

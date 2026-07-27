@@ -65,7 +65,7 @@ function App() {
   };
 
   return (
-    <div className={`${theme === 'dark' ? 'dark' : ''} w-screen h-screen overflow-hidden relative`}>
+    <div className={`${theme === 'dark' ? 'dark' : theme === 'blueprint' ? 'dark blueprint' : ''} w-screen h-screen overflow-hidden relative`}>
       {/* Universal Floating Cockpit Control Dock */}
       <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[200] pointer-events-auto flex items-center gap-2 px-3 py-1.5 dark:bg-[#001428]/95 bg-white/95 backdrop-blur-md dark:border-indigo-500/35 border-slate-200 border rounded-full shadow-2xl transition-all duration-300">
         <div className="flex items-center gap-1.5 pr-2 mr-1 border-r border-slate-200 dark:border-indigo-500/20 text-xs font-mono font-bold dark:text-[#00D4FF] text-indigo-700">

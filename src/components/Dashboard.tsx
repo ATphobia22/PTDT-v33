@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Activity, Database, MonitorPlay, Network, Shield, AlertTriangle, Cpu, Globe, Sun, Moon, Maximize2, Server, Zap, Settings, X, Music, Volume2, VolumeX, Power } from 'lucide-react';
+import { Activity, Database, MonitorPlay, Network, Shield, AlertTriangle, Cpu, Globe, Sun, Moon, Map, Maximize2, Server, Zap, Settings, X, Music, Volume2, VolumeX, Power } from 'lucide-react';
 import { AssimilationView } from './AssimilationView';
 import { EvidenceView } from './EvidenceView';
 import { SystemTelemetry } from './SystemTelemetry';
@@ -17,7 +17,7 @@ import { useAudioSystem } from '../context/AudioContext';
 
 export function Dashboard() {
   const [activePanel, setActivePanel] = useState<'telemetry' | 'evidence' | 'system' | 'upgrades' | null>('telemetry');
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme, toggleTheme } = useTheme();
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const { isMuted, toggleMute, volume, setVolume, setSystemOn, currentSoundscape, setSoundscape } = useAudioSystem();
 
@@ -108,9 +108,9 @@ export function Dashboard() {
             <button 
               onClick={toggleTheme} 
               className="p-2 dark:bg-[#001428]/85 bg-white dark:border-slate-700/50 border-slate-200 border rounded hover:dark:bg-[#003366] hover:bg-slate-50 dark:text-[#00D4FF] text-indigo-600 transition-colors shadow-xl cursor-pointer"
-              title={theme === 'dark' ? 'Switch to Day Mode' : 'Switch to Night Mode'}
+              title={theme === 'dark' ? 'Switch to Day Mode' : theme === 'blueprint' ? 'Switch to Night Mode' : 'Switch to Blueprint Mode'}
             >
-              {theme === 'dark' ? <Sun size={18} className="text-[#00D4FF]" /> : <Moon size={18} className="text-indigo-600" />}
+              {theme === 'dark' ? <Sun size={18} className="text-[#00D4FF]" /> : theme === 'blueprint' ? <Moon size={18} className="text-[#00D4FF]" /> : <Moon size={18} className="text-indigo-600" />}
             </button>
           </div>
         </header>
@@ -206,9 +206,9 @@ export function Dashboard() {
           {/* Middle Section: Scenario Control Deck */}
           <div style={{
             flex: 1,
-            background: theme === 'dark' ? "rgba(0, 10, 20, 0.8)" : "rgba(255, 255, 255, 0.92)",
+            background: (theme === 'dark' || theme === 'blueprint') ? "rgba(0, 10, 20, 0.8)" : "rgba(255, 255, 255, 0.92)",
             backdropFilter: "blur(16px)",
-            border: theme === 'dark' ? "1px solid rgba(0, 212, 255, 0.15)" : "1px solid rgba(99, 102, 241, 0.25)",
+            border: (theme === 'dark' || theme === 'blueprint') ? "1px solid rgba(0, 212, 255, 0.15)" : "1px solid rgba(99, 102, 241, 0.25)",
             borderRadius: "6px",
             padding: "16px",
             display: "flex",
@@ -355,7 +355,7 @@ export function Dashboard() {
             <div className="space-y-4 mb-6 pt-4 border-t border-slate-200 dark:border-slate-800/80">
               <div>
                 <h3 className="text-[11px] font-bold dark:text-slate-300 text-slate-800 uppercase tracking-wider mb-1 flex items-center gap-1.5 font-mono">
-                  {theme === 'dark' ? <Moon className="w-3.5 h-3.5 text-indigo-400" /> : <Sun className="w-3.5 h-3.5 text-indigo-500" />}
+                  {(theme === 'dark' || theme === 'blueprint') ? <Moon className="w-3.5 h-3.5 text-indigo-400" /> : <Sun className="w-3.5 h-3.5 text-indigo-500" />}
                   Cockpit Visual Mode
                 </h3>
                 <p className="text-[9px] dark:text-slate-500 text-slate-600 mb-3 leading-normal">
@@ -363,26 +363,36 @@ export function Dashboard() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 dark:bg-slate-900/60 bg-slate-50 border border-slate-200 dark:border-slate-800 rounded p-2">
+              <div className="grid grid-cols-3 gap-2 dark:bg-slate-900/60 bg-slate-50 border border-slate-200 dark:border-slate-800 rounded p-2">
                 <button
-                  onClick={() => { if (theme === 'dark') toggleTheme(); }}
+                  onClick={() => setTheme('light')}
                   className={`py-1.5 rounded text-[9px] font-mono font-bold border transition-all cursor-pointer uppercase flex items-center justify-center gap-1.5 ${
                     theme === 'light'
                       ? 'bg-indigo-100 border-indigo-300 text-indigo-600 font-extrabold'
                       : 'bg-transparent border-transparent text-slate-400 hover:text-slate-200'
                   }`}
                 >
-                  <Sun size={11} /> Day Mode
+                  <Sun size={11} /> Day
                 </button>
                 <button
-                  onClick={() => { if (theme === 'light') toggleTheme(); }}
+                  onClick={() => setTheme('dark')}
                   className={`py-1.5 rounded text-[9px] font-mono font-bold border transition-all cursor-pointer uppercase flex items-center justify-center gap-1.5 ${
-                    theme === 'dark'
+                    (theme === 'dark' || theme === 'blueprint')
                       ? 'dark:bg-indigo-500/20 dark:border-indigo-500/40 text-[#00D4FF] font-extrabold'
                       : 'bg-transparent border-transparent text-slate-400 hover:text-slate-600'
                   }`}
                 >
-                  <Moon size={11} /> Night Mode
+                  <Moon size={11} /> Night
+                </button>
+                <button
+                  onClick={() => setTheme('blueprint')}
+                  className={`py-1.5 rounded text-[9px] font-mono font-bold border transition-all cursor-pointer uppercase flex items-center justify-center gap-1.5 ${
+                    theme === 'blueprint'
+                      ? 'bg-blue-900/30 border-blue-400/50 text-blue-300 font-extrabold'
+                      : 'bg-transparent border-transparent text-slate-400 hover:text-slate-600'
+                  }`}
+                >
+                  <Map size={11} /> Blueprint
                 </button>
               </div>
             </div>

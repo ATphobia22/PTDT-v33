@@ -93,6 +93,7 @@ export function ScientificProofOverlay({ onClose }: ScientificProofOverlayProps)
   // Active view tab inside the overlay
   const [activeTab, setActiveTab] = useState<'science' | 'grants' | 'export'>('science');
   const [isMinimized, setIsMinimized] = useState<boolean>(false);
+  const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [selectedState, setSelectedState] = useState<'ALL' | 'IN' | 'IL' | 'KY'>('ALL');
   const [scaleFactor, setScaleFactor] = useState<number>(1.0);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
@@ -405,6 +406,13 @@ Cryptographic Seal Status: SECURED & TIMESTAMPTED
             <Maximize2 size={13} />
           </button>
           <button 
+            onClick={() => setIsExpanded(!isExpanded)}
+            title={isExpanded ? "Collapse height" : "Expand height"}
+            className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-indigo-400 transition-all cursor-pointer"
+          >
+            {isExpanded ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+          </button>
+          <button 
             onClick={onClose}
             title="Close Panel"
             className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-rose-400 transition-all cursor-pointer"
@@ -417,7 +425,7 @@ Cryptographic Seal Status: SECURED & TIMESTAMPTED
   }
 
   return (
-    <div className="absolute top-20 left-6 z-30 w-[420px] bg-slate-900/95 border border-indigo-500/40 rounded-xl shadow-2xl backdrop-blur-md text-slate-100 font-mono text-xs max-h-[80vh] flex flex-col overflow-hidden">
+    <div className={`absolute top-20 left-6 z-30 w-[420px] bg-slate-900/95 border border-indigo-500/40 rounded-xl shadow-2xl backdrop-blur-md text-slate-100 font-mono text-xs ${isExpanded ? 'h-[80vh]' : 'max-h-[80vh]'} flex flex-col overflow-hidden`}>
       
       {/* Header */}
       <div className="flex justify-between items-center border-b border-indigo-500/30 p-4 bg-slate-950/40">

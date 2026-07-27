@@ -226,7 +226,7 @@ export function MapComponent({ layers: externalLayers }: MapComponentProps) {
 
     // Determine the base map style
     // OpenFreeMap Liberty and Bright styles are perfect open-source options
-    let styleUrl = theme === 'dark' 
+    let styleUrl = (theme === 'dark' || theme === 'blueprint') 
       ? 'https://tiles.openfreemap.org/styles/dark' 
       : 'https://tiles.openfreemap.org/styles/liberty';
 
@@ -237,7 +237,7 @@ export function MapComponent({ layers: externalLayers }: MapComponentProps) {
         'carto': {
           type: 'raster' as const,
           tiles: [
-            theme === 'dark' 
+            (theme === 'dark' || theme === 'blueprint') 
               ? 'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'
               : 'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png'
           ],
@@ -451,7 +451,7 @@ export function MapComponent({ layers: externalLayers }: MapComponentProps) {
             map.setPaintProperty(layer.id, 'fill-outline-color', '#00ffb7'); // Shallow saturation edge
           } else {
             // Reset to default
-            map.setPaintProperty(layer.id, 'fill-color', theme === 'dark' ? '#0f172a' : '#94a3b8');
+            map.setPaintProperty(layer.id, 'fill-color', (theme === 'dark' || theme === 'blueprint') ? '#0f172a' : '#94a3b8');
             map.setPaintProperty(layer.id, 'fill-opacity', 1);
             map.setPaintProperty(layer.id, 'fill-outline-color', 'transparent');
           }
@@ -615,7 +615,7 @@ export function MapComponent({ layers: externalLayers }: MapComponentProps) {
       default:
         // Elegant slate color schema matching dark/light themes
         return {
-          'fill-extrusion-color': theme === 'dark' 
+          'fill-extrusion-color': (theme === 'dark' || theme === 'blueprint') 
             ? [
                 'interpolate',
                 ['linear'],
