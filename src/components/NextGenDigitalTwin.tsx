@@ -64,7 +64,7 @@ export default function NextGenDigitalTwin() {
           const mappedGages = json.data.map((gage: any) => {
             let lat = 37.893;
             let lng = -88.016;
-            if (gage.gauge_id.includes("03377500")) {
+            if (gage.gauge_id.includes("03378500")) {
               lat = 38.129; // New Harmony
               lng = -87.935;
             } else if (gage.gauge_id.includes("03322000")) {

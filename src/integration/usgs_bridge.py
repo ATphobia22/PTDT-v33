@@ -7,13 +7,13 @@ class USGSGageDataBridge:
     """
     USGS National Water Information System (NWIS) Instantaneous Values service bridge.
     Collects live gauge elevation heights and volumetric discharge at critical nodes in Point Township:
-      - Wabash River at New Harmony, IN (Gage ID: 03377500)
+      - Wabash River at New Harmony, IN (Gage ID: 03378500)
       - Ohio River at Uniontown Dam near Mount Vernon, IN (Gage ID: 03322000)
     """
     def __init__(self):
         self.base_url = "https://waterservices.usgs.gov/nwis/iv/"
         
-    def fetch_live_gage_readings(self, gage_ids: List[str] = ["03377500", "03322000"]) -> List[Dict[str, Any]]:
+    def fetch_live_gage_readings(self, gage_ids: List[str] = ["03378500", "03322000"]) -> List[Dict[str, Any]]:
         """Queries the live USGS NWIS REST API for instantaneous gage height (00065) and flow (00060)."""
         gages_str = ",".join(gage_ids)
         query_params = {
@@ -78,7 +78,7 @@ class USGSGageDataBridge:
         now_iso = datetime.now(timezone.utc).isoformat()
         return [
             {
-                "gauge_id": "USGS-03377500",
+                "gauge_id": "USGS-03378500",
                 "name": "WABASH RIVER AT NEW HARMONY, IN",
                 "timestamp": now_iso,
                 "water_level_stage_ft": 18.42, # Nominal stage

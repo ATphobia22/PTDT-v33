@@ -462,7 +462,7 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
     if (!map || !mapLoaded) return;
 
     // Apply Hydrodynamic Water Shading
-    const layers = map.getStyle().layers;
+    const layers = map.getStyle()?.layers;
     if (layers) {
       layers.forEach(layer => {
         // Find water layers (usually named 'water', 'waterway', 'ocean', etc.)
@@ -571,7 +571,7 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
     const map = mapRef.current;
     if (!map || !mapLoaded) return;
 
-    const layers = map.getStyle().layers;
+    const layers = map.getStyle()?.layers;
     if (!layers) return;
 
     layers.forEach(layer => {
@@ -588,6 +588,8 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
     try {
       const activeLayerId = sourceType === 'overture' ? '3d-buildings-overture' : 
         (map.getLayer('3d-buildings-osm') ? '3d-buildings-osm' : '3d-buildings-osm-fallback');
+
+      if (!map.getLayer(activeLayerId)) return;
 
       const features = map.queryRenderedFeatures({ layers: [activeLayerId] });
       const count = features.length;

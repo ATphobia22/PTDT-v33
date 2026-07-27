@@ -204,7 +204,9 @@ export function OvertureTwinView() {
 
     let buildingFeatures: any[] = [];
     try {
-      buildingFeatures = map.queryRenderedFeatures({ layers: ['overture-buildings-3d'] });
+      if (map.getLayer('overture-buildings-3d')) {
+        buildingFeatures = map.queryRenderedFeatures({ layers: ['overture-buildings-3d'] });
+      }
     } catch (e) {
       console.error('Error querying rendered building features:', e);
     }

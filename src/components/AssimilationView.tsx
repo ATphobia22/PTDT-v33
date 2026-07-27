@@ -71,7 +71,7 @@ export function AssimilationView() {
     };
   }, []);
 
-  const wabashGage = usgsGages.find(g => g.gauge_id === "USGS-03377500") || {
+  const wabashGage = usgsGages.find(g => g.gauge_id === "USGS-03378500") || {
     name: "Wabash River at New Harmony, IN",
     water_level_stage_ft: 18.42,
     discharge_cfs: 45100.0,
@@ -190,7 +190,7 @@ export function AssimilationView() {
         <div className="lg:col-span-2 rounded-xl border dark:border-slate-800 border-slate-200 dark:bg-[#0F172A] bg-white p-4 flex flex-col shadow-sm min-h-[420px]">
           <div className="text-sm font-semibold mb-3 flex items-center justify-between border-b dark:border-slate-800 border-slate-200 pb-2">
             <span className="font-mono text-xs text-indigo-400">FILTER ASSIMILATION PATH: {wabashGage.name}</span>
-            <span className="text-[10px] font-mono text-slate-400">Site ID: 03377500</span>
+            <span className="text-[10px] font-mono text-slate-400">Site ID: 03378500</span>
           </div>
 
           {loading ? (
@@ -295,7 +295,7 @@ export function AssimilationView() {
                 <div className="p-3 dark:bg-slate-900 bg-slate-100 rounded-lg border dark:border-slate-800 border-slate-200 flex flex-col gap-1.5">
                   <div className="flex justify-between items-center border-b dark:border-slate-800 border-slate-200 pb-1.5">
                     <span className="font-bold text-[10px] dark:text-slate-200 text-slate-800 truncate font-mono">WABASH RIVER AT NEW HARMONY</span>
-                    <span className="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 font-mono text-[8px] rounded">USGS-03377500</span>
+                    <span className="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 font-mono text-[8px] rounded">USGS-03378500</span>
                   </div>
                   <div className="grid grid-cols-2 gap-2 mt-1">
                     <div>
