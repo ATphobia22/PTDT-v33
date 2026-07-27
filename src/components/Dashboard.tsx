@@ -13,11 +13,12 @@ import { TurbovecPatternEngine } from './TurbovecPatternEngine';
 import { TurbovecScorePlot } from './TurbovecScorePlot';
 import { MapComponent } from './MapComponent';
 import { AiPdfAnalyzer } from './AiPdfAnalyzer';
+import { ArchimedesConsole } from './ArchimedesConsole';
 import { useTheme } from '../context/ThemeContext';
 import { useAudioSystem } from '../context/AudioContext';
 
 export function Dashboard() {
-  const [activePanel, setActivePanel] = useState<'telemetry' | 'evidence' | 'system' | 'upgrades' | 'ai'>('telemetry');
+  const [activePanel, setActivePanel] = useState<'telemetry' | 'evidence' | 'system' | 'upgrades' | 'ai' | 'archimedes'>('telemetry');
   const { theme, setTheme, toggleTheme } = useTheme();
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [zenMode, setZenMode] = useState(false);
@@ -164,13 +165,14 @@ export function Dashboard() {
             
             {/* HUD Tab Bar Navigation */}
             <div className="flex dark:bg-[#001428]/90 bg-white/95 backdrop-blur-md dark:border-slate-700 border-slate-200 border rounded-lg p-1.5 gap-1 shadow-xl">
-              {(['telemetry', 'evidence', 'system', 'upgrades', 'ai'] as const).map((panel) => {
+              {(['telemetry', 'evidence', 'system', 'upgrades', 'ai', 'archimedes'] as const).map((panel) => {
                 const isActive = activePanel === panel;
                 let Icon = Activity;
                 if (panel === 'evidence') Icon = Database;
                 if (panel === 'system') Icon = Cpu;
                 if (panel === 'upgrades') Icon = Zap;
                 if (panel === 'ai') Icon = FileText;
+                if (panel === 'archimedes') Icon = Shield;
                 
                 return (
                   <button
@@ -184,7 +186,9 @@ export function Dashboard() {
                     title={isActive ? `Minimize ${panel} panel` : `Open ${panel} panel`}
                   >
                     <Icon size={14} className={isActive ? 'animate-pulse text-[#00D4FF]' : ''} />
-                    <span className="text-[8px] font-mono font-bold uppercase tracking-wider">{panel === 'ai' ? 'Forensic' : panel}</span>
+                    <span className="text-[8px] font-mono font-bold uppercase tracking-wider">
+                      {panel === 'ai' ? 'Forensic' : panel === 'archimedes' ? 'Archimedes' : panel}
+                    </span>
                   </button>
                 );
               })}
@@ -222,6 +226,13 @@ export function Dashboard() {
               <Card className="dark:bg-slate-900/80 bg-white/90 backdrop-blur-md dark:border-slate-700 border-slate-200 dark:text-slate-100 text-slate-900 h-[600px] flex flex-col shadow-xl transition-all duration-300">
                 <CardContent className="p-0 h-full flex flex-col">
                   <AiPdfAnalyzer />
+                </CardContent>
+              </Card>
+            )}
+            {activePanel === 'archimedes' && (
+              <Card className="dark:bg-slate-900/80 bg-white/90 backdrop-blur-md dark:border-slate-700 border-slate-200 dark:text-slate-100 text-slate-900 h-[600px] flex flex-col shadow-xl transition-all duration-300">
+                <CardContent className="p-0 h-full flex flex-col">
+                  <ArchimedesConsole />
                 </CardContent>
               </Card>
             )}
