@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   redis_langcache:
     image: redis:7-alpine
@@ -17,7 +15,8 @@ services:
     volumes:
       - chroma_data:/chroma/chroma
     ports:
-      - "8000:8000"
+      # Host 8001 — leave 8000 for Archimedes engine
+      - "8001:8000"
     networks:
       - ptdt_sovereign_net
     restart: unless-stopped
