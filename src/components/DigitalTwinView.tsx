@@ -635,19 +635,24 @@ export function DigitalTwinView() {
     if (isSimulating) {
       interval = setInterval(() => {
         setWaterDepth(prev => {
-          const newDepth = prev + 0.1;
-          if (newDepth > 5) {
-            setRasDischarge(2000);
-            return 0.1; // reset
-          }
-          const computedDischarge = 2000 + ((newDepth - 0.1) / 4.9) * 10000;
-          setRasDischarge(computedDischarge);
-          return newDepth;
+          const next = prev + 0.1;
+          return next > 5 ? 0.1 : next;
         });
       }, 100);
     }
     return () => clearInterval(interval);
   }, [isSimulating]);
+
+  useEffect(() => {
+    if (isSimulating) {
+      if (waterDepth >= 5) {
+        setRasDischarge(2000);
+      } else {
+        const computedDischarge = 2000 + ((waterDepth - 0.1) / 4.9) * 10000;
+        setRasDischarge(computedDischarge);
+      }
+    }
+  }, [waterDepth, isSimulating]);
 
   return (
     <div ref={viewWrapperRef} className="w-full h-full relative dark:bg-[#020617] bg-slate-50 dark:text-slate-100 text-slate-900 flex overflow-hidden">

@@ -590,7 +590,8 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
         (map.getLayer('3d-buildings-osm') ? '3d-buildings-osm' : '3d-buildings-osm-fallback');
 
       const features = map.queryRenderedFeatures({ layers: [activeLayerId] });
-      setBuildingCount(features.length);
+      const count = features.length;
+      setBuildingCount(prev => prev === count ? prev : count);
     } catch (e) {
       // Quiet fail if layers not loaded fully
     }

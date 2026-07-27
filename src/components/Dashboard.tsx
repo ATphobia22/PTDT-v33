@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Activity, Database, MonitorPlay, Network, Shield, AlertTriangle, Cpu, Globe, Sun, Moon, Map, Maximize2, Minimize2, Server, Zap, Settings, X, Music, Volume2, VolumeX, Power, Eye, EyeOff, Ruler, Download, MousePointer2 } from 'lucide-react';
+import { Activity, Database, MonitorPlay, Network, Shield, AlertTriangle, Cpu, Globe, Sun, Moon, Map, Maximize2, Minimize2, Server, Zap, Settings, X, Music, Volume2, VolumeX, Power, Eye, EyeOff, Ruler, Download, MousePointer2, FileText } from 'lucide-react';
 import { AssimilationView } from './AssimilationView';
 import { EvidenceView } from './EvidenceView';
 import { SystemTelemetry } from './SystemTelemetry';
@@ -12,11 +12,12 @@ import { DepthLegend } from './DepthLegend';
 import { TurbovecPatternEngine } from './TurbovecPatternEngine';
 import { TurbovecScorePlot } from './TurbovecScorePlot';
 import { MapComponent } from './MapComponent';
+import { AiPdfAnalyzer } from './AiPdfAnalyzer';
 import { useTheme } from '../context/ThemeContext';
 import { useAudioSystem } from '../context/AudioContext';
 
 export function Dashboard() {
-  const [activePanel, setActivePanel] = useState<'telemetry' | 'evidence' | 'system' | 'upgrades' | null>('telemetry');
+  const [activePanel, setActivePanel] = useState<'telemetry' | 'evidence' | 'system' | 'upgrades' | 'ai'>('telemetry');
   const { theme, setTheme, toggleTheme } = useTheme();
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [zenMode, setZenMode] = useState(false);
@@ -163,17 +164,18 @@ export function Dashboard() {
             
             {/* HUD Tab Bar Navigation */}
             <div className="flex dark:bg-[#001428]/90 bg-white/95 backdrop-blur-md dark:border-slate-700 border-slate-200 border rounded-lg p-1.5 gap-1 shadow-xl">
-              {(['telemetry', 'evidence', 'system', 'upgrades'] as const).map((panel) => {
+              {(['telemetry', 'evidence', 'system', 'upgrades', 'ai'] as const).map((panel) => {
                 const isActive = activePanel === panel;
                 let Icon = Activity;
                 if (panel === 'evidence') Icon = Database;
                 if (panel === 'system') Icon = Cpu;
                 if (panel === 'upgrades') Icon = Zap;
+                if (panel === 'ai') Icon = FileText;
                 
                 return (
                   <button
                     key={panel}
-                    onClick={() => setActivePanel(isActive ? null : panel)}
+                    onClick={() => setActivePanel(isActive ? 'telemetry' : panel)}
                     className={`flex-1 flex flex-col items-center gap-1 py-1.5 px-1 rounded transition-all cursor-pointer ${
                       isActive
                         ? 'bg-indigo-600 text-white shadow-lg font-bold'
@@ -182,7 +184,7 @@ export function Dashboard() {
                     title={isActive ? `Minimize ${panel} panel` : `Open ${panel} panel`}
                   >
                     <Icon size={14} className={isActive ? 'animate-pulse text-[#00D4FF]' : ''} />
-                    <span className="text-[8px] font-mono font-bold uppercase tracking-wider">{panel}</span>
+                    <span className="text-[8px] font-mono font-bold uppercase tracking-wider">{panel === 'ai' ? 'Forensic' : panel}</span>
                   </button>
                 );
               })}
@@ -213,6 +215,13 @@ export function Dashboard() {
               <Card className="dark:bg-slate-900/80 bg-white/90 backdrop-blur-md dark:border-slate-700 border-slate-200 dark:text-slate-100 text-slate-900 h-[600px] flex flex-col shadow-xl transition-all duration-300">
                 <CardContent className="p-4 flex-1 overflow-hidden">
                   <UpgradesView />
+                </CardContent>
+              </Card>
+            )}
+            {activePanel === 'ai' && (
+              <Card className="dark:bg-slate-900/80 bg-white/90 backdrop-blur-md dark:border-slate-700 border-slate-200 dark:text-slate-100 text-slate-900 h-[600px] flex flex-col shadow-xl transition-all duration-300">
+                <CardContent className="p-0 h-full flex flex-col">
+                  <AiPdfAnalyzer />
                 </CardContent>
               </Card>
             )}
