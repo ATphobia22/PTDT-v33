@@ -106,38 +106,34 @@ export function SovereignCitadelView() {
   }, [simulationResult]);
 
   // Handle Simulation Run
-  const triggerSimulation = () => {
+  const triggerSimulation = async () => {
     if (systemStatus !== 'ONLINE') return;
     
     setSystemStatus('COMPUTING');
     addLog('Executing Tucker Cognitive OS OpenMI 2.0 DAG Orchestration...', 'info');
     addLog('Multi-solver cluster locked at 120 Hz fixed timestep.', 'info');
     
-    // Simulate Backend processing time
-    setTimeout(() => {
-      // Mock Response from FastAPI backend
-      const result = {
-        scenario_id: 'ARCHIMEDES_BERM_TEST_01',
-        metrics: {
-          hydraulics: { surface_discharge_cms: 450.2, water_depth_m: 116.19 }, // ~381.2 ft
-          geotechnics: { factor_of_safety: 1.65 }
-        },
-        governance: {
-          decision: 'APPROVED_CERTIFIED_NO_RISE',
-          audit_trail: [
-            "IN-312-IAC-10 PASS: Structural footprint meets zero surcharge displacement criteria."
-          ],
-          cryptographic_hash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
-        }
-      };
+    try {
+      const response = await fetch('/api/v1/twin/simulate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          usgs_stage_ft: telemetry?.usgs_stage_ft ?? 381.2,
+          discharge_cfs: telemetry?.discharge_cfs ?? 142000.0
+        })
+      });
+      
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const result = await response.json();
       
       setSimulationResult(result);
       setSystemStatus('EVIDENCE_SEALED');
-      
-      addLog('Simulation complete. HEC-RAS 2D output valid.', 'success');
-      addLog(`Statutory Governor: ${result.governance.decision}`, 'success');
-      addLog(`Daubert Evidence Hash: ${result.governance.cryptographic_hash.substring(0, 16)}...`, 'system');
-    }, 2500);
+      addLog('Simulation verified. Daubert Evidence Seal Generated.', 'success');
+      addLog(`Cryptographic Hash: ${result.governance.cryptographic_hash.substring(0, 24)}...`, 'system');
+    } catch (e: any) {
+      addLog(`Simulation failed: ${e.message}`, 'error');
+      setSystemStatus('ONLINE');
+    }
   };
 
   return (
