@@ -57,12 +57,11 @@ const scenario = [
 
 export function ExecutionGraph() {
   const [nodes, setNodes, onNodesChange] = useNodesState(defaultNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [isPlaying, setIsPlaying] = useState(false);
 
   // Derive edges dynamically based on node status
-  useMemo(() => {
-    const updatedEdges = defaultEdges.map((edge) => {
+  const edges = useMemo(() => {
+    return defaultEdges.map((edge) => {
       const sourceNode = nodes.find((n) => n.id === edge.source);
       const isSourceSuccess = sourceNode?.data.status === 'success';
       const isSourceRunning = sourceNode?.data.status === 'running';
@@ -81,8 +80,7 @@ export function ExecutionGraph() {
         },
       };
     });
-    setEdges(updatedEdges);
-  }, [nodes, setEdges]);
+  }, [nodes]);
 
   const startSimulation = () => {
     setIsPlaying(true);
@@ -147,7 +145,6 @@ export function ExecutionGraph() {
           edges={edges}
           nodeTypes={nodeTypes}
           onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
           fitView
           fitViewOptions={{ padding: 0.2 }}
           className="dark:bg-[#020617] bg-slate-50"
