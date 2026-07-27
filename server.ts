@@ -759,6 +759,26 @@ Structure your response with clear headers and bullet points. End with "SYSTEM_S
     });
   });
 
+  app.get("/api/nws-alerts", (req, res) => {
+    res.json({
+      title: "NWS Active Alerts - Tri-State Regional Node",
+      features: [
+        {
+          id: "NWS-ID-001",
+          properties: {
+            event: "Flood Warning",
+            headline: "Flood Warning issued for Wabash River at New Harmony affecting Posey County",
+            severity: "Severe",
+            urgency: "Immediate",
+            certainty: "Likely",
+            description: "The National Weather Service in Paducah has issued a Flood Warning for the Wabash River at New Harmony... until further notice. At 18.0 feet the river begins to overflow lowlands. Residents are advised to monitor the PTDT Sovereign Twin for real-time stage updates.",
+            instruction: "Do not drive across flooded roads. Turn around, don't drown. Secure high-value equipment at 13101 Bonebank Rd."
+          }
+        }
+      ]
+    });
+  });
+
   // Serve static assets or mount Vite dev server
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
