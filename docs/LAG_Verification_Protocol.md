@@ -1,47 +1,166 @@
-# LAG Verification Protocol: 13101 Bonebank Road
+# LAG Verification Protocol — 377.2 ft NAVD88
+**Property:** 13101 Bonebank Road, Mount Vernon, IN 47620 (Point Township, Posey County)  
+**Purpose:** Support FEMA LOMA (natural high ground) with elevation data that meets 44 CFR Part 70 and MT-EZ / Online LOMC requirements.
 
-This protocol outlines the forensic engineering steps required to verify the **377.2 ft Lowest Adjacent Grade (LAG)** for a Letter of Map Amendment (LOMA) application, ensuring compliance with FEMA 44 CFR Part 70 and Indiana IC 25-31-1.
-
-## 1. Technical Requirements & Standards
-
-### 1.1 Vertical Datum (NAVD 88)
-*   **Requirement**: All elevation data MUST be referenced to the **North American Vertical Datum of 1988 (NAVD 88)**.
-*   **Caveat**: Legacy data using **NGVD 29** must be converted using the National Geodetic Survey (NGS) **NCAT** tool or based on the local Flood Insurance Study (FIS) conversion factor. A datum mismatch is the most common cause of LOMA rejection.
-
-### 1.2 Topographic Precision
-*   **Baseline**: Utilize high-fidelity **LiDAR** (standard QL2 or better). While the project utilizes 5cm high-precision LiDAR for work maps, FEMA typically requires a certified elevation from a Professional Land Surveyor or Engineer for the final MT-1/MT-EZ form.
-*   **Work Map**: The LiDAR data establishes property-specific contours and visualizes the relationship between the structure and the Base Flood Elevation (BFE).
-
-## 2. Evidence Chain & Verification Steps
-
-### Step 1: Base Flood Elevation (BFE) Determination
-*   Consult the effective **FEMA Flood Insurance Rate Map (FIRM)** or the **Indiana Floodplain Information Portal (INFIP)**.
-*   For 13101 Bonebank Road, the regulatory BFE is established at **375.0 ft MSL (NAVD 88)**.
-
-### Step 2: LAG Measurement
-*   The Professional Engineer (P.E.) or Surveyor must measure the **Lowest Adjacent Grade (LAG)**, which is the lowest point of the ground immediately adjacent to the structure.
-*   Current project verification: **377.2 ft MSL (NAVD 88)**.
-*   **Clearance Vector**: +2.2 ft (LAG 377.2 - BFE 375.0).
-
-### Step 3: Natural Ground Attestation
-*   The engineer must verify if the structure sits on **natural high ground**.
-*   If fill was placed to raise the structure above the BFE, a **LOMA-F** (based on fill) is required instead of a standard LOMA.
-*   For a Pure LOMA, certify that no artificial fill was used to elevate the subject property.
-
-### Step 4: Hydrodynamic Calibration (Optional/Supporting)
-*   Utilize **Archimedes Engine** to calibrate the site's hydraulic profile against **USGS Gauge 03378500** (Wabash River at New Harmony).
-*   This telemetry provides context for regional flooding behavior but does not replace the requirement for a certified site-specific LAG.
-
-## 3. Statutory Certification (Indiana IC 25-31-1)
-
-*   All topographic work maps and LOMA transmittals must be certified under the **Professional Seal** of a Registered Professional Engineer in Indiana.
-*   **Forensic Statement**: "The technical data and topographic work maps attached were performed under my direct supervision and exceed standard FEMA Risk MAP specifications."
-
-## 4. Documentation & Submission
-
-*   **FEMA Portal**: Submit via the **Online LOMC** tool on the FEMA GO portal.
-*   **Case Study PDF**: Compile a forensic case study including high-resolution renders, site photos, and a SHA256-verified manifest of artifacts.
-*   **Digital Manifest**: Host the full render and supporting datasets on the **Sovereign Node** with a secure link provided in the transmittal.
+> **Status of numbers in this system**  
+> LAG **377.2 ft** and BFE **375.0 ft** are the locked project baseline values used by Archimedes.  
+> Final LOMA submittal still requires an Indiana PE or Licensed Surveyor to certify site elevations under IC 25-31-1 (or equivalent surveyor authority).
 
 ---
-*Note: This protocol is a guideline. Final certification must be provided by a licensed professional in accordance with state and federal law.*
+
+## 1. What FEMA Actually Requires (Verified)
+
+| Requirement | Source | Practical meaning |
+|-------------|--------|-------------------|
+| LAG ≥ BFE (structure) or lowest lot elevation ≥ BFE (lot) | FEMA LOMA guidance; 44 CFR Part 70 | Pure LOMA path only if **no fill** raised the grade |
+| Elevations certified by PE or Licensed Land Surveyor | FEMA MT-EZ / Online LOMC instructions | Archimedes PDFs are **supporting** technical data; PE/surveyor seal is mandatory |
+| Vertical datum stated (NAVD88 or NGVD29) | MT-1 Technical Guidance | If not NAVD88/NGVD29, provide conversion |
+| LAG to nearest **0.1 ft** | MT-1 Technical Guidance | Report **377.2**, not a coarser value |
+| Single residential lot/structure → MT-EZ or Online LOMC | FEMA forms | Do not use MT-EZ for floodway, fill, multi-lot, or conditional requests |
+
+**Official portals**
+- Online LOMC: https://hazards.fema.gov/femaportal/onlinelomc/signin  
+- LOMA overview: https://www.fema.gov/flood-maps/change-your-flood-zone/loma-lomr-f  
+- eCFR 44 CFR Part 70: https://www.ecfr.gov/current/title-44/chapter-I/subchapter-B/part-70
+
+---
+
+## 2. High-Fidelity Topographic Baseline
+
+### Acceptable inputs
+- Site-specific survey or certified LiDAR-derived elevations referenced to **NAVD88**
+- Contours dense enough to support a defensible LAG at the structure (attached decks, stairs, garage pads included in LAG definition)
+
+### Project claim (document as such)
+The platform is designed around a **5 cm LiDAR work map** and ~1-ft contour density. That resolution, if certified by a PE/surveyor, is stronger than typical ~1 m federal DEM products.  
+**FEMA does not “require 5 cm LiDAR”** — it requires **certified** elevations. Higher resolution is **better data** that supports the certification; it does not replace it.
+
+### Natural ground (Pure LOMA vs LOMR-F)
+- **LOMA:** structure/lot on **natural grade** (no artificial fill that raises grade above natural ground)
+- **LOMR-F:** fill was placed to elevate the site  
+PE letter generated by Archimedes includes a natural-ground attestation placeholder — PE must confirm after field review.
+
+---
+
+## 3. Strict Datum Alignment (NAVD88) — Critical
+
+| Rule | Why it matters |
+|------|----------------|
+| All elevations on the LOMA package must share one vertical datum | Mixing NGVD29 and NAVD88 is a common rejection cause |
+| Prefer **NAVD88** (current FIS practice for many Indiana studies) | Matches modern survey GPS/OPUS practice |
+| If any source is NGVD29, convert using the **FIS community conversion** or NGS NCAT | Do **not** invent a single “~3 ft” factor |
+
+**Caveat on “~3 feet” error claims:**  
+NGVD29↔NAVD88 offsets vary by location. In parts of the eastern U.S. they are often on the order of several tenths of a foot to ~1–3+ ft depending on the county/stream. **Use the Posey County / community FIS conversion factor (or NCAT at the site coordinates), not a generic statewide number.**
+
+FEMA vertical datum guidance: https://www.fema.gov/sites/default/files/documents/Vertical_Datum_Conversion_Guidance_Nov_2023.pdf
+
+---
+
+## 4. USGS Gauge 03378500 — Role and Limits
+
+| Fact | Detail |
+|------|--------|
+| **Real station** | USGS **03378500** — Wabash River at New Harmony, IN |
+| Portal | https://waterdata.usgs.gov/monitoring-location/03378500/ |
+| Gage datum / land surface (published) | ~**352.71 ft** (station metadata) |
+| Use in PTDT | Regional stage / discharge context for hydrodynamic calibration and digital-twin scenarios |
+| **What it does *not* do** | It does **not** by itself prove property LAG = 377.2 ft |
+
+**Correct evidence chain**
+1. Site LiDAR / survey → LAG 377.2 ft NAVD88 (PE/surveyor certified)  
+2. Effective FIS / FIRM / FARA → BFE 375.0 ft (same datum)  
+3. Optional: Archimedes + USGS 03378500 → stage-informed velocity/storage scenarios  
+4. PE seal under IC 25-31-1 → submittal package  
+5. Upload to Online LOMC / MT-EZ
+
+---
+
+## 5. Clearance Vector (Project Baseline)
+
+```
+LAG  377.2 ft NAVD88
+BFE  375.0 ft NAVD88
+Clearance = +2.2 ft  → meets LOMA elevation test *if* certified and on natural grade
+```
+
+When completing Online LOMC or MT-EZ, enter **377.2** exactly in the LAG field so it matches sealed reports.
+
+---
+
+## 6. Statutory Engineering Certification (Indiana)
+
+- **IC 25-31-1** — PE registration and seal authority  
+- Seal attests the work was prepared by or under the PE’s responsible charge  
+- 864 IAC 1.1-7-2 — seal design (name, number, “professional engineer”)  
+- Federal side: **44 CFR Part 70** map correction procedure; elevation data must be PE/surveyor certified
+
+Archimedes generates the PE transmittal PDF with placeholders for name/license — **replace with real PE identity before filing**. The PE seal remains under the licensee’s sole control (IC 25-31-1).
+
+---
+
+## 7. FEMA Processing Timeline
+
+| Milestone | Official target |
+|-----------|-----------------|
+| Notice of submittal completeness | Within **30 days** |
+| LOMA / MT-1 determination | Within **60 days** of complete data |
+| Some Online LOMC FAQ language | Up to **90 days** |
+| eLOMA (eligible licensed users) | Often near-instant if criteria met |
+
+Sources: https://www.fema.gov/flood-maps/change-your-flood-zone/loma-lomr-f · Online LOMC FAQ
+
+---
+
+## 8. FEMA Portal Documentation Package
+
+### Generated by Archimedes (`python archimedes_engine.py`)
+| Artifact | Role |
+|----------|------|
+| `01_PE_Transmittal_and_LOMA_Letter.pdf` | Cover / certification narrative |
+| `03_IDNR_No_Rise_Certification.pdf` | If any floodway work is involved |
+| `bca_elevation_data.json` / `bca_summary.csv` | Elevation baseline + BCA inputs |
+| `bca_package_manifest.json` | SHA-256 chain-of-custody + evidence chain |
+
+### Additional items you must attach
+- [ ] Current **FARA** from INFIP (Zone A / drainage > 1 sq mi support)
+- [ ] Property legal description / tax parcel map / recorded plat
+- [ ] FIRM panel map excerpt showing structure relative to SFHA
+- [ ] PE- or surveyor-sealed elevation form / Elevation Certificate (MT-EZ Section B)
+- [ ] Optional: PDF case-study stills from the digital twin + SHA-256 link to hosted evidence (supporting only)
+
+### Online LOMC / MT-EZ data entry checklist
+- [ ] Structure or lot correctly identified
+- [ ] LAG entered as **377.2** (ft)
+- [ ] BFE entered as **375.0** (ft) from effective FIS/FARA
+- [ ] Datum marked **NAVD88**
+- [ ] “No fill” / natural grade pathway selected (pure LOMA)
+- [ ] Sealed PDFs uploaded
+
+---
+
+## 9. Accuracy Summary
+
+| Claim | Verdict |
+|-------|---------|
+| USGS 03378500 exists at New Harmony, Wabash River | **Verified** |
+| LOMA requires LAG ≥ BFE and PE/surveyor certification | **Verified** |
+| NAVD88 must match FIS; NGVD29 mix can cause rejection | **Verified** |
+| IC 25-31-1 governs Indiana PE seal | **Verified** |
+| MT-EZ / Online LOMC for single lot/structure | **Verified** |
+| LOMA determination typically within 60 days (complete package) | **Verified** |
+| LAG 377.2 / BFE 375.0 / +2.2 ft | **Project baseline** — PE/surveyor must confirm |
+| 5 cm LiDAR “required” by FEMA | **Overstated** — certified elevations required; LiDAR is better data |
+| USGS gauge “proves” LAG 377.2 | **Incorrect framing** |
+| Generic “~3 ft” NGVD29 error | **Use local FIS/NCAT** |
+
+---
+
+## 10. One-Command Regeneration
+
+```bash
+pip install -r requirements.txt
+python archimedes_engine.py
+```
+
+Then apply PE seals, attach FARA, and file via Online LOMC.
