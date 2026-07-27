@@ -12,7 +12,6 @@ import { DepthLegend } from './DepthLegend';
 import { TurbovecPatternEngine } from './TurbovecPatternEngine';
 import { TurbovecScorePlot } from './TurbovecScorePlot';
 import { MapComponent } from './MapComponent';
-import { TerminalOverlay } from './TerminalOverlay';
 import { useTheme } from '../context/ThemeContext';
 import { useAudioSystem } from '../context/AudioContext';
 
@@ -267,8 +266,8 @@ export function Dashboard() {
 
       {/* System Settings & Ambient Music Config Overlay */}
       {showSettingsModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[150] flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#001428]/95 border border-slate-200 dark:border-indigo-500/30 p-6 rounded-lg w-full max-w-md shadow-2xl font-sans relative max-h-[85vh] overflow-y-auto scrollbar-hide dark:text-slate-100 text-slate-900 transition-colors duration-300">
+        <div className="fixed top-20 right-6 z-[150] w-[350px] flex flex-col shadow-2xl">
+          <div className="bg-white dark:bg-[#001428]/95 border border-slate-200 dark:border-indigo-500/30 p-5 rounded-lg w-full font-sans relative max-h-[80vh] overflow-y-auto scrollbar-hide dark:text-slate-100 text-slate-900 transition-colors duration-300 backdrop-blur-md shadow-2xl">
             <button 
               onClick={() => setShowSettingsModal(false)}
               className="absolute top-4 right-4 text-slate-400 hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer"
@@ -505,7 +504,7 @@ export function Dashboard() {
         </div>
       )}
 
-      <TerminalOverlay />
+      
     </div>
   );
 }

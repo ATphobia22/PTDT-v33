@@ -140,7 +140,7 @@ export function TerminalOverlay() {
   return (
     <div 
       className={cn(
-        "fixed bottom-0 left-0 right-0 z-[100] bg-slate-950/95 backdrop-blur-md border-t border-indigo-500/30 shadow-2xl transition-all duration-300 flex flex-col font-mono text-sm text-slate-300",
+        "fixed bottom-0 left-0 w-full md:w-[50vw] z-[100] bg-slate-950/95 backdrop-blur-md border-t border-indigo-500/30 shadow-2xl transition-all duration-300 flex flex-col font-mono text-sm text-slate-300",
         isExpanded ? "h-[60vh]" : "h-[300px]"
       )}
     >

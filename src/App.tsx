@@ -4,6 +4,8 @@ import { DigitalTwinView } from './components/DigitalTwinView';
 import NextGenDigitalTwin from './components/NextGenDigitalTwin';
 import { OvertureTwinView } from './components/OvertureTwinView';
 import { SovereignCitadelView } from './components/SovereignCitadelView';
+import { DebugConsole } from './components/DebugConsole';
+import { TerminalOverlay } from './components/TerminalOverlay';
 import { useTheme } from './context/ThemeContext';
 import { useAudioSystem } from './context/AudioContext';
 import { Power, Activity, Cpu, Layers, Globe, Shield } from 'lucide-react';
@@ -103,6 +105,8 @@ function App() {
       <div className="w-full h-full relative">
         {renderActiveView()}
       </div>
+      <DebugConsole />
+      <TerminalOverlay />
     </div>
   );
 }
