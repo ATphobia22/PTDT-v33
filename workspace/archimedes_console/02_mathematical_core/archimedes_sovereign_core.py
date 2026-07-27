@@ -5,10 +5,18 @@ import json
 import datetime
 from dataclasses import dataclass, field, asdict
 from typing import Dict, List, Any, Optional
+from pathlib import Path
 
 import requests
 from fastapi import FastAPI, Request, HTTPException, status
 import uvicorn
+
+# ---------------------------------------------------------------------------
+# Path helpers for package generation
+# ---------------------------------------------------------------------------
+THIS_DIR = Path(__file__).resolve().parent
+CONSOLE_ROOT = THIS_DIR.parent
+PACKAGE_DIR = CONSOLE_ROOT / "05_final_portal_package"
 
 @dataclass(frozen=True)
 class HydraulicState:
@@ -39,7 +47,7 @@ class ArchimedesHydroEngine:
 
     def calculate_compensatory_storage(self, berm_length_ft: float, berm_width_ft: float, berm_height_ft: float) -> Dict[str, float]:
         displacement_cu_ft = berm_length_ft * berm_width_ft * berm_height_ft
-        excavation_cu_ft = displacement_cu_ft * 1.20 # Enforced 1.20x safety factor
+        excavation_cu_ft = displacement_cu_ft * 1.20  # Enforced 1.20x safety factor
         displacement_cu_yds = displacement_cu_ft / 27.0
         excavation_cu_yds = excavation_cu_ft / 27.0
         net_balance = excavation_cu_yds - displacement_cu_yds
@@ -76,7 +84,7 @@ class TriStateLegalComplianceGovernor:
         
         return GovernanceState(decision=decision, audit_trail=audit_trail, cryptographic_hash=sha256_hash)
 
-app = FastAPI(title="PTDT v32 Sovereign Core Engine", version="32.2.0")
+app = FastAPI(title="PTDT v32 Sovereign Core Engine", version="32.3.0")
 
 GLP_BLOCKS = [
     r"(?i)drop\s+table",
@@ -123,9 +131,59 @@ async def execute_simulation(payload: dict):
         "timestamp": datetime.datetime.now().isoformat(),
         "metrics": asdict(hydraulic_state),
         "compensatory_storage": storage_balance,
-        "governance": asdict(governance)
+        "governance": asdict(governance),
+        "elevation": {
+            "lag_ft": hydro_engine.lowest_adjacent_grade_ft,
+            "bfe_ft": hydro_engine.base_flood_elevation_ft,
+            "clearance_ft": round(hydro_engine.lowest_adjacent_grade_ft - hydro_engine.base_flood_elevation_ft, 2)
+        }
+    }
+
+@app.post("/api/v1/package/generate", operation_id="generate_full_regulatory_package")
+async def api_generate_package(payload: dict = None):
+    """
+    Live endpoint: generate the complete LOMA + BCA package on demand.
+    Returns the master manifest and list of artifacts written to disk.
+    """
+    payload = payload or {}
+    berm_length = float(payload.get("berm_length_ft", 300.0))
+    berm_width = float(payload.get("berm_width_ft", 10.0))
+    berm_height = float(payload.get("berm_height_ft", 3.0))
+
+    try:
+        # Import here to avoid circular issues at module load
+        from generate_full_package import generate_full_regulatory_package
+        master = generate_full_regulatory_package(
+            output_dir=str(PACKAGE_DIR),
+            berm_length_ft=berm_length,
+            berm_width_ft=berm_width,
+            berm_height_ft=berm_height,
+        )
+        return {
+            "status": "success",
+            "message": "Full regulatory + BCA package generated",
+            "manifest": master,
+            "output_directory": str(PACKAGE_DIR),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Package generation failed: {str(e)}")
+
+@app.get("/api/v1/health")
+async def health():
+    return {
+        "status": "healthy",
+        "engine": "ArchimedesHydroEngine",
+        "version": "32.3.0",
+        "node": "13101_BONEBANK_RD",
+        "lag_ft": hydro_engine.lowest_adjacent_grade_ft,
+        "bfe_ft": hydro_engine.base_flood_elevation_ft,
+        "clearance_ft": round(hydro_engine.lowest_adjacent_grade_ft - hydro_engine.base_flood_elevation_ft, 2),
     }
 
 if __name__ == "__main__":
-    print("Launching PTDT v32 Sovereign Master Engine...")
+    print("Launching PTDT v32 Sovereign Master Engine (v32.3.0)...")
+    print("Endpoints:")
+    print("  POST /api/v1/twin/simulate")
+    print("  POST /api/v1/package/generate   ← full LOMA + BCA package")
+    print("  GET  /api/v1/health")
     uvicorn.run(app, host="0.0.0.0", port=8000)
