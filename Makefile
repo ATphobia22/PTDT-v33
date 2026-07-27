@@ -36,7 +36,9 @@ docker-build:
 	docker build -f environment/Dockerfile -t archimedes-engine:local .
 	docker build -t web-app:local .
 
-docker-verify-archimedes: docker-build
+docker-verify-archimedes:
+	@if grep -qi databricksruntime environment/Dockerfile; then echo "FAIL: slim Dockerfile required"; exit 1; fi
+	docker build -f environment/Dockerfile -t archimedes-engine:local .
 	-docker rm -f archimedes-local-verify 2>/dev/null || true
 	docker run -d --name archimedes-local-verify -p 8000:8000 archimedes-engine:local
 	@for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do \
@@ -51,5 +53,6 @@ docker-verify-archimedes: docker-build
 	done; docker logs archimedes-local-verify; docker stop archimedes-local-verify; exit 1
 
 docker-verify: docker-verify-archimedes
+	docker build -t web-app:local .
 	docker compose config -q
-	@echo "compose config OK"
+	@echo "docker-verify OK (archimedes health + web image + compose)"

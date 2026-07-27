@@ -73,25 +73,27 @@ jobs:
             echo "FAIL: environment/Dockerfile must use python:3.10-slim"
             exit 1
           fi
-          echo "Archimedes Dockerfile base OK"
+          if ! grep -q 'uvicorn' environment/Dockerfile; then
+            echo "FAIL: Archimedes CMD should use uvicorn for fast health"
+            exit 1
+          fi
+          echo "Archimedes Dockerfile OK"
 
       - name: Build Archimedes Docker image (hard gate)
-        run: |
-          docker build -f environment/Dockerfile -t archimedes-engine:ci .
+        run: docker build -f environment/Dockerfile -t archimedes-engine:ci .
 
       - name: Run Archimedes container and verify health
         run: |
           docker run -d --name archimedes-ci -p 8000:8000 archimedes-engine:ci
-          # Engine generates package then starts uvicorn; allow cold start
-          for i in $(seq 1 30); do
+          for i in $(seq 1 20); do
             if curl -sf http://127.0.0.1:8000/api/v1/health >/tmp/health.json 2>/dev/null; then
               cat /tmp/health.json
               grep -q ONLINE /tmp/health.json
-              echo "Health check passed"
+              echo "Archimedes health OK"
               docker stop archimedes-ci
               exit 0
             fi
-            echo "Waiting for health ($i/30)..."
+            echo "Waiting for health ($i/20)..."
             sleep 2
           done
           echo "FAIL: /api/v1/health did not become ready"
@@ -99,10 +101,8 @@ jobs:
           docker stop archimedes-ci || true
           exit 1
 
-      - name: Build web Docker image
-        run: |
-          docker build -t web-app:ci .
-        continue-on-error: true
+      - name: Build web Docker image (hard gate)
+        run: docker build -t web-app:ci .
 
       - name: Compose config validation
         run: |
