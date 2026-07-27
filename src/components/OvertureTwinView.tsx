@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import * as pmtiles from 'pmtiles';
-import { ChevronLeft, ChevronRight, Maximize2, Minimize2, Map, Shield, Activity, Menu } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Maximize2, Minimize2, Map, Shield, Activity, Menu, Download } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { Spinner } from './ui/spinner';
 import { Skeleton } from './ui/skeleton';
@@ -198,6 +198,53 @@ export function OvertureTwinView() {
     }
   };
 
+  const downloadSnapshot = () => {
+    if (!mapRef.current) return;
+    const map = mapRef.current;
+
+    let buildingFeatures: any[] = [];
+    try {
+      buildingFeatures = map.queryRenderedFeatures({ layers: ['overture-buildings-3d'] });
+    } catch (e) {
+      console.error('Error querying rendered building features:', e);
+    }
+
+    const snapshot = {
+      timestamp: new Date().toISOString(),
+      node: '13101_BONEBANK_RD',
+      projection: 'EPSG:3857 / NAVD88',
+      viewState: {
+        center: map.getCenter().toArray(),
+        zoom: map.getZoom(),
+        pitch: map.getPitch(),
+        bearing: map.getBearing()
+      },
+      simulatedFloodMetrics: {
+        floodStageFeet: floodStage,
+        floodStageMeters: Number((floodStage * 0.3048).toFixed(4)),
+        impactStatus: floodStage > 375 ? 'BREACH DETECTED' : 'SECURE'
+      },
+      localGaugesTelemetry: {
+        wabashNewHarmony: '6.55 ft',
+        ohioMyersDam: '18.32 ft'
+      },
+      renderedOvertureBuildingsCount: buildingFeatures.length,
+      renderedOvertureBuildingsSample: buildingFeatures.slice(0, 100).map((f) => ({
+        id: f.id,
+        properties: f.properties || {},
+        geometry: f.geometry
+      }))
+    };
+
+    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(snapshot, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute('href', dataStr);
+    downloadAnchor.setAttribute('download', `PTDT_Overture_PMT_Data_Snapshot_${Date.now()}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  };
+
   return (
     <div className="relative w-full h-full bg-slate-100 dark:bg-[#020617] overflow-hidden font-sans text-slate-900 dark:text-white rounded-xl">
       
@@ -365,6 +412,14 @@ export function OvertureTwinView() {
             <span className="font-bold text-emerald-600 dark:text-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-1 rounded border border-emerald-200 dark:border-emerald-900/50">SECURE</span>
           )}
         </div>
+
+        <button 
+          onClick={downloadSnapshot}
+          className="w-full mt-4 flex items-center justify-center gap-2 py-2 px-4 text-[10px] font-mono font-bold bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white rounded-lg shadow-md transition-all cursor-pointer border border-transparent hover:border-indigo-400 uppercase tracking-wider"
+          title="Download Current Overture PMT Data Snapshot"
+        >
+          <Download size={14} className="text-[#00D4FF]" /> DOWNLOAD SNAPSHOT
+        </button>
       </div>
 
       <div ref={mapContainer} className="w-full h-full z-0" />

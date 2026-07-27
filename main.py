@@ -17,6 +17,9 @@ app = FastAPI(
     version="23.0.0"
 )
 
+from backend.core.security import bible_regex_firewall
+app.middleware("http")(bible_regex_firewall)
+
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,

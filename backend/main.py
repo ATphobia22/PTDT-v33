@@ -37,11 +37,15 @@ async def get_db():
     async with AsyncSessionLocal() as session:
         yield session
 
+from backend.core.security import bible_regex_firewall
+
 app = FastAPI(
     title="Tucker Sovereign Citadel API Gateway",
     version="32.1.0",
     description="Production Wholesale Gateway for DLT Multi-Physics Twin."
 )
+
+app.middleware("http")(bible_regex_firewall)
 
 app.add_middleware(
     CORSMiddleware,
