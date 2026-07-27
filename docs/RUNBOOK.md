@@ -8,6 +8,7 @@
 | UI | `make ui` / `npm run dev` | Require Google/Cesium keys |
 | Full stack | `make compose-up` | Old Databricks Dockerfile |
 | DLT hydro pipeline | Databricks only | Local `python src/pipeline_engine.py` |
+| Docker verify | `make docker-verify` | Skip health check |
 
 ## First-time setup
 
@@ -21,12 +22,23 @@ python archimedes_engine.py
 
 Second terminal: `npm ci && npm run dev`
 
-## Docker
+## Docker verification (local)
 
 ```bash
+# Fails if environment/Dockerfile uses Databricks base
+make docker-build
+
+# Build Archimedes image, run container, assert /api/v1/health returns ONLINE
+make docker-verify-archimedes
+
+# + validate docker-compose.yml
+make docker-verify
+
 docker compose up --build
 curl http://127.0.0.1:8000/api/v1/health
 ```
+
+CI job **Docker Build Verification** does the same on every push to main: slim Dockerfile check, hard-fail Archimedes image build, container health, optional web image build, `docker compose config`.
 
 Optional Redis/Chroma (Chroma host port **8001**):
 

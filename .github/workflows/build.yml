@@ -21,9 +21,6 @@ jobs:
         run: npm run lint || true
         continue-on-error: true
       - run: npm run build
-      - name: Build web Docker image
-        run: docker build -t web-app:latest .
-        continue-on-error: true
 
   python-engine:
     name: Archimedes Python Engine Verification
@@ -58,6 +55,56 @@ jobs:
         run: python python/navd88_hard_check.py ci_package_out/bca_elevation_data.json
       - name: Verify regulatory dependencies
         run: python -c "import fastapi, reportlab, shapely; print('deps OK')"
-      - name: Build Archimedes Docker image
-        run: docker build -f environment/Dockerfile -t archimedes-engine:latest .
+
+  docker-verify:
+    name: Docker Build Verification
+    runs-on: ubuntu-latest
+    needs: [python-engine]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify Archimedes Dockerfile is slim (no Databricks)
+        run: |
+          if grep -qi 'databricksruntime' environment/Dockerfile; then
+            echo "FAIL: environment/Dockerfile must not use databricksruntime"
+            exit 1
+          fi
+          if ! grep -q 'python:3.10' environment/Dockerfile; then
+            echo "FAIL: environment/Dockerfile must use python:3.10-slim"
+            exit 1
+          fi
+          echo "Archimedes Dockerfile base OK"
+
+      - name: Build Archimedes Docker image (hard gate)
+        run: |
+          docker build -f environment/Dockerfile -t archimedes-engine:ci .
+
+      - name: Run Archimedes container and verify health
+        run: |
+          docker run -d --name archimedes-ci -p 8000:8000 archimedes-engine:ci
+          # Engine generates package then starts uvicorn; allow cold start
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8000/api/v1/health >/tmp/health.json 2>/dev/null; then
+              cat /tmp/health.json
+              grep -q ONLINE /tmp/health.json
+              echo "Health check passed"
+              docker stop archimedes-ci
+              exit 0
+            fi
+            echo "Waiting for health ($i/30)..."
+            sleep 2
+          done
+          echo "FAIL: /api/v1/health did not become ready"
+          docker logs archimedes-ci || true
+          docker stop archimedes-ci || true
+          exit 1
+
+      - name: Build web Docker image
+        run: |
+          docker build -t web-app:ci .
         continue-on-error: true
+
+      - name: Compose config validation
+        run: |
+          docker compose config -q
+          echo "docker-compose.yml valid"
