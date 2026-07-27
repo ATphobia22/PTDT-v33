@@ -2,63 +2,62 @@ name: Build and Deploy
 
 on:
   push:
-    branches:
-      - main
-      - master
+    branches: [main, master]
   pull_request:
-    branches:
-      - main
-      - master
+    branches: [main, master]
 
 jobs:
   node-build:
     name: Node.js Frontend/Server Build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
+      - run: npm ci
       - name: Run linter
-        run: npm run lint || true # Soft-fail while large TS files stabilize
+        run: npm run lint || true
         continue-on-error: true
-
-      - name: Build application
-        run: npm run build
-
-      - name: Build Docker Image
-        run: docker build -t web-app:latest . || true
+      - run: npm run build
+      - name: Build web Docker image
+        run: docker build -t web-app:latest .
         continue-on-error: true
 
   python-engine:
     name: Archimedes Python Engine Verification
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-
       - name: Verify Engine Core
         run: |
-          python -c "from archimedes_engine import ArchimedesEngine; engine = ArchimedesEngine(); assert engine.base_flood_elevation_ft == 375.0; print('Engine Core Verified')"
-
-      - name: Verify Regulatory Package Imports
+          python -c "from archimedes_engine import ArchimedesEngine; e = ArchimedesEngine(); assert e.base_flood_elevation_ft == 375.0; assert e.lowest_adjacent_grade_ft == 377.2; print('Engine Core Verified')"
+      - name: Generate regulatory package (hard gate)
         run: |
-          python -c "import fastapi, reportlab, shapely; print('Regulatory dependencies verified')"
+          python -c "
+          from archimedes_engine import generate_unified_regulatory_package
+          import os
+          out = 'ci_package_out'
+          res = generate_unified_regulatory_package(out)
+          assert res['status'] == 'success'
+          assert os.path.isfile(os.path.join(out, '01_PE_Transmittal_and_LOMA_Letter.pdf'))
+          assert os.path.isfile(os.path.join(out, '03_IDNR_No_Rise_Certification.pdf'))
+          assert os.path.isfile(os.path.join(out, 'bca_elevation_data.json'))
+          assert os.path.isfile(os.path.join(out, 'bca_package_manifest.json'))
+          print('Package OK', res['checksum'][:16])
+          "
+      - name: NAVD88 hard-check on BCA export
+        run: python python/navd88_hard_check.py ci_package_out/bca_elevation_data.json
+      - name: Verify regulatory dependencies
+        run: python -c "import fastapi, reportlab, shapely; print('deps OK')"
+      - name: Build Archimedes Docker image
+        run: docker build -f environment/Dockerfile -t archimedes-engine:latest .
+        continue-on-error: true
