@@ -1,0 +1,33 @@
+bundle:
+  name: atphobia22-hydro-pipeline
+
+artifacts:
+  default:
+    type: whl
+    path: ./dist/*.whl
+
+resources:
+  jobs:
+    hydro_pipeline_job:
+      name: "[PTDT-v32] Sovereign Hydrodynamic Pipeline"
+      tasks:
+        - task_key: run_pipeline
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.hydro_pipeline.id}
+      
+  pipelines:
+    hydro_pipeline:
+      name: "Tri-State-DLT-v32"
+      target: prod
+      libraries:
+        - file:
+            path: ./src/pipeline_engine.py
+      configuration:
+        citadel.isolation.mode: "STRICT"
+        istio.sidecar.inject: "true"
+        grpc.telemetry.enabled: "true"
+
+environments:
+  prod:
+    workspace:
+      host: https://adb-tri-state.azuredatabricks.net

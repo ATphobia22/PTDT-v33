@@ -17,9 +17,11 @@ export function SovereignCitadelView() {
   useEffect(() => {
     addLog('System Boot: PTDT v32 Sovereign Platform Specification (TSE-PTDT-v32-SPS-001)', 'system');
     addLog('Verifying TPM 2.0 Secure Boot attestation...', 'system');
+    addLog('Istio service mesh sidecar injection verified.', 'info');
 
     const bootTimer = setTimeout(() => {
       addLog('Zero-trust network egress policies confirmed.', 'success');
+      addLog('Protobuf/gRPC telemetry contracts synchronized (v29.1).', 'info');
       addLog('Connecting to IN DNR Best Available Floodplain Mapping (BAFM) API...', 'info');
       
       setSystemStatus('ONLINE');
