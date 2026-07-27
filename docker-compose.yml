@@ -1,8 +1,7 @@
+version: '3.8'
 services:
   web:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
     ports:
       - "3000:3000"
     environment:
@@ -17,7 +16,7 @@ services:
       dockerfile: environment/Dockerfile
     ports:
       - "8000:8000"
-    environment:
-      - PYTHONUNBUFFERED=1
-    # Image already CMD's archimedes_engine.py; override only if needed
-    # command: python3 archimedes_engine.py
+    command: python3 archimedes_engine.py
+    volumes:
+      - .:/app
+    working_dir: /app
