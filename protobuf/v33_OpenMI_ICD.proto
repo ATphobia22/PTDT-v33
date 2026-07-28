@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package ptdt.openmi.v33;
+
+service SolverIntegration {
+    rpc Initialize (InitializeRequest) returns (InitializeResponse);
+    rpc PerformTimeStep (TimeStepRequest) returns (TimeStepResponse);
+    rpc GetValues (ValuesRequest) returns (ValuesResponse);
+    rpc SetValues (ValuesRequest) returns (ValuesResponse);
+    rpc Finish (FinishRequest) returns (FinishResponse);
+}
+
+message InitializeRequest {
+    string run_id = 1;
+    string config_uri = 2;
+    double timestep_seconds = 3;
+}
+
+message InitializeResponse {
+    bool success = 1;
+    string error_message = 2;
+}
+
+message TimeStepRequest {
+    string run_id = 1;
+    double dt_seconds = 2;
+}
+
+message TimeStepResponse {
+    bool success = 1;
+    double current_simulation_time = 2;
+}
+
+message ValuesRequest {
+    string run_id = 1;
+    string quantity_id = 2;
+    string element_set_id = 3;
+    repeated double values = 4;
+}
+
+message ValuesResponse {
+    bool success = 1;
+    repeated double values = 2;
+}
+
+message FinishRequest {
+    string run_id = 1;
+}
+
+message FinishResponse {
+    bool success = 1;
+}
