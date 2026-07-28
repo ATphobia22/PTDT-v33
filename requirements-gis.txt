@@ -1,0 +1,6 @@
+# Optional local GIS stack (not required for package generation or CI)
+-r requirements.txt
+numpy==1.26.4
+shapely==2.0.3
+geopandas==0.14.3
+h5py==3.11.0
