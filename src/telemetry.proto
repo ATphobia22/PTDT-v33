@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package atphobia22.hydro;
+
+import "google/protobuf/timestamp.proto";
+
+// Represent core telemetry for a high-performance hydraulic model run
+message ModelRunTelemetry {
+  string model_id = 1;
+  double latency_seconds = 2;
+  string output_path = 3;
+  string citadel_hash = 4;
+  
+  // High-fidelity sensor data
+  float usgs_stage_ft = 5;
+  float discharge_cfs = 6;
+  
+  google.protobuf.Timestamp processed_at = 7;
+}
+
+// Service definition for streaming real-time sensor metrics
+service HydroTelemetryService {
+  rpc StreamMetrics(ModelRunRequest) returns (stream ModelRunTelemetry);
+}
+
+message ModelRunRequest {
+  string project_id = 1;
+  bool include_raster_data = 2;
+}

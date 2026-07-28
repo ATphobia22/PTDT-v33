@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Activity, Radio, Target, RefreshCw } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { Spinner } from './ui/spinner';
+import { Skeleton } from './ui/skeleton';
 
 export function AssimilationView() {
   const [usgsGages, setUsgsGages] = useState<any[]>([]);
@@ -24,15 +26,41 @@ export function AssimilationView() {
     const fetchTelemetry = async () => {
       try {
         const res = await fetch('/api/usgs-telemetry');
-        if (!res.ok) throw new Error("Failed to load telemetry");
-        const json = await res.json();
-        if (json.success && isMounted) {
-          setUsgsGages(json.data || []);
-          setSource(json.source);
-          setLoading(false);
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(`Failed to load telemetry: ${res.status} ${res.statusText} - ${errorText}`);
         }
-      } catch (err) {
-        console.error("Error loading telemetry in AssimilationView:", err);
+        const json = await res.json();
+        
+        if (json && Array.isArray(json.data)) {
+          setUsgsGages(json.data);
+          setSource(json.source || "UNKNOWN");
+          setLoading(false);
+        } else {
+          console.error("Invalid telemetry data format:", json);
+          throw new Error("Invalid telemetry data format");
+        }
+      } catch (err: any) {
+        console.log("USGS Telemetry rate-limited or offline. Applying high-fidelity fallback layer.", err?.message || err);
+        // Fallback for UI if API fails completely
+        setUsgsGages([
+          {
+            gauge_id: "USGS-03377500",
+            name: "Wabash River at New Harmony, IN",
+            water_level_stage_ft: 18.42,
+            discharge_cfs: 45100.0,
+            timestamp: new Date().toISOString()
+          },
+          {
+            gauge_id: "USGS-03322000",
+            name: "Ohio River at Uniontown Dam, IN",
+            water_level_stage_ft: 24.85,
+            discharge_cfs: 115000.0,
+            timestamp: new Date().toISOString()
+          }
+        ]);
+        setSource("OFFLINE_FALLBACK");
+        setLoading(false);
       }
     };
     fetchTelemetry();
@@ -43,7 +71,7 @@ export function AssimilationView() {
     };
   }, []);
 
-  const wabashGage = usgsGages.find(g => g.gauge_id === "USGS-03377500") || {
+  const wabashGage = usgsGages.find(g => g.gauge_id === "USGS-03378500") || {
     name: "Wabash River at New Harmony, IN",
     water_level_stage_ft: 18.42,
     discharge_cfs: 45100.0,
@@ -60,12 +88,12 @@ export function AssimilationView() {
   // Generate EnKF stochastic ensemble paths converging on the live USGS observation
   const chartData = (() => {
     const data = [];
-    const baseHeight = wabashGage.water_level_stage_ft;
-    const baseTime = new Date(wabashGage.timestamp || new Date());
+    const baseHeight = wabashGage?.water_level_stage_ft ?? 18.42;
+    const baseTime = new Date(wabashGage?.timestamp || new Date());
     
     for (let i = 8; i >= 0; i--) {
       const timePoint = new Date(baseTime.getTime() - i * 3600 * 1000);
-      const timeLabel = timePoint.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const timeLabel = timePoint.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
       
       // Simulate historical trend
       const trend = Math.sin((8 - i) * 0.5) * 1.2;
@@ -93,7 +121,7 @@ export function AssimilationView() {
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b dark:border-slate-800 border-slate-200 pb-4">
         <div>
           <h2 className="text-xl font-bold tracking-tight">EnKF Data Assimilation Hub</h2>
-          <p className="text-xs dark:text-slate-400 text-slate-500 font-mono mt-0.5">Real-time telemetry integration, uncertainty bounding, and sovereign cryptographic sealing</p>
+          <p className="text-xs dark:text-slate-400 text-slate-500 font-mono mt-0.5">Real-time telemetry integration, uncertainty bounding, and secure cryptographic sealing</p>
         </div>
         <div className="flex items-center gap-2">
           <span className={cn(
@@ -109,29 +137,51 @@ export function AssimilationView() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Metric Cards */}
-        <div className="p-4 rounded-xl border dark:border-slate-800 border-slate-200 dark:bg-[#0F172A] bg-white flex flex-col gap-2 shadow-sm">
-          <div className="flex items-center gap-2 text-emerald-400 font-mono text-[10px] uppercase tracking-wider">
-            <Radio size={14} /> Active Sensors
-          </div>
-          <div className="text-3xl font-light font-mono">1,248</div>
-          <div className="text-xs dark:text-slate-500 text-slate-400 font-mono">Wabash-Ohio telemetry network nodes</div>
-        </div>
-        
-        <div className="p-4 rounded-xl border dark:border-slate-800 border-slate-200 dark:bg-[#0F172A] bg-white flex flex-col gap-2 shadow-sm">
-          <div className="flex items-center gap-2 text-amber-400 font-mono text-[10px] uppercase tracking-wider">
-            <Activity size={14} /> Ensemble Members (N)
-          </div>
-          <div className="text-3xl font-light font-mono">100</div>
-          <div className="text-xs dark:text-slate-500 text-slate-400 font-mono">Parallel stochastic forecast grids</div>
-        </div>
+        {loading ? (
+          <>
+            <div className="p-4 rounded-xl border dark:border-slate-800 border-slate-200 dark:bg-[#0F172A] bg-white flex flex-col gap-3 shadow-sm">
+              <Skeleton className="h-3 w-1/3" />
+              <Skeleton className="h-8 w-1/2" />
+              <Skeleton className="h-3.5 w-3/4" />
+            </div>
+            <div className="p-4 rounded-xl border dark:border-slate-800 border-slate-200 dark:bg-[#0F172A] bg-white flex flex-col gap-3 shadow-sm">
+              <Skeleton className="h-3 w-1/3" />
+              <Skeleton className="h-8 w-1/2" />
+              <Skeleton className="h-3.5 w-3/4" />
+            </div>
+            <div className="p-4 rounded-xl border dark:border-slate-800 border-slate-200 dark:bg-[#0F172A] bg-white flex flex-col gap-3 shadow-sm">
+              <Skeleton className="h-3 w-1/3" />
+              <Skeleton className="h-8 w-1/2" />
+              <Skeleton className="h-3.5 w-3/4" />
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="p-4 rounded-xl border dark:border-slate-800 border-slate-200 dark:bg-[#0F172A] bg-white flex flex-col gap-2 shadow-sm">
+              <div className="flex items-center gap-2 text-emerald-400 font-mono text-[10px] uppercase tracking-wider">
+                <Radio size={14} /> Active Nodes
+              </div>
+              <div className="text-3xl font-light font-mono">1,248</div>
+              <div className="text-xs dark:text-slate-500 text-slate-400 font-mono">Wabash-Ohio telemetry network nodes</div>
+            </div>
+            
+            <div className="p-4 rounded-xl border dark:border-slate-800 border-slate-200 dark:bg-[#0F172A] bg-white flex flex-col gap-2 shadow-sm">
+              <div className="flex items-center gap-2 text-amber-400 font-mono text-[10px] uppercase tracking-wider">
+                <Activity size={14} /> Ensemble Members (N)
+              </div>
+              <div className="text-3xl font-light font-mono">100</div>
+              <div className="text-xs dark:text-slate-500 text-slate-400 font-mono">Parallel stochastic forecast grids</div>
+            </div>
 
-        <div className="p-4 rounded-xl border dark:border-slate-800 border-slate-200 dark:bg-[#0F172A] bg-white flex flex-col gap-2 shadow-sm">
-          <div className="flex items-center gap-2 text-indigo-400 font-mono text-[10px] uppercase tracking-wider">
-            <Target size={14} /> Innovations Residual (y - Hx)
-          </div>
-          <div className="text-3xl font-light font-mono">{residual.toFixed(4)} ft</div>
-          <div className="text-xs dark:text-slate-500 text-slate-400 font-mono">Mean observational divergence</div>
-        </div>
+            <div className="p-4 rounded-xl border dark:border-slate-800 border-slate-200 dark:bg-[#0F172A] bg-white flex flex-col gap-2 shadow-sm">
+              <div className="flex items-center gap-2 text-indigo-400 font-mono text-[10px] uppercase tracking-wider">
+                <Target size={14} /> Innovations Residual (y - Hx)
+              </div>
+              <div className="text-3xl font-light font-mono">{residual.toFixed(4)} ft</div>
+              <div className="text-xs dark:text-slate-500 text-slate-400 font-mono">Mean observational divergence</div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Primary Display & Live Charts */}
@@ -140,13 +190,23 @@ export function AssimilationView() {
         <div className="lg:col-span-2 rounded-xl border dark:border-slate-800 border-slate-200 dark:bg-[#0F172A] bg-white p-4 flex flex-col shadow-sm min-h-[420px]">
           <div className="text-sm font-semibold mb-3 flex items-center justify-between border-b dark:border-slate-800 border-slate-200 pb-2">
             <span className="font-mono text-xs text-indigo-400">FILTER ASSIMILATION PATH: {wabashGage.name}</span>
-            <span className="text-[10px] font-mono text-slate-400">Site ID: 03377500</span>
+            <span className="text-[10px] font-mono text-slate-400">Site ID: 03378500</span>
           </div>
 
           {loading ? (
-            <div className="flex-1 flex flex-col items-center justify-center font-mono text-xs dark:text-slate-400 text-slate-500">
-              <RefreshCw className="w-6 h-6 animate-spin mb-2 text-indigo-400" />
-              Ingesting live NWIS telemetry stream...
+            <div className="flex-1 flex flex-col items-center justify-center font-mono text-xs dark:text-slate-400 text-slate-500 gap-4">
+              <Spinner size="lg" variant="primary" />
+              <div className="text-center space-y-1">
+                <div className="font-bold text-indigo-400">Ingesting live NWIS telemetry stream...</div>
+                <div className="text-[10px] text-slate-400 max-w-sm mx-auto">
+                  Synchronizing with Wabash-Ohio telemetry arrays & generating forward uncertainty boundaries.
+                </div>
+              </div>
+              <div className="w-4/5 space-y-2 mt-4">
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-5/6" />
+                <Skeleton className="h-3 w-4/5" />
+              </div>
             </div>
           ) : (
             <div className="flex-1 w-full h-[320px]">
@@ -185,57 +245,101 @@ export function AssimilationView() {
         {/* Live Gauges Registry & Diagnostics */}
         <div className="rounded-xl border dark:border-slate-800 border-slate-200 dark:bg-[#0F172A] bg-white p-4 flex flex-col shadow-sm gap-4">
           <div className="text-xs font-bold uppercase tracking-wider dark:text-slate-400 text-slate-500 border-b dark:border-slate-800 border-slate-200 pb-2">
-            Sovereign Gauges Status
+            Telemetry Gauges Status
           </div>
 
           <div className="flex-1 space-y-3">
-            {/* Wabash River Gauge */}
-            <div className="p-3 dark:bg-slate-900 bg-slate-100 rounded-lg border dark:border-slate-800 border-slate-200 flex flex-col gap-1.5">
-              <div className="flex justify-between items-center border-b dark:border-slate-800 border-slate-200 pb-1.5">
-                <span className="font-bold text-[10px] dark:text-slate-200 text-slate-800 truncate font-mono">WABASH RIVER AT NEW HARMONY</span>
-                <span className="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 font-mono text-[8px] rounded">USGS-03377500</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2 mt-1">
-                <div>
-                  <span className="text-[8px] dark:text-slate-500 text-slate-400 uppercase font-mono block">Stage Height</span>
-                  <span className="text-sm font-bold font-mono text-indigo-400">{wabashGage.water_level_stage_ft.toFixed(2)} ft</span>
+            {loading ? (
+              <>
+                {/* Wabash River Gauge Skeleton */}
+                <div className="p-3 dark:bg-slate-900 bg-slate-100 rounded-lg border dark:border-slate-800 border-slate-200 flex flex-col gap-2">
+                  <div className="flex justify-between items-center border-b dark:border-slate-800 border-slate-200 pb-1.5">
+                    <Skeleton className="h-3 w-2/3" />
+                    <Skeleton className="h-2.5 w-12" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    <div className="flex flex-col gap-1">
+                      <Skeleton className="h-2 w-1/2" />
+                      <Skeleton className="h-4 w-3/4" />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <Skeleton className="h-2 w-1/2" />
+                      <Skeleton className="h-4 w-3/4" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-2.5 w-5/6 mt-1" />
                 </div>
-                <div>
-                  <span className="text-[8px] dark:text-slate-500 text-slate-400 uppercase font-mono block">Discharge Rate</span>
-                  <span className="text-sm font-bold font-mono text-emerald-400">{wabashGage.discharge_cfs.toLocaleString()} cfs</span>
-                </div>
-              </div>
-              {wabashGage.seal_hash && (
-                <div className="text-[8px] text-indigo-400/80 font-mono truncate mt-1 pt-1.5 border-t dark:border-slate-800 border-slate-200/50 flex justify-between items-center">
-                  <span>BLOCK SEAL: {wabashGage.seal_hash.substring(0, 14)}...</span>
-                  <span className="text-emerald-400">✔ VERIFIED</span>
-                </div>
-              )}
-            </div>
 
-            {/* Ohio River Gauge */}
-            <div className="p-3 dark:bg-slate-900 bg-slate-100 rounded-lg border dark:border-slate-800 border-slate-200 flex flex-col gap-1.5">
-              <div className="flex justify-between items-center border-b dark:border-slate-800 border-slate-200 pb-1.5">
-                <span className="font-bold text-[10px] dark:text-slate-200 text-slate-800 truncate font-mono">OHIO RIVER AT UNIONTOWN DAM</span>
-                <span className="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 font-mono text-[8px] rounded">USGS-03322000</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2 mt-1">
-                <div>
-                  <span className="text-[8px] dark:text-slate-500 text-slate-400 uppercase font-mono block">Stage Height</span>
-                  <span className="text-sm font-bold font-mono text-indigo-400">{ohioGage.water_level_stage_ft.toFixed(2)} ft</span>
+                {/* Ohio River Gauge Skeleton */}
+                <div className="p-3 dark:bg-slate-900 bg-slate-100 rounded-lg border dark:border-slate-800 border-slate-200 flex flex-col gap-2">
+                  <div className="flex justify-between items-center border-b dark:border-slate-800 border-slate-200 pb-1.5">
+                    <Skeleton className="h-3 w-2/3" />
+                    <Skeleton className="h-2.5 w-12" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    <div className="flex flex-col gap-1">
+                      <Skeleton className="h-2 w-1/2" />
+                      <Skeleton className="h-4 w-3/4" />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <Skeleton className="h-2 w-1/2" />
+                      <Skeleton className="h-4 w-3/4" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-2.5 w-5/6 mt-1" />
                 </div>
-                <div>
-                  <span className="text-[8px] dark:text-slate-500 text-slate-400 uppercase font-mono block">Discharge Rate</span>
-                  <span className="text-sm font-bold font-mono text-emerald-400">{ohioGage.discharge_cfs.toLocaleString()} cfs</span>
+              </>
+            ) : (
+              <>
+                {/* Wabash River Gauge */}
+                <div className="p-3 dark:bg-slate-900 bg-slate-100 rounded-lg border dark:border-slate-800 border-slate-200 flex flex-col gap-1.5">
+                  <div className="flex justify-between items-center border-b dark:border-slate-800 border-slate-200 pb-1.5">
+                    <span className="font-bold text-[10px] dark:text-slate-200 text-slate-800 truncate font-mono">WABASH RIVER AT NEW HARMONY</span>
+                    <span className="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 font-mono text-[8px] rounded">USGS-03378500</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    <div>
+                      <span className="text-[8px] dark:text-slate-500 text-slate-400 uppercase font-mono block">Stage Height</span>
+                      <span className="text-sm font-bold font-mono text-indigo-400">{(wabashGage?.water_level_stage_ft ?? 18.42).toFixed(2)} ft</span>
+                    </div>
+                    <div>
+                      <span className="text-[8px] dark:text-slate-500 text-slate-400 uppercase font-mono block">Discharge Rate</span>
+                      <span className="text-sm font-bold font-mono text-emerald-400">{(wabashGage?.discharge_cfs ?? 45100).toLocaleString()} cfs</span>
+                    </div>
+                  </div>
+                  {wabashGage?.seal_hash && (
+                    <div className="text-[8px] text-indigo-400/80 font-mono truncate mt-1 pt-1.5 border-t dark:border-slate-800 border-slate-200/50 flex justify-between items-center">
+                      <span>BLOCK SEAL: {wabashGage.seal_hash.substring(0, 14)}...</span>
+                      <span className="text-emerald-400">✔ VERIFIED</span>
+                    </div>
+                  )}
                 </div>
-              </div>
-              {ohioGage.seal_hash && (
-                <div className="text-[8px] text-indigo-400/80 font-mono truncate mt-1 pt-1.5 border-t dark:border-slate-800 border-slate-200/50 flex justify-between items-center">
-                  <span>BLOCK SEAL: {ohioGage.seal_hash.substring(0, 14)}...</span>
-                  <span className="text-emerald-400">✔ VERIFIED</span>
+
+                {/* Ohio River Gauge */}
+                <div className="p-3 dark:bg-slate-900 bg-slate-100 rounded-lg border dark:border-slate-800 border-slate-200 flex flex-col gap-1.5">
+                  <div className="flex justify-between items-center border-b dark:border-slate-800 border-slate-200 pb-1.5">
+                    <span className="font-bold text-[10px] dark:text-slate-200 text-slate-800 truncate font-mono">OHIO RIVER AT UNIONTOWN DAM</span>
+                    <span className="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 font-mono text-[8px] rounded">USGS-03322000</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    <div>
+                      <span className="text-[8px] dark:text-slate-500 text-slate-400 uppercase font-mono block">Stage Height</span>
+                      <span className="text-sm font-bold font-mono text-indigo-400">{(ohioGage?.water_level_stage_ft ?? 24.85).toFixed(2)} ft</span>
+                    </div>
+                    <div>
+                      <span className="text-[8px] dark:text-slate-500 text-slate-400 uppercase font-mono block">Discharge Rate</span>
+                      <span className="text-sm font-bold font-mono text-emerald-400">{(ohioGage?.discharge_cfs ?? 115000).toLocaleString()} cfs</span>
+                    </div>
+                  </div>
+                  {ohioGage?.seal_hash && (
+                    <div className="text-[8px] text-indigo-400/80 font-mono truncate mt-1 pt-1.5 border-t dark:border-slate-800 border-slate-200/50 flex justify-between items-center">
+                      <span>BLOCK SEAL: {ohioGage.seal_hash.substring(0, 14)}...</span>
+                      <span className="text-emerald-400">✔ VERIFIED</span>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </>
+            )}
           </div>
 
           <div className="pt-2 border-t dark:border-slate-800 border-slate-200 space-y-1 bg-slate-950/20 p-2.5 rounded border dark:border-slate-800/50 border-slate-200 font-mono text-[10px]">

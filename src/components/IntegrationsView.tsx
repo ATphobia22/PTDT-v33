@@ -131,6 +131,126 @@ export function IntegrationsView() {
       ]
     },
     {
+      name: "Cognitive OS & AI Agents",
+      icon: <Cpu className="w-5 h-5 text-emerald-500" />,
+      items: [
+        {
+          name: "Tucker-Cognitive-Os",
+          desc: "Cognitive operating system layer for reasoning, evidence assimilation, and DAG execution.",
+          url: "https://github.com/ATphobia22/Tucker-Cognitive-Os",
+          tags: ["Cognitive OS", "AI", "Orchestration"]
+        },
+        {
+          name: "agentfield",
+          desc: "Observable multi-agent orchestrator for workflow execution.",
+          url: "https://github.com/ATphobia22/agentfield",
+          tags: ["Agentic", "Observability"]
+        },
+        {
+          name: "Olive",
+          desc: "Model optimization and quantization tools for fast local CPU/GPU/NPU inference.",
+          url: "https://github.com/ATphobia22/Olive",
+          tags: ["Quantization", "ONNX", "Performance"]
+        },
+        {
+          name: "open-notebook",
+          desc: "DAG and cognitive execution runner.",
+          url: "https://github.com/ATphobia22/open-notebook",
+          tags: ["DAG", "Runner"]
+        },
+        {
+          name: "ColossalAI",
+          desc: "Deep learning system for large scale models, utilized for complex scaling.",
+          url: "https://github.com/ATphobia22/ColossalAI",
+          tags: ["Deep Learning", "Scaling"]
+        }
+      ]
+    },
+    {
+      name: "WebGPU, WebGL & Fluid Rendering",
+      icon: <Layers className="w-5 h-5 text-rose-500" />,
+      items: [
+        {
+          name: "WebGL-Fluid-Simulation",
+          desc: "Real-time fluid simulation on the GPU, used for hydraulic and river-front fluid rendering in the Digital Twin.",
+          url: "https://github.com/ATphobia22/WebGL-Fluid-Simulation",
+          tags: ["WebGL", "Fluid", "Simulation", "GPU", "Hydrodynamics"]
+        },
+        {
+          name: "react-unity-webgl",
+          desc: "React component for embedding Unity WebGL builds directly into web applications, powering interactive 3D digital twins.",
+          url: "https://github.com/ATphobia22/react-unity-webgl",
+          tags: ["React", "Unity", "WebGL", "3D Component"]
+        },
+        {
+          name: "webgpufundamentals",
+          desc: "Core patterns, shaders, and buffer utilities for high-performance WebGPU.",
+          url: "https://github.com/ATphobia22/webgpufundamentals",
+          tags: ["WebGPU", "Shaders", "Compute"]
+        },
+        {
+          name: "ChartGPU",
+          desc: "WebGPU-based charting for real-time dashboards.",
+          url: "https://github.com/ATphobia22/ChartGPU",
+          tags: ["WebGPU", "Visualization", "Charts"]
+        },
+        {
+          name: "regl",
+          desc: "Declarative and functional WebGL framework for fast, reactive 3D rendering.",
+          url: "https://github.com/regl-project/regl",
+          tags: ["WebGL", "Declarative", "Functional", "Rendering"]
+        },
+        {
+          name: "ogl",
+          desc: "Minimal, highly modular WebGL library designed for lightweight, high-performance rendering.",
+          url: "https://github.com/oframe/ogl",
+          tags: ["WebGL", "Lightweight", "Performance"]
+        },
+        {
+          name: "cobe",
+          desc: "Minimal and highly optimized 5KB WebGL globe library, ideal for lightweight planetary overlays.",
+          url: "https://github.com/shuding/cobe",
+          tags: ["WebGL", "3D Globe", "Lightweight"]
+        },
+        {
+          name: "potree",
+          desc: "High-performance WebGL point cloud viewer for massive geospatial lidar datasets.",
+          url: "https://github.com/potree/potree",
+          tags: ["WebGL", "Point Cloud", "Lidar", "Geospatial"]
+        },
+        {
+          name: "webglearth2",
+          desc: "An open-source 3D virtual planet library using WebGL, enabling customized planetary digital twins.",
+          url: "https://github.com/webglearth/webglearth2",
+          tags: ["WebGL", "3D Globe", "Planetary"]
+        },
+        {
+          name: "webgl-noise",
+          desc: "Procedural Noise Shader Routines compatible with WebGL, utilized for fluid ripples and water surface textures.",
+          url: "https://github.com/ashima/webgl-noise",
+          tags: ["WebGL", "Procedural Noise", "Shaders"]
+        },
+        {
+          name: "webgl-examples",
+          desc: "Code examples that accompany the MDN WebGL documentation.",
+          url: "https://github.com/mdn/webgl-examples",
+          tags: ["WebGL", "Examples", "MDN"]
+        },
+        {
+          name: "webgl-lessons",
+          desc: "Lessons for mastering low-level WebGL graphics programming.",
+          url: "https://github.com/gpjt/webgl-lessons",
+          tags: ["WebGL", "Tutorial", "Graphics"]
+        },
+        {
+          name: "v3-utility-library",
+          desc: "Geospatial vector tiles and map helpers.",
+          url: "https://github.com/ATphobia22/v3-utility-library",
+          tags: ["Geospatial", "Tiles"]
+        }
+      ]
+    },
+    {
       name: "3D Visualization & Cinema Software",
       icon: <Layers className="w-5 h-5 text-amber-500" />,
       items: [

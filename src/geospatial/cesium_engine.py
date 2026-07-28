@@ -1,6 +1,6 @@
 from typing import Dict, Any, List
 
-class CesiumSovereignGlobeEngine:
+class CesiumGlobeEngine:
     """
     Configures and structures the WebGPU/ThreeJS-compatible Cesium Ion catalog layers,
     elevations tilesets, and 3D vector graphics representing Point Township, Posey County, Indiana.

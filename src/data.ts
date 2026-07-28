@@ -173,9 +173,9 @@ export const CORE_CODE_FILES: CodeFile[] = [
     category: "bootstrap",
     language: "bash",
     content: `#!/bin/bash
-# ▲(GOG) [ ☐ ■ ● ] — SYSTEM FIRST | ORDER LOCKED | v21.0 SOVEREIGN INFINITY
+# ▲(GOG) [ ☐ ■ ● ] — SYSTEM FIRST | ORDER LOCKED | v21.0 TRI-STATE ACTIVE
 set -e
-echo "▲ INITIALIZING SOVEREIGN NODE — Root: 13101 Main Street"
+echo "▲ INITIALIZING TRI-STATE NODE — Root: 13101 Main Street"
 
 # 1. Platform Detection & Dependency Provisioning (2026 Optimized)
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
@@ -238,13 +238,13 @@ def auth_check(func):
     category: "gateway",
     language: "python",
     content: `"""
-SYSTEM FIRST NODE — v21.0 SOVEREIGN INFINITY
+SYSTEM FIRST NODE — v21.0 TRI-STATE ACTIVE
 Root Authority: System Administrator
 """
 from fastapi import FastAPI, HTTPException
 from .governance import auth_check, GSPPolicyEngine
 
-app = FastAPI(title="Sovereign Node v21.0", version="21.0.0") [11, 15].
+app = FastAPI(title="Tri-State Node v21.0", version="21.0.0") [11, 15].
 
 @app.post("/mission/execute")
 @auth_check
@@ -302,7 +302,7 @@ struct MiniDeniApp: App {
         WindowGroup {
             ContentView()
                 .onAppear {
-                    // Start Sovereign Mission for Skin Analysis
+                    // Start Active Mission for Skin Analysis
                     quantumLens.initializeMission(.analytics) [23].
                 }
         }
@@ -313,7 +313,7 @@ struct ContentView: View {
     var body: some View {
         VStack {
             Text("M.i.n.i. Deni AI")
-                .font(.custom("Sovereign-Bold", size: 24))
+                .font(.custom("System-Bold", size: 24))
             
             // Integrated CineForge Dashboard for Makeup Prototyping
             CineForgeView(engine: .pixArtAlpha)
@@ -342,7 +342,7 @@ from .adas.ralph_loop import RalphLoop
 class MiniDeniEngine:
     def __init__(self, config):
         self.rsa = RSAEngine(config.llm) # Recursive Self-Aggregation [29, 32].
-        self.dedup = DedupEngine(config.redis) # Sovereign Deduplication [29, 32].
+        self.dedup = DedupEngine(config.redis) # System Deduplication [29, 32].
         self.ralph = RalphLoop(config.policies) # Completion Promise verification [29, 32].
 
     async def plan_and_answer(self, mission_ctx: dict) -> dict:
@@ -570,8 +570,8 @@ func (r *Replica) hashPayload(data []byte) string {
 }`
   },
   {
-    name: "SovereignDiscoveryScan.py",
-    path: "/backend/python/SovereignDiscoveryScan.py",
+    name: "IntegratedDiscoveryScan.py",
+    path: "/backend/python/IntegratedDiscoveryScan.py",
     category: "discovery",
     language: "python",
     content: `import os
@@ -583,7 +583,7 @@ NCBI_KEY = os.getenv('NCBI_API_KEY')
 RIGETTI_TOKEN = os.getenv('RIGETTI_QCS_TOKEN')
 HF_TOKEN = os.getenv('HF_TOKEN')
 
-class SovereignDiscoveryScan:
+class IntegratedDiscoveryScan:
     """
     Scans ingested data for fractures and maps disease states to canonical forms.
     """
@@ -610,25 +610,25 @@ class SovereignDiscoveryScan:
         return [{"title": entry.title} for entry in parsed.entries]`
   },
   {
-    name: "SovereignSync.hs",
-    path: "/core/SovereignSync.hs",
+    name: "IntegratedSync.hs",
+    path: "/core/IntegratedSync.hs",
     category: "synthesis",
     language: "haskell",
-    content: `module SovereignSync where
+    content: `module IntegratedSync where
 
 -- Pure Functional Logic Chain: Ingest -> Validate -> Reason -> Solve -> Deploy
 -- Enforces perfect state progression at the compiler level.
 
-data SovereignState = SovereignState {
+data IntegratedState = IntegratedState {
     intent :: String,
     governance :: String,
     status :: String
 } deriving (Show)
 
-type Transformation = SovereignState -> SovereignState
+type Transformation = IntegratedState -> IntegratedState
 
-syncAll :: SovereignState -> SovereignState
-syncAll = deploySovereign . solveQuantum . reasonParallel . validateSecurity . ingestAll
+syncAll :: IntegratedState -> IntegratedState
+syncAll = deploySystem . solveQuantum . reasonParallel . validateSecurity . ingestAll
 
 ingestAll :: Transformation
 ingestAll s = s { status = "INGESTED" }
@@ -645,7 +645,7 @@ reasonParallel s = s { status = "REASON_COMPLETED" }
 solveQuantum :: Transformation
 solveQuantum s = s { status = "QUANTUM_STABILIZED" }
 
-deploySovereign :: Transformation
-deploySovereign s = s { status = "ORDER LOCKED - IT IS FINISHED" }`
+deploySystem :: Transformation
+deploySystem s = s { status = "ORDER LOCKED - IT IS FINISHED" }`
   }
 ];

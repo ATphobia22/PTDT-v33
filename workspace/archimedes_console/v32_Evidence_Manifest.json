@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "v32_Evidence_Manifest",
+  "type": "object",
+  "properties": {
+    "manifest_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "timestamp_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "simulation_run_id": {
+      "type": "string"
+    },
+    "software_bill_of_materials": {
+      "type": "object",
+      "properties": {
+        "sbom_sha256": { "type": "string" },
+        "syft_reference": { "type": "string" },
+        "cosign_container_signature": { "type": "string" }
+      },
+      "required": ["sbom_sha256", "cosign_container_signature"]
+    },
+    "authoritative_inputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "source_agency": { "type": "string" },
+          "file_name": { "type": "string" },
+          "sha256_hash": { "type": "string" }
+        },
+        "required": ["source_agency", "file_name", "sha256_hash"]
+      }
+    },
+    "solver_provenance": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "solver_name": { "type": "string" },
+          "version": { "type": "string" },
+          "binary_hash": { "type": "string" },
+          "convergence_achieved": { "type": "boolean" }
+        },
+        "required": ["solver_name", "version", "binary_hash", "convergence_achieved"]
+      }
+    },
+    "cryptographic_signatures": {
+      "type": "object",
+      "properties": {
+        "jws_detached_signature": { "type": "string" },
+        "rfc3161_timestamp": { "type": "string" },
+        "key_identifier": { "type": "string" }
+      },
+      "required": ["jws_detached_signature", "rfc3161_timestamp", "key_identifier"]
+    }
+  },
+  "required": [
+    "manifest_id",
+    "timestamp_utc",
+    "simulation_run_id",
+    "software_bill_of_materials",
+    "authoritative_inputs",
+    "solver_provenance",
+    "cryptographic_signatures"
+  ]
+}

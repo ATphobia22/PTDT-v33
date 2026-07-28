@@ -1,3 +1,4 @@
+import { useTheme } from '../context/ThemeContext';
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { WebGPURenderer, MeshBasicNodeMaterial } from 'three/webgpu';
@@ -10,6 +11,8 @@ import { cn } from '../lib/utils';
 import { WebGPU3DValley } from './WebGPU3DValley';
 import { fetchNwsAlerts } from '../services/gisService';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Spinner } from './ui/spinner';
+import { Skeleton } from './ui/skeleton';
 
 export interface ParcelInfo {
   id: string;
@@ -23,6 +26,7 @@ export interface ParcelInfo {
 }
 
 export function DigitalTwinView() {
+  const { theme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const viewWrapperRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<any>(null);
@@ -49,7 +53,7 @@ export function DigitalTwinView() {
     waterDepthRef.current = waterDepth;
   }, [waterDepth]);
 
-  // Sovereign Integrations Hub States & Data
+  // Tri-State Integrations Hub States & Data
   const [sidebarTab, setSidebarTab] = useState<'metrics' | 'registry'>('metrics');
   const [rasDischarge, setRasDischarge] = useState(3500);
   const [modflowActive, setModflowActive] = useState(false);
@@ -145,7 +149,7 @@ export function DigitalTwinView() {
       if (selectedParcel) {
         if (selectedParcel.lineageGroup.toLowerCase() === 'tucker') {
           setXsoftRecord({
-            owner: "John Tucker Revocable Trust",
+            owner: "Tri-State Family Trust",
             appraisedValue: "$285,400",
             taxId: "116-013-002-00"
           });
@@ -398,7 +402,7 @@ export function DigitalTwinView() {
 
       addParcel(-15, 10, {
         id: "PRCL_TUCKER_01",
-        tractName: "Tucker Homestead (13101 Bonebank Rd)",
+        tractName: "Family Homestead (13101 Bonebank Rd)",
         lineageGroup: "Tucker",
         threatScore: 25.5,
         isInundated: false,
@@ -631,32 +635,45 @@ export function DigitalTwinView() {
     if (isSimulating) {
       interval = setInterval(() => {
         setWaterDepth(prev => {
-          const newDepth = prev + 0.1;
-          if (newDepth > 5) {
-            setRasDischarge(2000);
-            return 0.1; // reset
-          }
-          const computedDischarge = 2000 + ((newDepth - 0.1) / 4.9) * 10000;
-          setRasDischarge(computedDischarge);
-          return newDepth;
+          const next = prev + 0.1;
+          return next > 5 ? 0.1 : next;
         });
       }, 100);
     }
     return () => clearInterval(interval);
   }, [isSimulating]);
 
+  useEffect(() => {
+    if (isSimulating) {
+      if (waterDepth >= 5) {
+        setRasDischarge(2000);
+      } else {
+        const computedDischarge = 2000 + ((waterDepth - 0.1) / 4.9) * 10000;
+        setRasDischarge(computedDischarge);
+      }
+    }
+  }, [waterDepth, isSimulating]);
+
   return (
     <div ref={viewWrapperRef} className="w-full h-full relative dark:bg-[#020617] bg-slate-50 dark:text-slate-100 text-slate-900 flex overflow-hidden">
       {/* 3D Canvas Area */}
       <div className="flex-1 relative">
         {!isRendererActive && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center z-10 dark:bg-[#020617] bg-slate-50/80 backdrop-blur-sm">
-            <div className="p-6 rounded-xl border border-indigo-500/30 bg-indigo-500/10 max-w-md text-center">
-              <RefreshCw className="w-12 h-12 text-indigo-400 mx-auto mb-4 animate-spin" />
-              <h3 className="text-lg font-bold text-indigo-100 mb-2 font-mono">INITIALIZING TWIN MESH...</h3>
-              <p className="text-sm text-indigo-200/70">
-                Compiling vectorized shader nodes and establishing sovereign GIS plat structures.
-              </p>
+          <div className="absolute inset-0 flex flex-col items-center justify-center z-10 dark:bg-[#020617] bg-slate-50/80 backdrop-blur-sm p-6 text-center animate-in fade-in duration-300">
+            <div className="max-w-md w-full flex flex-col items-center gap-6">
+              <Spinner size="xl" variant="primary" />
+              <div className="space-y-2">
+                <h3 className="text-sm font-bold tracking-widest font-mono text-indigo-600 dark:text-indigo-400 uppercase">
+                  INITIALIZING TWIN MESH...
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-sans">
+                  Compiling high-precision vectorized shader nodes, binding vertex buffers, and loading real-time integrated GIS plat structures.
+                </p>
+              </div>
+              <div className="w-full space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-2/3 mx-auto" />
+              </div>
             </div>
           </div>
         )}
@@ -680,10 +697,10 @@ export function DigitalTwinView() {
             <div className="text-[11px] font-bold dark:text-slate-100 text-slate-800 truncate font-mono">
               {ingestionFeed.gageName}
             </div>
-            <div className="text-[10px] dark:text-slate-400 text-slate-500 font-mono">
+            <div className="text-[10px] dark:text-slate-600 dark:text-slate-400 text-slate-500 dark:text-slate-500 font-mono">
               Boundary Inflow: <span className="text-emerald-400 font-bold">{ingestionFeed.discharge.toLocaleString()} cfs</span>
             </div>
-            <div className="text-[8px] dark:text-slate-500 text-slate-400 font-mono mt-0.5">
+            <div className="text-[8px] dark:text-slate-500 dark:text-slate-500 text-slate-600 dark:text-slate-400 font-mono mt-0.5">
               Assimilated Time: {ingestionFeed.time} | Convergence: <span className="text-indigo-400">Stable</span>
             </div>
           </div>
@@ -691,7 +708,7 @@ export function DigitalTwinView() {
         
         {/* Matterport Lidar Scan Walkthrough overlay */}
         {selectedMatterport && (
-          <div className="absolute inset-4 z-20 rounded-xl dark:bg-slate-950/95 bg-white/95 border border-purple-500/40 shadow-[0_0_30px_rgba(168,85,247,0.3)] p-4 flex flex-col justify-between backdrop-blur-md animate-in zoom-in-95 duration-200 pointer-events-auto">
+          <div className="absolute inset-4 z-20 rounded-xl dark:bg-slate-100 dark:bg-slate-950/95 bg-white/95 border border-purple-500/40 shadow-[0_0_30px_rgba(168,85,247,0.3)] p-4 flex flex-col justify-between backdrop-blur-md animate-in zoom-in-95 duration-200 pointer-events-auto">
             <div className="flex justify-between items-center border-b dark:border-purple-500/20 border-purple-200 pb-2">
               <div className="flex items-center gap-2 text-purple-400 font-bold font-mono text-xs sm:text-sm">
                 <Eye size={18} className="animate-pulse text-purple-500" />
@@ -699,14 +716,14 @@ export function DigitalTwinView() {
               </div>
               <button 
                 onClick={() => setSelectedMatterport(null)}
-                className="p-1 hover:bg-purple-500/10 rounded transition-colors text-slate-400 hover:text-purple-300 cursor-pointer"
+                className="p-1 hover:bg-purple-500/10 rounded transition-colors text-slate-600 dark:text-slate-400 hover:text-purple-300 cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
             
             {/* Simulation Scan Grid */}
-            <div className="flex-1 min-h-[180px] sm:min-h-[220px] my-3 border dark:border-purple-500/20 border-purple-200/50 dark:bg-black bg-slate-900 rounded-lg relative overflow-hidden flex items-center justify-center font-mono text-center">
+            <div className="flex-1 min-h-[180px] sm:min-h-[220px] my-3 border dark:border-purple-500/20 border-purple-200/50 dark:bg-black bg-slate-50 dark:bg-slate-900 rounded-lg relative overflow-hidden flex items-center justify-center font-mono text-center">
               
               {/* Matrix of green/purple dots simulating a point cloud scan */}
               <div className="absolute inset-0 opacity-25 pointer-events-none grid grid-cols-12 grid-rows-12 gap-1 p-4">
@@ -731,7 +748,7 @@ export function DigitalTwinView() {
               </div>
 
               <div className="absolute top-4 right-4 text-[9px] sm:text-[10px] text-purple-400/80 flex flex-col items-end text-right">
-                <div>SENSORS: LiDAR v2 + Depth Sensor</div>
+                {/* Placeholder */}
                 <div>OCTREE_DEPTH: 8 (OPTIMIZED)</div>
                 <div>DEEP_WALK_ENGINE: ACTIVE</div>
               </div>
@@ -741,7 +758,7 @@ export function DigitalTwinView() {
                 <span className="px-3 py-1.5 bg-purple-500/20 border border-purple-500/40 rounded-full text-purple-300 font-bold text-xs tracking-wider animate-pulse select-none">
                   LIDAR FIELD WALKTHROUGH MOCK ACTIVE
                 </span>
-                <span className="text-[10px] text-slate-400 mt-2">Use mouse on the 3D twin grid or click close to return</span>
+                <span className="text-[10px] text-slate-600 dark:text-slate-400 mt-2">Use mouse on the 3D twin grid or click close to return</span>
               </div>
             </div>
 
@@ -754,47 +771,47 @@ export function DigitalTwinView() {
         
         {/* Overlays */}
         <div className="absolute top-6 left-6 z-10 pointer-events-none">
-          <div className="dark:bg-[#0F172A] bg-white/80 backdrop-blur-md border dark:border-slate-800 border-slate-200 rounded-xl p-4 min-w-[280px]">
+          <div className="dark:bg-[#0F172A] bg-white/80 backdrop-blur-md border dark:border-slate-200 dark:border-slate-800 border-slate-200 rounded-xl p-4 min-w-[280px]">
             <h2 className="text-lg font-bold tracking-tight mb-1 flex items-center gap-2">
               <Waves className="w-5 h-5 text-indigo-400" />
               WebGPU Twin Engine
             </h2>
-            <p className="text-xs dark:text-slate-400 text-slate-500 font-mono mb-4">Wabash-Ohio Confluence Model</p>
+            <p className="text-xs dark:text-slate-600 dark:text-slate-400 text-slate-500 dark:text-slate-500 font-mono mb-4">Wabash-Ohio Confluence Model</p>
             
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-sm dark:text-slate-400 text-slate-500">Simulation Status</span>
+                <span className="text-sm dark:text-slate-600 dark:text-slate-400 text-slate-500 dark:text-slate-500">Simulation Status</span>
                 <span className={cn("text-xs font-mono px-2 py-0.5 rounded", isSimulating ? "bg-emerald-500/20 text-emerald-400" : "bg-amber-500/20 text-amber-400")}>
                   {isSimulating ? "ACTIVE" : "STANDBY"}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm dark:text-slate-400 text-slate-500">Water Depth</span>
+                <span className="text-sm dark:text-slate-600 dark:text-slate-400 text-slate-500 dark:text-slate-500">Water Depth</span>
                 <span className={cn("text-sm font-mono font-bold", waterDepth > 2.25 ? "text-red-400" : "text-indigo-400")}>
                   {waterDepth.toFixed(2)}m
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm dark:text-slate-400 text-slate-500">Risk Threshold</span>
-                <span className="text-sm font-mono dark:text-slate-300 text-slate-700">2.25m</span>
+                <span className="text-sm dark:text-slate-600 dark:text-slate-400 text-slate-500 dark:text-slate-500">Risk Threshold</span>
+                <span className="text-sm font-mono dark:text-slate-700 dark:text-slate-300 text-slate-700">2.25m</span>
               </div>
             </div>
 
             {/* Ancestral Protected Lineage Groups Legend */}
-            <div className="mt-4 pt-4 border-t dark:border-slate-800 border-slate-200/60 pointer-events-auto">
-              <div className="text-[10px] dark:text-slate-500 text-slate-400 uppercase tracking-wider font-semibold mb-2">Protected Lineages</div>
+            <div className="mt-4 pt-4 border-t dark:border-slate-200 dark:border-slate-800 border-slate-200/60 pointer-events-auto">
+              <div className="text-[10px] dark:text-slate-500 dark:text-slate-500 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-semibold mb-2">Protected Lineages</div>
               <div className="flex flex-col gap-2 text-xs">
                 <div className="flex items-center gap-2">
                   <span className="w-3 h-3 rounded bg-[#3b82f6] shadow-[0_0_8px_rgba(59,130,246,0.5)] block shrink-0" style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', transform: 'rotate(180deg)' }} />
-                  <span className="dark:text-slate-300 text-slate-700">Tucker family (Blue Cone Pin)</span>
+                  <span className="dark:text-slate-700 dark:text-slate-300 text-slate-700">Family homestead (Blue Cone Pin)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-3 h-3 bg-[#f59e0b] shadow-[0_0_8px_rgba(245,158,11,0.5)] rotate-45 block shrink-0" />
-                  <span className="dark:text-slate-300 text-slate-700">Yeida family (Amber Diamond)</span>
+                  <span className="dark:text-slate-700 dark:text-slate-300 text-slate-700">Yeida family (Amber Diamond)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-3 h-3 bg-[#d946ef] shadow-[0_0_8px_rgba(217,70,239,0.5)] block shrink-0" style={{ borderRadius: '2px' }} />
-                  <span className="dark:text-slate-300 text-slate-700">Nazarene Church (Pink Pillar)</span>
+                  <span className="dark:text-slate-700 dark:text-slate-300 text-slate-700">Nazarene Church (Pink Pillar)</span>
                 </div>
               </div>
             </div>
@@ -804,7 +821,7 @@ export function DigitalTwinView() {
         {/* Fullscreen Toggle */}
         <button 
           onClick={toggleFullscreen}
-          className="absolute top-6 right-6 z-10 p-2.5 rounded-lg dark:bg-[#0F172A] bg-white/80 backdrop-blur-md border dark:border-slate-800 border-slate-200 dark:text-slate-400 text-slate-500 hover:text-white transition-colors"
+          className="absolute top-6 right-6 z-10 p-2.5 rounded-lg dark:bg-[#0F172A] bg-white/80 backdrop-blur-md border dark:border-slate-200 dark:border-slate-800 border-slate-200 dark:text-slate-600 dark:text-slate-400 text-slate-500 dark:text-slate-500 hover:text-slate-900 dark:text-white transition-colors"
           title="Toggle Fullscreen"
         >
           {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
@@ -816,7 +833,7 @@ export function DigitalTwinView() {
             <div className="relative p-5">
               <button 
                 onClick={() => setSelectedParcel(null)}
-                className="absolute top-4 right-4 text-teal-400 hover:text-white transition-colors"
+                className="absolute top-4 right-4 text-teal-400 hover:text-slate-900 dark:text-white transition-colors"
               >
                 <X size={16} />
               </button>
@@ -826,34 +843,34 @@ export function DigitalTwinView() {
                 ANCESTRAL PARCEL
               </div>
               
-              <h3 className="text-xl font-bold tracking-tight text-white mb-0.5">
+              <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white mb-0.5">
                 {selectedParcel.tractName}
               </h3>
-              <p className="text-xs dark:text-slate-400 text-slate-500 font-mono mb-5">{selectedParcel.id}</p>
+              <p className="text-xs dark:text-slate-600 dark:text-slate-400 text-slate-500 dark:text-slate-500 font-mono mb-5">{selectedParcel.id}</p>
 
               <div className="grid grid-cols-2 gap-3 mb-5">
-                <div className="dark:bg-slate-900 bg-slate-100/50 rounded-lg p-2.5 border dark:border-slate-800 border-slate-200">
-                  <div className="text-[10px] dark:text-slate-500 text-slate-400 uppercase tracking-wider mb-1">Lineage Group</div>
+                <div className="dark:bg-slate-50 dark:bg-slate-900 bg-slate-100/50 rounded-lg p-2.5 border dark:border-slate-200 dark:border-slate-800 border-slate-200">
+                  <div className="text-[10px] dark:text-slate-500 dark:text-slate-500 text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1">Lineage Group</div>
                   <div className={cn(
                     "font-bold text-sm",
                     selectedParcel.lineageGroup.toLowerCase() === 'tucker' ? "text-[#3b82f6]" :
                     selectedParcel.lineageGroup.toLowerCase() === 'yeida' ? "text-[#f59e0b]" :
                     selectedParcel.lineageGroup.toLowerCase() === 'church' ? "text-[#d946ef]" :
-                    "dark:text-slate-200 text-slate-800"
+                    "dark:text-slate-800 dark:text-slate-200 text-slate-800"
                   )}>
                     {selectedParcel.lineageGroup}
                   </div>
                 </div>
                 
-                <div className="dark:bg-slate-900 bg-slate-100/50 rounded-lg p-2.5 border dark:border-slate-800 border-slate-200">
-                  <div className="text-[10px] dark:text-slate-500 text-slate-400 uppercase tracking-wider mb-1">Threat Score</div>
+                <div className="dark:bg-slate-50 dark:bg-slate-900 bg-slate-100/50 rounded-lg p-2.5 border dark:border-slate-200 dark:border-slate-800 border-slate-200">
+                  <div className="text-[10px] dark:text-slate-500 dark:text-slate-500 text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1">Threat Score</div>
                   <div className={cn("font-bold font-mono", selectedParcel.threatScore > 70 ? 'text-red-500' : 'text-emerald-400')}>
                     {selectedParcel.threatScore.toFixed(1)}
                   </div>
                 </div>
                 
-                <div className="dark:bg-slate-900 bg-slate-100/50 rounded-lg p-2.5 border dark:border-slate-800 border-slate-200 col-span-2">
-                  <div className="text-[10px] dark:text-slate-500 text-slate-400 uppercase tracking-wider mb-1">Current Status</div>
+                <div className="dark:bg-slate-50 dark:bg-slate-900 bg-slate-100/50 rounded-lg p-2.5 border dark:border-slate-200 dark:border-slate-800 border-slate-200 col-span-2">
+                  <div className="text-[10px] dark:text-slate-500 dark:text-slate-500 text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1">Current Status</div>
                   <div className="flex items-center gap-2">
                     <div className={cn("w-2 h-2 rounded-full", selectedParcel.isInundated ? "bg-red-500" : "bg-emerald-500")} />
                     <span className={cn("font-medium text-sm", selectedParcel.isInundated ? "text-red-400" : "text-emerald-400")}>
@@ -865,13 +882,13 @@ export function DigitalTwinView() {
 
               <div className="space-y-4">
                 <div>
-                  <h4 className="text-[10px] dark:text-slate-500 text-slate-400 uppercase tracking-wider mb-1">Historical Context</h4>
-                  <p className="text-sm dark:text-slate-300 text-slate-700 leading-relaxed dark:bg-slate-900 bg-slate-100/30 p-3 rounded-lg border dark:border-slate-800 border-slate-200/50">
+                  <h4 className="text-[10px] dark:text-slate-500 dark:text-slate-500 text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1">Historical Context</h4>
+                  <p className="text-sm dark:text-slate-700 dark:text-slate-300 text-slate-700 leading-relaxed dark:bg-slate-50 dark:bg-slate-900 bg-slate-100/30 p-3 rounded-lg border dark:border-slate-200 dark:border-slate-800 border-slate-200/50">
                     {selectedParcel.historicalNote}
                   </p>
                 </div>
                 <div>
-                  <h4 className="text-[10px] dark:text-slate-500 text-slate-400 uppercase tracking-wider mb-1">Grant Eligibility Assessment</h4>
+                  <h4 className="text-[10px] dark:text-slate-500 dark:text-slate-500 text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1">Grant Eligibility Assessment</h4>
                   <div className="text-sm text-indigo-300 font-mono bg-indigo-900/20 p-3 rounded-lg border border-indigo-500/20 space-y-2">
                     <div className="flex justify-between border-b border-indigo-500/20 pb-1">
                       <span className="text-indigo-400/70">Calculated Threat Index:</span>
@@ -891,7 +908,7 @@ export function DigitalTwinView() {
                         "px-2 py-0.5 rounded text-xs font-bold",
                         selectedParcel.threatScore > 75 ? "bg-emerald-500/20 text-emerald-400" :
                         selectedParcel.threatScore > 50 ? "bg-amber-500/20 text-amber-400" :
-                        "dark:bg-slate-800 bg-white dark:text-slate-400 text-slate-500"
+                        "dark:bg-slate-200 dark:bg-slate-800 bg-white dark:text-slate-600 dark:text-slate-400 text-slate-500 dark:text-slate-500"
                       )}>
                         {selectedParcel.threatScore > 75 ? "IN_DNR_MIG_2026 High Priority" :
                          selectedParcel.threatScore > 50 ? "FEMA_BRIC_2026 Eligible" :
@@ -916,33 +933,33 @@ export function DigitalTwinView() {
         )}
 
         {/* Controls */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex gap-4 dark:bg-[#0F172A] bg-white/80 backdrop-blur-md border dark:border-slate-800 border-slate-200 p-2 rounded-xl">
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex gap-4 dark:bg-[#0F172A] bg-white/80 backdrop-blur-md border dark:border-slate-200 dark:border-slate-800 border-slate-200 p-2 rounded-xl">
           <button 
             onClick={() => setIsSimulating(!isSimulating)}
             className={cn(
               "flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all",
               isSimulating 
-                ? "dark:bg-slate-800 bg-white hover:dark:bg-slate-700 hover:bg-slate-200 text-white" 
-                : "bg-indigo-600 hover:bg-indigo-500 text-white"
+                ? "dark:bg-slate-200 dark:bg-slate-800 bg-white hover:dark:bg-slate-700 hover:bg-slate-200 text-slate-900 dark:text-white" 
+                : "bg-indigo-600 hover:bg-indigo-500 text-slate-900 dark:text-white"
             )}
           >
             {isSimulating ? <Pause size={16} /> : <Play size={16} />}
             {isSimulating ? "Halt Simulation" : "Run Inundation"}
           </button>
-          <div className="w-px dark:bg-slate-800 bg-white mx-1" />
+          <div className="w-px dark:bg-slate-200 dark:bg-slate-800 bg-white mx-1" />
           <button 
             onClick={() => {
               setIsPlacingBerm(!isPlacingBerm);
               if (!isPlacingBerm) setSelectedParcel(null); // deselect when placing berms
             }}
-            className={cn("flex items-center gap-2 px-4 py-2 rounded-lg dark:bg-slate-800 bg-white hover:dark:bg-slate-700 hover:bg-slate-200 dark:text-slate-300 text-slate-700 font-medium text-sm transition-all shadow-[0_0_0_1px_rgba(255,255,255,0.05)_inset]", isPlacingBerm && "bg-indigo-600 text-white hover:bg-indigo-500 border-indigo-400 shadow-[0_0_15px_rgba(79,70,229,0.3)]")}
+            className={cn("flex items-center gap-2 px-4 py-2 rounded-lg dark:bg-slate-200 dark:bg-slate-800 bg-white hover:dark:bg-slate-700 hover:bg-slate-200 dark:text-slate-700 dark:text-slate-300 text-slate-700 font-medium text-sm transition-all shadow-[0_0_0_1px_rgba(255,255,255,0.05)_inset]", isPlacingBerm && "bg-indigo-600 text-slate-900 dark:text-white hover:bg-indigo-500 border-indigo-400 shadow-[0_0_15px_rgba(79,70,229,0.3)]")}
           >
             <Plus size={16} />
             {isPlacingBerm ? "Stop Placing" : "Place Berm"}
           </button>
           <button 
             onClick={() => setShowHeatmap(!showHeatmap)}
-            className={cn("flex items-center gap-2 px-4 py-2 rounded-lg dark:bg-slate-800 bg-white hover:dark:bg-slate-700 hover:bg-slate-200 dark:text-slate-300 text-slate-700 font-medium text-sm transition-all shadow-[0_0_0_1px_rgba(255,255,255,0.05)_inset]", showHeatmap && "bg-emerald-600 text-white hover:bg-emerald-500 border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.3)]")}
+            className={cn("flex items-center gap-2 px-4 py-2 rounded-lg dark:bg-slate-200 dark:bg-slate-800 bg-white hover:dark:bg-slate-700 hover:bg-slate-200 dark:text-slate-700 dark:text-slate-300 text-slate-700 font-medium text-sm transition-all shadow-[0_0_0_1px_rgba(255,255,255,0.05)_inset]", showHeatmap && "bg-emerald-600 text-slate-900 dark:text-white hover:bg-emerald-500 border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.3)]")}
           >
             <Thermometer size={16} />
             Heatmap
@@ -950,17 +967,17 @@ export function DigitalTwinView() {
         </div>
       </div>
       
-      {/* Right Sidebar - Analytics & Sovereign Hub */}
+      {/* Right Sidebar - Analytics & Family Registry Hub */}
       {!isFullscreen && (
-        <div className="w-80 border-l dark:border-slate-800 border-slate-200 dark:bg-[#0F172A] bg-white flex flex-col shrink-0 z-10">
-          <div className="flex border-b dark:border-slate-800 border-slate-200 shrink-0">
+        <div className="w-80 border-l dark:border-slate-200 dark:border-slate-800 border-slate-200 dark:bg-[#0F172A] bg-white flex flex-col shrink-0 z-10">
+          <div className="flex border-b dark:border-slate-200 dark:border-slate-800 border-slate-200 shrink-0">
             <button 
               onClick={() => setSidebarTab('metrics')}
               className={cn(
                 "flex-1 py-3 text-xs font-bold uppercase tracking-wider text-center border-b-2 transition-all flex items-center justify-center gap-1.5 cursor-pointer",
                 sidebarTab === 'metrics' 
-                  ? "border-indigo-500 text-indigo-400 dark:bg-slate-900 bg-slate-50" 
-                  : "border-transparent dark:text-slate-500 text-slate-400 hover:dark:text-slate-300 hover:text-slate-700"
+                  ? "border-indigo-500 text-indigo-400 dark:bg-slate-50 dark:bg-slate-900 bg-slate-50" 
+                  : "border-transparent dark:text-slate-500 dark:text-slate-500 text-slate-600 dark:text-slate-400 hover:dark:text-slate-700 dark:text-slate-300 hover:text-slate-700"
               )}
             >
               <Activity size={13} />
@@ -971,33 +988,33 @@ export function DigitalTwinView() {
               className={cn(
                 "flex-1 py-3 text-xs font-bold uppercase tracking-wider text-center border-b-2 transition-all flex items-center justify-center gap-1.5 cursor-pointer",
                 sidebarTab === 'registry' 
-                  ? "border-indigo-500 text-indigo-400 dark:bg-slate-900 bg-slate-50" 
-                  : "border-transparent dark:text-slate-500 text-slate-400 hover:dark:text-slate-300 hover:text-slate-700"
+                  ? "border-indigo-500 text-indigo-400 dark:bg-slate-50 dark:bg-slate-900 bg-slate-50" 
+                  : "border-transparent dark:text-slate-500 dark:text-slate-500 text-slate-600 dark:text-slate-400 hover:dark:text-slate-700 dark:text-slate-300 hover:text-slate-700"
               )}
             >
               <Database size={13} />
-              Sovereign Hub
+              Registry Hub
             </button>
           </div>
 
           {sidebarTab === 'metrics' ? (
             <div className="p-4 space-y-6 overflow-y-auto flex-1">
               <div className="space-y-2">
-                <div className="text-xs dark:text-slate-500 text-slate-400 font-medium uppercase tracking-wider flex items-center justify-between">
-                  <span>Hydrology Node (PT-001)</span>
+                <div className="text-xs dark:text-slate-500 dark:text-slate-500 text-slate-600 dark:text-slate-400 font-medium uppercase tracking-wider flex items-center justify-between">
+                  {/* Placeholder */}
                   {isSimulating && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />}
                 </div>
-                <div className="dark:bg-slate-900 bg-slate-100 rounded-lg p-3 border dark:border-slate-800 border-slate-200">
+                <div className="dark:bg-slate-50 dark:bg-slate-900 bg-slate-100 rounded-lg p-3 border dark:border-slate-200 dark:border-slate-800 border-slate-200">
                   <div className="text-2xl font-light font-mono text-emerald-400">
-                    {rasDischarge.toFixed(0)} <span className="text-sm dark:text-slate-500 text-slate-400">cfs</span>
+                    {rasDischarge.toFixed(0)} <span className="text-sm dark:text-slate-500 dark:text-slate-500 text-slate-600 dark:text-slate-400">cfs</span>
                   </div>
-                  <div className="text-xs dark:text-slate-400 text-slate-500 mt-1">Discharge Rate</div>
+                  <div className="text-xs dark:text-slate-600 dark:text-slate-400 text-slate-500 dark:text-slate-500 mt-1">Discharge Rate</div>
                 </div>
               </div>
 
               {/* Live USGS River Telemetry Gauges */}
               <div className="space-y-2">
-                <div className="text-xs dark:text-slate-500 text-slate-400 font-medium uppercase tracking-wider flex items-center justify-between">
+                <div className="text-xs dark:text-slate-500 dark:text-slate-500 text-slate-600 dark:text-slate-400 font-medium uppercase tracking-wider flex items-center justify-between">
                   <span>Live USGS River Gauges</span>
                   <span className={cn(
                     "text-[8px] font-mono px-1.5 py-0.5 rounded",
@@ -1009,44 +1026,44 @@ export function DigitalTwinView() {
                 
                 <div className="space-y-2">
                   {usgsGages.length === 0 ? (
-                    <div className="p-3 dark:bg-slate-900 bg-slate-100 rounded-lg text-center font-mono text-[10px] dark:text-slate-400 text-slate-500 border dark:border-slate-800 border-slate-200">
-                      <RefreshCw className="w-3.5 h-3.5 mx-auto animate-spin mb-1 text-indigo-400" />
-                      Connecting to USGS NWIS...
+                    <div className="space-y-2 py-1">
+                      <Skeleton className="h-20 w-full" />
+                      <Skeleton className="h-20 w-full" />
                     </div>
                   ) : (
                     usgsGages.map((gage) => (
-                      <div key={gage.gauge_id} className="dark:bg-slate-900 bg-slate-100 rounded-lg p-2.5 border dark:border-slate-800 border-slate-200 flex flex-col gap-1.5">
+                      <div key={gage.gauge_id} className="dark:bg-slate-50 dark:bg-slate-900 bg-slate-100 rounded-lg p-2.5 border dark:border-slate-200 dark:border-slate-800 border-slate-200 flex flex-col gap-1.5">
                         <div className="flex justify-between items-center">
-                          <span className="font-bold text-[10px] truncate max-w-[170px] dark:text-slate-200 text-slate-800 uppercase font-mono">{gage.name}</span>
-                          <span className="text-[8px] dark:text-slate-500 text-slate-400 font-mono">
+                          <span className="font-bold text-[10px] truncate max-w-[170px] dark:text-slate-800 dark:text-slate-200 text-slate-800 uppercase font-mono">{gage.name}</span>
+                          <span className="text-[8px] dark:text-slate-500 dark:text-slate-500 text-slate-600 dark:text-slate-400 font-mono">
                             {gage.gauge_id.replace("USGS-", "")}
                           </span>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
-                          <div className="p-1.5 rounded dark:bg-[#020617] bg-white border dark:border-slate-800 border-slate-200/50">
-                            <div className="text-[8px] dark:text-slate-500 text-slate-400 font-mono uppercase">Stage Height</div>
+                          <div className="p-1.5 rounded dark:bg-[#020617] bg-white border dark:border-slate-200 dark:border-slate-800 border-slate-200/50">
+                            <div className="text-[8px] dark:text-slate-500 dark:text-slate-500 text-slate-600 dark:text-slate-400 font-mono uppercase">Stage Height</div>
                             <div className="text-xs font-bold font-mono text-indigo-400">
                               {gage.water_level_stage_ft.toFixed(2)} ft
                             </div>
                           </div>
-                          <div className="p-1.5 rounded dark:bg-[#020617] bg-white border dark:border-slate-800 border-slate-200/50">
-                            <div className="text-[8px] dark:text-slate-500 text-slate-400 font-mono uppercase">Discharge</div>
+                          <div className="p-1.5 rounded dark:bg-[#020617] bg-white border dark:border-slate-200 dark:border-slate-800 border-slate-200/50">
+                            <div className="text-[8px] dark:text-slate-500 dark:text-slate-500 text-slate-600 dark:text-slate-400 font-mono uppercase">Discharge</div>
                             <div className="text-xs font-bold font-mono text-emerald-400">
                               {gage.discharge_cfs.toLocaleString()} cfs
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center justify-between gap-1 mt-0.5 pt-1.5 border-t dark:border-slate-800 border-slate-200/50">
+                        <div className="flex items-center justify-between gap-1 mt-0.5 pt-1.5 border-t dark:border-slate-200 dark:border-slate-800 border-slate-200/50">
                           {gage.seal_hash ? (
                             <span className="text-[7px] text-indigo-400/70 font-mono truncate max-w-[130px]">
                               SEAL: {gage.seal_hash.substring(0, 10)}...
                             </span>
                           ) : (
-                            <span className="text-[7px] dark:text-slate-600 text-slate-400 font-mono">Unsealed telemetry</span>
+                            <span className="text-[7px] dark:text-slate-600 text-slate-600 dark:text-slate-400 font-mono">Unsealed telemetry</span>
                           )}
                           <button
                             onClick={() => handleRasDischargeChange(gage.discharge_cfs, gage.name)}
-                            className="text-[9px] px-1.5 py-0.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-medium font-mono tracking-tight transition-colors flex items-center gap-0.5 cursor-pointer"
+                            className="text-[9px] px-1.5 py-0.5 rounded bg-indigo-600 hover:bg-indigo-500 text-slate-900 dark:text-white font-medium font-mono tracking-tight transition-colors flex items-center gap-0.5 cursor-pointer"
                           >
                             <Waves size={8} />
                             Feed Twin
@@ -1060,21 +1077,21 @@ export function DigitalTwinView() {
 
               {/* NWS Active Alerts */}
               <div className="space-y-2">
-                <div className="text-xs dark:text-slate-500 text-slate-400 font-medium uppercase tracking-wider flex items-center justify-between">
+                <div className="text-xs dark:text-slate-500 dark:text-slate-500 text-slate-600 dark:text-slate-400 font-medium uppercase tracking-wider flex items-center justify-between">
                   <span>NWS Active Alerts</span>
                 </div>
                 <div className="space-y-2">
                   {nwsAlerts.length === 0 ? (
-                    <div className="p-3 dark:bg-slate-900 bg-slate-100 rounded-lg text-center font-mono text-[10px] dark:text-slate-400 text-slate-500 border dark:border-slate-800 border-slate-200">
+                    <div className="p-3 dark:bg-slate-50 dark:bg-slate-900 bg-slate-100 rounded-lg text-center font-mono text-[10px] dark:text-slate-600 dark:text-slate-400 text-slate-500 dark:text-slate-500 border dark:border-slate-200 dark:border-slate-800 border-slate-200">
                       No active alerts.
                     </div>
                   ) : (
                     nwsAlerts.map((alert, index) => (
-                      <div key={index} className={cn("dark:bg-slate-900 bg-slate-100 rounded-lg p-2.5 border dark:border-slate-800 border-slate-200 flex flex-col gap-1.5",
+                      <div key={index} className={cn("dark:bg-slate-50 dark:bg-slate-900 bg-slate-100 rounded-lg p-2.5 border dark:border-slate-200 dark:border-slate-800 border-slate-200 flex flex-col gap-1.5",
                         alert.properties?.severity === "Severe" || alert.properties?.severity === "Extreme" ? "border-red-500/50 bg-red-500/5" : ""
                       )}>
                         <div className="flex justify-between items-center gap-2">
-                          <span className={cn("font-bold text-[10px] dark:text-slate-200 text-slate-800 uppercase font-mono",
+                          <span className={cn("font-bold text-[10px] dark:text-slate-800 dark:text-slate-200 text-slate-800 uppercase font-mono",
                              alert.properties?.severity === "Severe" || alert.properties?.severity === "Extreme" ? "text-red-400" : ""
                           )}>{alert.properties?.event || "Alert"}</span>
                           {alert.properties?.severity && (
@@ -1085,7 +1102,7 @@ export function DigitalTwinView() {
                             </span>
                           )}
                         </div>
-                        <div className="text-[10px] dark:text-slate-400 text-slate-500 line-clamp-3">
+                        <div className="text-[10px] dark:text-slate-600 dark:text-slate-400 text-slate-500 dark:text-slate-500 line-clamp-3">
                           {alert.properties?.headline || alert.properties?.description}
                         </div>
                       </div>
@@ -1095,8 +1112,8 @@ export function DigitalTwinView() {
               </div>
               
               <div className="space-y-2">
-                <div className="text-xs dark:text-slate-500 text-slate-400 font-medium uppercase tracking-wider">Geotechnical Status</div>
-                <div className="dark:bg-slate-900 bg-slate-100 rounded-lg p-3 border dark:border-slate-800 border-slate-200">
+                <div className="text-xs dark:text-slate-500 dark:text-slate-500 text-slate-600 dark:text-slate-400 font-medium uppercase tracking-wider">Geotechnical Status</div>
+                <div className="dark:bg-slate-50 dark:bg-slate-900 bg-slate-100 rounded-lg p-3 border dark:border-slate-200 dark:border-slate-800 border-slate-200">
                   <div className={cn("text-2xl font-light font-mono flex items-center justify-between", waterDepth > 2.25 ? "text-red-400" : "text-emerald-400")}>
                     <span>
                       {modflowActive 
@@ -1110,25 +1127,25 @@ export function DigitalTwinView() {
                       </span>
                     )}
                   </div>
-                  <div className="text-xs dark:text-slate-400 text-slate-500 mt-1">Factor of Safety (FoS)</div>
+                  <div className="text-xs dark:text-slate-600 dark:text-slate-400 text-slate-500 dark:text-slate-500 mt-1">Factor of Safety (FoS)</div>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <div className="text-xs dark:text-slate-500 text-slate-400 font-medium uppercase tracking-wider">Compliance Engine</div>
-                <div className="dark:bg-slate-900 bg-slate-100 rounded-lg p-3 border dark:border-slate-800 border-slate-200">
+                <div className="text-xs dark:text-slate-500 dark:text-slate-500 text-slate-600 dark:text-slate-400 font-medium uppercase tracking-wider">Compliance Engine</div>
+                <div className="dark:bg-slate-50 dark:bg-slate-900 bg-slate-100 rounded-lg p-3 border dark:border-slate-200 dark:border-slate-800 border-slate-200">
                   <div className={cn("text-sm font-bold", waterDepth > 2.25 ? "text-red-400" : "text-emerald-400")}>
                     {waterDepth > 2.25 ? "VIOLATION DETECTED" : "COMPLIANT_NO_RISE"}
                   </div>
-                  <div className="text-xs dark:text-slate-400 text-slate-500 mt-2 font-mono text-[11px] leading-snug">
+                  <div className="text-xs dark:text-slate-600 dark:text-slate-400 text-slate-500 dark:text-slate-500 mt-2 font-mono text-[11px] leading-snug">
                     {waterDepth > 2.25 ? "Depth exceeds FEMA maximum allowance (2.25m)." : "All state No-Rise limits currently satisfied."}
                   </div>
                 </div>
               </div>
               
               <div className="space-y-2">
-                <div className="text-xs dark:text-slate-500 text-slate-400 font-medium uppercase tracking-wider">Event Log</div>
-                <div className="dark:bg-slate-900 bg-slate-100 rounded-lg p-3 border dark:border-slate-800 border-slate-200 h-40 overflow-y-auto space-y-2 font-mono text-[10px]">
+                <div className="text-xs dark:text-slate-500 dark:text-slate-500 text-slate-600 dark:text-slate-400 font-medium uppercase tracking-wider">Event Log</div>
+                <div className="dark:bg-slate-50 dark:bg-slate-900 bg-slate-100 rounded-lg p-3 border dark:border-slate-200 dark:border-slate-800 border-slate-200 h-40 overflow-y-auto space-y-2 font-mono text-[10px]">
                   <div className="text-emerald-400">[{new Date().toISOString().split('T')[1].slice(0, 8)}] Engine initialized.</div>
                   {platOverlayActive && (
                     <div className="text-yellow-400">[{new Date().toISOString().split('T')[1].slice(0, 8)}] MAP_SERVICE: Acres Plat grid overlay mapped.</div>
@@ -1147,50 +1164,50 @@ export function DigitalTwinView() {
               
               {/* Land Record GIS Portals */}
               <div className="space-y-3">
-                <div className="text-[10px] dark:text-slate-500 text-slate-400 font-bold uppercase tracking-widest border-b dark:border-slate-800 border-slate-200 pb-1.5 flex items-center gap-1">
+                <div className="text-[10px] dark:text-slate-500 dark:text-slate-500 text-slate-600 dark:text-slate-400 font-bold uppercase tracking-widest border-b dark:border-slate-200 dark:border-slate-800 border-slate-200 pb-1.5 flex items-center gap-1">
                   <Globe size={12} className="text-indigo-400" />
-                  Sovereign GIS & Tax Registry
+                  Tri-State GIS & Tax Registry
                 </div>
                 
                 {/* WTHGIS Portal */}
-                <div className="dark:bg-slate-900 bg-slate-100 rounded-lg p-2.5 border dark:border-slate-800 border-slate-200 space-y-2">
+                <div className="dark:bg-slate-50 dark:bg-slate-900 bg-slate-100 rounded-lg p-2.5 border dark:border-slate-200 dark:border-slate-800 border-slate-200 space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="font-bold dark:text-slate-300 text-slate-700">Posey County WTHGIS</span>
-                    <a href="https://poseyin.wthgis.com/" target="_blank" rel="noopener noreferrer" className="p-1 text-indigo-400 hover:text-indigo-300 hover:bg-slate-800 rounded transition-colors" title="Open County GIS Map">
+                    <span className="font-bold dark:text-slate-700 dark:text-slate-300 text-slate-700">Posey County WTHGIS</span>
+                    <a href="https://poseyin.wthgis.com/" target="_blank" rel="noopener noreferrer" className="p-1 text-indigo-400 hover:text-indigo-300 hover:bg-slate-200 dark:bg-slate-800 rounded transition-colors" title="Open County GIS Map">
                       <Link size={14} />
                     </a>
                   </div>
-                  <p className="text-[11px] dark:text-slate-400 text-slate-500 leading-snug">
+                  <p className="text-[11px] dark:text-slate-600 dark:text-slate-400 text-slate-500 dark:text-slate-500 leading-snug">
                     Indiana Map Service provider for land parcel spatial datasets and public layers.
                   </p>
                 </div>
 
                 {/* XSoft Tax Portal */}
-                <div className="dark:bg-slate-900 bg-slate-100 rounded-lg p-2.5 border dark:border-slate-800 border-slate-200 space-y-2">
+                <div className="dark:bg-slate-50 dark:bg-slate-900 bg-slate-100 rounded-lg p-2.5 border dark:border-slate-200 dark:border-slate-800 border-slate-200 space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="font-bold dark:text-slate-300 text-slate-700">XSoft Property taxes</span>
-                    <a href="https://engage.xsoftinc.com/posey" target="_blank" rel="noopener noreferrer" className="p-1 text-indigo-400 hover:text-indigo-300 hover:bg-slate-800 rounded transition-colors" title="Open Tax Inquiry">
+                    <span className="font-bold dark:text-slate-700 dark:text-slate-300 text-slate-700">XSoft Property taxes</span>
+                    <a href="https://engage.xsoftinc.com/posey" target="_blank" rel="noopener noreferrer" className="p-1 text-indigo-400 hover:text-indigo-300 hover:bg-slate-200 dark:bg-slate-800 rounded transition-colors" title="Open Tax Inquiry">
                       <Link size={14} />
                     </a>
                   </div>
-                  <p className="text-[11px] dark:text-slate-400 text-slate-500 leading-snug">
+                  <p className="text-[11px] dark:text-slate-600 dark:text-slate-400 text-slate-500 dark:text-slate-500 leading-snug">
                     Real-time county assessor values, appraisals, and legal boundaries.
                   </p>
                   
                   {/* Interactive Appraisal Puller */}
-                  <div className="pt-1.5 border-t dark:border-slate-800/60 border-slate-200/50 space-y-2">
+                  <div className="pt-1.5 border-t dark:border-slate-200 dark:border-slate-800/60 border-slate-200/50 space-y-2">
                     <button
                       onClick={handleXSoftSync}
                       disabled={isSyncingXSoft}
-                      className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition-all shadow-[0_1px_3px_rgba(0,0,0,0.1)] disabled:opacity-50 cursor-pointer"
+                      className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-slate-900 dark:text-white font-semibold transition-all shadow-[0_1px_3px_rgba(0,0,0,0.1)] disabled:opacity-50 cursor-pointer"
                     >
                       <RefreshCw size={12} className={cn(isSyncingXSoft && "animate-spin")} />
                       {isSyncingXSoft ? "Syncing Assessors..." : "Sync Valuation Records"}
                     </button>
                     {xsoftRecord && (
                       <div className="p-2 rounded bg-indigo-950/20 border border-indigo-500/20 font-mono text-[11px] space-y-1">
-                        <div className="flex justify-between"><span className="text-indigo-400/70">Parcel Tax ID:</span><span className="text-slate-300 font-bold">{xsoftRecord.taxId}</span></div>
-                        <div className="flex justify-between"><span className="text-indigo-400/70">Legal Owner:</span><span className="text-slate-300 font-bold text-right truncate max-w-[120px]">{xsoftRecord.owner}</span></div>
+                        <div className="flex justify-between"><span className="text-indigo-400/70">Parcel Tax ID:</span><span className="text-slate-700 dark:text-slate-300 font-bold">{xsoftRecord.taxId}</span></div>
+                        <div className="flex justify-between"><span className="text-indigo-400/70">Legal Owner:</span><span className="text-slate-700 dark:text-slate-300 font-bold text-right truncate max-w-[120px]">{xsoftRecord.owner}</span></div>
                         <div className="flex justify-between"><span className="text-indigo-400/70">Appraisal:</span><span className="text-emerald-400 font-bold">{xsoftRecord.appraisedValue}</span></div>
                       </div>
                     )}
@@ -1198,26 +1215,26 @@ export function DigitalTwinView() {
                 </div>
 
                 {/* Acres Plat Map */}
-                <div className="dark:bg-slate-900 bg-slate-100 rounded-lg p-2.5 border dark:border-slate-800 border-slate-200 space-y-2">
+                <div className="dark:bg-slate-50 dark:bg-slate-900 bg-slate-100 rounded-lg p-2.5 border dark:border-slate-200 dark:border-slate-800 border-slate-200 space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="font-bold dark:text-slate-300 text-slate-700">Acres Plat Map Portal</span>
-                    <a href="https://www.acres.com/plat-map/map/in/posey-county-in" target="_blank" rel="noopener noreferrer" className="p-1 text-indigo-400 hover:text-indigo-300 hover:bg-slate-800 rounded transition-colors" title="Open Acres Plat map">
+                    <span className="font-bold dark:text-slate-700 dark:text-slate-300 text-slate-700">Acres Plat Map Portal</span>
+                    <a href="https://www.acres.com/plat-map/map/in/posey-county-in" target="_blank" rel="noopener noreferrer" className="p-1 text-indigo-400 hover:text-indigo-300 hover:bg-slate-200 dark:bg-slate-800 rounded transition-colors" title="Open Acres Plat map">
                       <Link size={14} />
                     </a>
                   </div>
-                  <p className="text-[11px] dark:text-slate-400 text-slate-500 leading-snug">
+                  <p className="text-[11px] dark:text-slate-600 dark:text-slate-400 text-slate-500 dark:text-slate-500 leading-snug">
                     Public plat boundary survey matching Point township water boundaries.
                   </p>
                   
                   {/* Interactive Plat Outline projection */}
-                  <div className="pt-1.5 border-t dark:border-slate-800/60 border-slate-200/50">
+                  <div className="pt-1.5 border-t dark:border-slate-200 dark:border-slate-800/60 border-slate-200/50">
                     <button
                       onClick={() => setPlatOverlayActive(!platOverlayActive)}
                       className={cn(
                         "w-full flex items-center justify-center gap-1.5 py-1.5 rounded border transition-all text-[11px] font-semibold cursor-pointer",
                         platOverlayActive
                           ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/40 shadow-[0_0_8px_rgba(234,179,8,0.2)]"
-                          : "dark:bg-slate-800 bg-white dark:text-slate-300 text-slate-700 dark:border-slate-700 border-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                          : "dark:bg-slate-200 dark:bg-slate-800 bg-white dark:text-slate-700 dark:text-slate-300 text-slate-700 dark:border-slate-300 dark:border-slate-700 border-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
                       )}
                     >
                       <Layers size={12} />
@@ -1229,27 +1246,27 @@ export function DigitalTwinView() {
 
               {/* Computational Hydrology Stack */}
               <div className="space-y-3">
-                <div className="text-[10px] dark:text-slate-500 text-slate-400 font-bold uppercase tracking-widest border-b dark:border-slate-800 border-slate-200 pb-1.5 flex items-center gap-1">
+                <div className="text-[10px] dark:text-slate-500 dark:text-slate-500 text-slate-600 dark:text-slate-400 font-bold uppercase tracking-widest border-b dark:border-slate-200 dark:border-slate-800 border-slate-200 pb-1.5 flex items-center gap-1">
                   <Cpu size={12} className="text-emerald-400" />
                   Engineering Solvers
                 </div>
 
                 {/* HEC-RAS Commander */}
-                <div className="dark:bg-slate-900 bg-slate-100 rounded-lg p-2.5 border dark:border-slate-800 border-slate-200 space-y-2">
+                <div className="dark:bg-slate-50 dark:bg-slate-900 bg-slate-100 rounded-lg p-2.5 border dark:border-slate-200 dark:border-slate-800 border-slate-200 space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="font-bold dark:text-slate-300 text-slate-700">HEC-RAS (ras-commander)</span>
-                    <a href="https://github.com/ATphobia22/ras-commander" target="_blank" rel="noopener noreferrer" className="p-1 text-indigo-400 hover:text-indigo-300 hover:bg-slate-800 rounded transition-colors">
+                    <span className="font-bold dark:text-slate-700 dark:text-slate-300 text-slate-700">HEC-RAS (ras-commander)</span>
+                    <a href="https://github.com/ATphobia22/ras-commander" target="_blank" rel="noopener noreferrer" className="p-1 text-indigo-400 hover:text-indigo-300 hover:bg-slate-200 dark:bg-slate-800 rounded transition-colors">
                       <Link size={14} />
                     </a>
                   </div>
-                  <p className="text-[11px] dark:text-slate-400 text-slate-500 leading-snug">
+                  <p className="text-[11px] dark:text-slate-600 dark:text-slate-400 text-slate-500 dark:text-slate-500 leading-snug">
                     Controls unsteady flow simulations on the Wabash-Ohio confluence models.
                   </p>
                   
                   {/* Slider to interact with discharge rate */}
-                  <div className="pt-2 border-t dark:border-slate-800/60 border-slate-200/50 space-y-1">
+                  <div className="pt-2 border-t dark:border-slate-200 dark:border-slate-800/60 border-slate-200/50 space-y-1">
                     <div className="flex justify-between text-[11px] font-mono">
-                      <span className="dark:text-slate-400 text-slate-500">HEC-RAS Inflow Q:</span>
+                      <span className="dark:text-slate-600 dark:text-slate-400 text-slate-500 dark:text-slate-500">HEC-RAS Inflow Q:</span>
                       <span className="text-emerald-400 font-bold">{rasDischarge.toFixed(0)} cfs</span>
                     </div>
                     <input
@@ -1265,25 +1282,25 @@ export function DigitalTwinView() {
                 </div>
 
                 {/* FloPy Seepage */}
-                <div className="dark:bg-slate-900 bg-slate-100 rounded-lg p-2.5 border dark:border-slate-800 border-slate-200 space-y-2">
+                <div className="dark:bg-slate-50 dark:bg-slate-900 bg-slate-100 rounded-lg p-2.5 border dark:border-slate-200 dark:border-slate-800 border-slate-200 space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="font-bold dark:text-slate-300 text-slate-700">FloPy / Groundwater (MODFLOW)</span>
-                    <a href="https://github.com/ATphobia22/flopy" target="_blank" rel="noopener noreferrer" className="p-1 text-indigo-400 hover:text-indigo-300 hover:bg-slate-800 rounded transition-colors">
+                    <span className="font-bold dark:text-slate-700 dark:text-slate-300 text-slate-700">FloPy / Groundwater (MODFLOW)</span>
+                    <a href="https://github.com/ATphobia22/flopy" target="_blank" rel="noopener noreferrer" className="p-1 text-indigo-400 hover:text-indigo-300 hover:bg-slate-200 dark:bg-slate-800 rounded transition-colors">
                       <Link size={14} />
                     </a>
                   </div>
-                  <p className="text-[11px] dark:text-slate-400 text-slate-500 leading-snug">
+                  <p className="text-[11px] dark:text-slate-600 dark:text-slate-400 text-slate-500 dark:text-slate-500 leading-snug">
                     USGS aquifer model assessing water table seepage across earth embankments.
                   </p>
                   
-                  <div className="pt-1.5 border-t dark:border-slate-800/60 border-slate-200/50">
+                  <div className="pt-1.5 border-t dark:border-slate-200 dark:border-slate-800/60 border-slate-200/50">
                     <button
                       onClick={() => setModflowActive(!modflowActive)}
                       className={cn(
                         "w-full flex items-center justify-center gap-1.5 py-1.5 rounded border transition-all text-[11px] font-semibold cursor-pointer",
                         modflowActive
                           ? "bg-indigo-500/20 text-indigo-400 border-indigo-500/40 shadow-[0_0_8px_rgba(99,102,241,0.2)]"
-                          : "dark:bg-slate-800 bg-white dark:text-slate-300 text-slate-700 dark:border-slate-700 border-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                          : "dark:bg-slate-200 dark:bg-slate-800 bg-white dark:text-slate-700 dark:text-slate-300 text-slate-700 dark:border-slate-300 dark:border-slate-700 border-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
                       )}
                     >
                       <Sliders size={12} />
@@ -1293,19 +1310,19 @@ export function DigitalTwinView() {
                 </div>
 
                 {/* RMC BestFit Bayesian */}
-                <div className="dark:bg-slate-900 bg-slate-100 rounded-lg p-2.5 border dark:border-slate-800 border-slate-200 space-y-2">
+                <div className="dark:bg-slate-50 dark:bg-slate-900 bg-slate-100 rounded-lg p-2.5 border dark:border-slate-200 dark:border-slate-800 border-slate-200 space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="font-bold dark:text-slate-300 text-slate-700">RMC-BestFit Bayesian Curves</span>
-                    <a href="https://github.com/ATphobia22/RMC-BestFit" target="_blank" rel="noopener noreferrer" className="p-1 text-indigo-400 hover:text-indigo-300 hover:bg-slate-800 rounded transition-colors">
+                    <span className="font-bold dark:text-slate-700 dark:text-slate-300 text-slate-700">RMC-BestFit Bayesian Curves</span>
+                    <a href="https://github.com/ATphobia22/RMC-BestFit" target="_blank" rel="noopener noreferrer" className="p-1 text-indigo-400 hover:text-indigo-300 hover:bg-slate-200 dark:bg-slate-800 rounded transition-colors">
                       <Link size={14} />
                     </a>
                   </div>
-                  <p className="text-[11px] dark:text-slate-400 text-slate-500 leading-snug mb-2">
+                  <p className="text-[11px] dark:text-slate-600 dark:text-slate-400 text-slate-500 dark:text-slate-500 leading-snug mb-2">
                     Bayesian flood hazard frequency models for risk evaluation of the Point Township confluence.
                   </p>
                   
                   {/* Recharts Bayesian Hazard Frequency Curve */}
-                  <div className="h-28 w-full dark:bg-[#020617] bg-slate-50 rounded border dark:border-slate-800 border-slate-200 p-1">
+                  <div className="h-28 w-full dark:bg-[#020617] bg-slate-50 rounded border dark:border-slate-200 dark:border-slate-800 border-slate-200 p-1">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={bayesianCurveData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="2 2" stroke="#1e293b" />
@@ -1318,36 +1335,36 @@ export function DigitalTwinView() {
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
-                  <div className="text-[8px] dark:text-slate-500 text-slate-400 text-center font-mono leading-none">
+                  <div className="text-[8px] dark:text-slate-500 dark:text-slate-500 text-slate-600 dark:text-slate-400 text-center font-mono leading-none">
                     Bayesian Peak flow (cfs) vs. Return Period Interval (Years)
                   </div>
                 </div>
 
                 {/* Matterport Lidar Walker */}
-                <div className="dark:bg-slate-900 bg-slate-100 rounded-lg p-2.5 border dark:border-slate-800 border-slate-200 space-y-2">
+                <div className="dark:bg-slate-50 dark:bg-slate-900 bg-slate-100 rounded-lg p-2.5 border dark:border-slate-200 dark:border-slate-800 border-slate-200 space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="font-bold dark:text-slate-300 text-slate-700">Matterport Scan walkthrough</span>
+                    <span className="font-bold dark:text-slate-700 dark:text-slate-300 text-slate-700">Matterport Scan walkthrough</span>
                     <div className="flex gap-1">
-                      <a href="https://github.com/ATphobia22/Matterport" target="_blank" rel="noopener noreferrer" className="p-1 text-indigo-400 hover:text-indigo-300 hover:bg-slate-800 rounded transition-colors" title="Repo 1">
+                      <a href="https://github.com/ATphobia22/Matterport" target="_blank" rel="noopener noreferrer" className="p-1 text-indigo-400 hover:text-indigo-300 hover:bg-slate-200 dark:bg-slate-800 rounded transition-colors" title="Repo 1">
                         <Link size={12} />
                       </a>
-                      <a href="https://github.com/ATphobia22/Matterport3DSimulator" target="_blank" rel="noopener noreferrer" className="p-1 text-indigo-400 hover:text-indigo-300 hover:bg-slate-800 rounded transition-colors" title="Repo 2">
+                      <a href="https://github.com/ATphobia22/Matterport3DSimulator" target="_blank" rel="noopener noreferrer" className="p-1 text-indigo-400 hover:text-indigo-300 hover:bg-slate-200 dark:bg-slate-800 rounded transition-colors" title="Repo 2">
                         <Link size={12} />
                       </a>
                     </div>
                   </div>
-                  <p className="text-[11px] dark:text-slate-400 text-slate-500 leading-snug">
+                  <p className="text-[11px] dark:text-slate-600 dark:text-slate-400 text-slate-500 dark:text-slate-500 leading-snug">
                     3D point cloud walk-throughs of protected historic properties.
                   </p>
                   
-                  <div className="pt-1.5 border-t dark:border-slate-800/60 border-slate-200/50">
+                  <div className="pt-1.5 border-t dark:border-slate-200 dark:border-slate-800/60 border-slate-200/50">
                     <button
                       onClick={() => setSelectedMatterport(selectedMatterport ? null : (selectedParcel ? selectedParcel.tractName : "Wabash River Base"))}
                       className={cn(
                         "w-full flex items-center justify-center gap-1.5 py-1.5 rounded border transition-all text-[11px] font-semibold cursor-pointer",
                         selectedMatterport
                           ? "bg-purple-500/20 text-purple-400 border-purple-500/40 shadow-[0_0_8px_rgba(168,85,247,0.2)]"
-                          : "dark:bg-slate-800 bg-white dark:text-slate-300 text-slate-700 dark:border-slate-700 border-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                          : "dark:bg-slate-200 dark:bg-slate-800 bg-white dark:text-slate-700 dark:text-slate-300 text-slate-700 dark:border-slate-300 dark:border-slate-700 border-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
                       )}
                     >
                       <Eye size={12} />
@@ -1357,43 +1374,43 @@ export function DigitalTwinView() {
                 </div>
 
                 {/* Additional repositories links */}
-                <div className="dark:bg-[#020617]/40 bg-slate-50 border dark:border-slate-800/50 border-slate-200 rounded p-2.5 space-y-2">
-                  <div className="text-[9px] dark:text-slate-500 text-slate-400 uppercase tracking-wider font-bold">Hydrological & AI Software Integrations</div>
+                <div className="dark:bg-[#020617]/40 bg-slate-50 border dark:border-slate-200 dark:border-slate-800/50 border-slate-200 rounded p-2.5 space-y-2">
+                  <div className="text-[9px] dark:text-slate-500 dark:text-slate-500 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">Hydrological & AI Software Integrations</div>
                   <div className="grid grid-cols-2 gap-1.5 text-[10px]">
-                    <a href="https://github.com/ATphobia22/mcp-openfema" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors">
+                    <a href="https://github.com/ATphobia22/mcp-openfema" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-200 dark:bg-slate-800/50 rounded text-slate-600 dark:text-slate-400 hover:text-indigo-300 transition-colors">
                       <Database size={10} /> mcp-openfema
                     </a>
-                    <a href="https://github.com/ATphobia22/h2oai-flood-intelligence-agent" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors">
+                    <a href="https://github.com/ATphobia22/h2oai-flood-intelligence-agent" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-200 dark:bg-slate-800/50 rounded text-slate-600 dark:text-slate-400 hover:text-indigo-300 transition-colors">
                       <Cpu size={10} /> flood-intelligence
                     </a>
-                    <a href="https://github.com/ATphobia22/ras-commander" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors">
+                    <a href="https://github.com/ATphobia22/ras-commander" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-200 dark:bg-slate-800/50 rounded text-slate-600 dark:text-slate-400 hover:text-indigo-300 transition-colors">
                       <Sliders size={10} /> ras-commander
                     </a>
-                    <a href="https://github.com/ATphobia22/ras2fim" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors">
+                    <a href="https://github.com/ATphobia22/ras2fim" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-200 dark:bg-slate-800/50 rounded text-slate-600 dark:text-slate-400 hover:text-indigo-300 transition-colors">
                       <Layers size={10} /> ras2fim
                     </a>
-                    <a href="https://github.com/ATphobia22/mcat-ras" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors">
+                    <a href="https://github.com/ATphobia22/mcat-ras" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-200 dark:bg-slate-800/50 rounded text-slate-600 dark:text-slate-400 hover:text-indigo-300 transition-colors">
                       <Activity size={10} /> mcat-ras
                     </a>
-                    <a href="https://github.com/ATphobia22/modflow-setup" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors">
+                    <a href="https://github.com/ATphobia22/modflow-setup" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-200 dark:bg-slate-800/50 rounded text-slate-600 dark:text-slate-400 hover:text-indigo-300 transition-colors">
                       <Database size={10} /> modflow-setup
                     </a>
-                    <a href="https://github.com/ATphobia22/rgis" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors">
+                    <a href="https://github.com/ATphobia22/rgis" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-200 dark:bg-slate-800/50 rounded text-slate-600 dark:text-slate-400 hover:text-indigo-300 transition-colors">
                       <Globe size={10} /> RiverGIS (rgis)
                     </a>
-                    <a href="https://github.com/ATphobia22/cwms-database" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors">
+                    <a href="https://github.com/ATphobia22/cwms-database" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-200 dark:bg-slate-800/50 rounded text-slate-600 dark:text-slate-400 hover:text-indigo-300 transition-colors">
                       <Database size={10} /> cwms-database
                     </a>
-                    <a href="https://github.com/ATphobia22/cwms-cli" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors">
+                    <a href="https://github.com/ATphobia22/cwms-cli" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-200 dark:bg-slate-800/50 rounded text-slate-600 dark:text-slate-400 hover:text-indigo-300 transition-colors">
                       <Settings size={10} /> cwms-cli
                     </a>
-                    <a href="https://github.com/ATphobia22/FAULT" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors">
+                    <a href="https://github.com/ATphobia22/FAULT" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-200 dark:bg-slate-800/50 rounded text-slate-600 dark:text-slate-400 hover:text-indigo-300 transition-colors">
                       <Globe size={10} /> FAULT (Landsat)
                     </a>
-                    <a href="https://github.com/ATphobia22/nfie-floodmap" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors col-span-2">
+                    <a href="https://github.com/ATphobia22/nfie-floodmap" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-200 dark:bg-slate-800/50 rounded text-slate-600 dark:text-slate-400 hover:text-indigo-300 transition-colors col-span-2">
                       <Layers size={10} /> nfie-floodmap
                     </a>
-                    <a href="https://github.com/ATphobia22/federal-emergency-management-agency" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors col-span-2">
+                    <a href="https://github.com/ATphobia22/federal-emergency-management-agency" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-200 dark:bg-slate-800/50 rounded text-slate-600 dark:text-slate-400 hover:text-indigo-300 transition-colors col-span-2">
                       <AlertTriangle size={10} /> FEMA regulatory-sync
                     </a>
                   </div>
@@ -1410,23 +1427,23 @@ export function DigitalTwinView() {
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-6 animate-in fade-in duration-200">
           <div className="dark:bg-[#0F172A] bg-white border border-indigo-500/30 rounded-xl w-full max-w-3xl flex flex-col max-h-full shadow-2xl">
             
-            <div className="flex items-center justify-between p-4 border-b dark:border-slate-800 border-slate-200 dark:bg-slate-900 bg-slate-100/50 rounded-t-xl">
+            <div className="flex items-center justify-between p-4 border-b dark:border-slate-200 dark:border-slate-800 border-slate-200 dark:bg-slate-50 dark:bg-slate-900 bg-slate-100/50 rounded-t-xl">
               <div>
                 <h3 className="font-bold text-lg dark:text-slate-100 text-slate-900 flex items-center gap-2">
                   <FileText className="text-indigo-400" size={20} />
                   DLT Infrastructure Asset Verification Pack
                 </h3>
-                <p className="text-xs dark:text-slate-400 text-slate-500 font-mono mt-1">Target Zone: {selectedParcel.tractName} | ID: {selectedParcel.id}</p>
+                <p className="text-xs dark:text-slate-600 dark:text-slate-400 text-slate-500 dark:text-slate-500 font-mono mt-1">Target Zone: {selectedParcel.tractName} | ID: {selectedParcel.id}</p>
               </div>
               <button 
                 onClick={() => setShowDossier(false)}
-                className="p-2 rounded hover:dark:bg-slate-800 bg-white dark:text-slate-400 text-slate-500 hover:text-white transition-colors"
+                className="p-2 rounded hover:dark:bg-slate-200 dark:bg-slate-800 bg-white dark:text-slate-600 dark:text-slate-400 text-slate-500 dark:text-slate-500 hover:text-slate-900 dark:text-white transition-colors"
               >
                 <X size={20} />
               </button>
             </div>
             
-            <div className="p-6 overflow-y-auto flex-1 font-mono text-sm leading-relaxed dark:text-slate-300 text-slate-700 space-y-6">
+            <div className="p-6 overflow-y-auto flex-1 font-mono text-sm leading-relaxed dark:text-slate-700 dark:text-slate-300 text-slate-700 space-y-6">
               
               <div>
                 <h4 className="text-indigo-400 font-bold mb-2 uppercase tracking-widest text-xs border-b border-indigo-900/50 pb-2">Executive Framework Summary</h4>
@@ -1437,20 +1454,20 @@ export function DigitalTwinView() {
 
               <div>
                 <h4 className="text-indigo-400 font-bold mb-2 uppercase tracking-widest text-xs border-b border-indigo-900/50 pb-2">Financial Apportionment Matrix</h4>
-                <div className="dark:bg-[#020617] bg-slate-50 border dark:border-slate-800 border-slate-200 rounded p-4">
-                  <div className="flex justify-between border-b dark:border-slate-800 border-slate-200 pb-2 mb-2 font-bold dark:text-slate-200 text-slate-800">
+                <div className="dark:bg-[#020617] bg-slate-50 border dark:border-slate-200 dark:border-slate-800 border-slate-200 rounded p-4">
+                  <div className="flex justify-between border-b dark:border-slate-200 dark:border-slate-800 border-slate-200 pb-2 mb-2 font-bold dark:text-slate-800 dark:text-slate-200 text-slate-800">
                     <span>Parameter Key</span>
                     <span>Calculated Metric Value</span>
                   </div>
                   <div className="flex justify-between py-1">
-                    <span className="dark:text-slate-400 text-slate-500">Federal Contribution Percentage</span>
+                    <span className="dark:text-slate-600 dark:text-slate-400 text-slate-500 dark:text-slate-500">Federal Contribution Percentage</span>
                     <span>75.0%</span>
                   </div>
                   <div className="flex justify-between py-1">
-                    <span className="dark:text-slate-400 text-slate-500">Local Matching Responsibility</span>
+                    <span className="dark:text-slate-600 dark:text-slate-400 text-slate-500 dark:text-slate-500">Local Matching Responsibility</span>
                     <span>25.0%</span>
                   </div>
-                  <div className="flex justify-between py-1 font-bold text-emerald-400 mt-2 pt-2 border-t dark:border-slate-800 border-slate-200/50">
+                  <div className="flex justify-between py-1 font-bold text-emerald-400 mt-2 pt-2 border-t dark:border-slate-200 dark:border-slate-800 border-slate-200/50">
                     <span>Evaluated Benefit-Cost Ratio (BCR)</span>
                     <span>BCR = 2.45</span>
                   </div>
@@ -1477,14 +1494,14 @@ export function DigitalTwinView() {
                 </ul>
               </div>
 
-              <div className="mt-8 pt-6 border-t dark:border-slate-800 border-slate-200">
+              <div className="mt-8 pt-6 border-t dark:border-slate-200 dark:border-slate-800 border-slate-200">
                 <h4 className="dark:text-slate-100 text-slate-900 font-bold mb-1">Civil Engineering Certification Sign-Off</h4>
-                <p className="text-xs dark:text-slate-400 text-slate-500 mb-6">
+                <p className="text-xs dark:text-slate-600 dark:text-slate-400 text-slate-500 dark:text-slate-500 mb-6">
                   The undersigned processing system certifies that the simulated structural upgrade yields a net-zero displacement profile across the adjacent cross-border properties.
                 </p>
                 <div className="w-64 border-b border-slate-600 mb-2"></div>
-                <p className="text-xs font-bold dark:text-slate-300 text-slate-700">Lead Automated Systems Engineer</p>
-                <p className="text-[10px] dark:text-slate-500 text-slate-400">DLT Multi-Physics Twin Platform Workspace</p>
+                <p className="text-xs font-bold dark:text-slate-700 dark:text-slate-300 text-slate-700">Lead Automated Systems Engineer</p>
+                <p className="text-[10px] dark:text-slate-500 dark:text-slate-500 text-slate-600 dark:text-slate-400">DLT Multi-Physics Twin Platform Workspace</p>
               </div>
 
             </div>

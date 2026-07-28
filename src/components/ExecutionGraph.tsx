@@ -24,7 +24,9 @@ const defaultNodes: Node[] = [
   { id: 'n4', type: 'solver', position: { x: 100, y: 310 }, data: { label: 'Sediment Scour', sublabel: 'Bed Shear & Scour', icon: 'scour', status: 'pending' } },
   { id: 'n5', type: 'solver', position: { x: 500, y: 310 }, data: { label: 'Bishop Stability', sublabel: 'Factor of Safety', icon: 'bishop', status: 'pending' } },
   { id: 'n6', type: 'solver', position: { x: 300, y: 440 }, data: { label: 'EnKF Assimilation', sublabel: 'State Update', icon: 'enkf', status: 'pending' } },
-  { id: 'n7', type: 'solver', position: { x: 300, y: 570 }, data: { label: 'Evidence Manifest', sublabel: 'Governance', icon: 'evidence', status: 'pending' } },
+  { id: 'n_tucker', type: 'solver', position: { x: 300, y: 570 }, data: { label: 'Tucker Cognitive OS', sublabel: 'Risk & Governance', icon: 'tucker', status: 'pending' } },
+  { id: 'n_webgpu', type: 'solver', position: { x: 100, y: 570 }, data: { label: 'WebGPU Render', sublabel: '3D Extrusion', icon: 'webgpu', status: 'pending' } },
+  { id: 'n7', type: 'solver', position: { x: 500, y: 570 }, data: { label: 'Evidence Manifest', sublabel: 'Data Fabric', icon: 'evidence', status: 'pending' } },
 ];
 
 const defaultEdges: Edge[] = [
@@ -36,7 +38,9 @@ const defaultEdges: Edge[] = [
   { id: 'e2-6', source: 'n2', target: 'n6' },
   { id: 'e3-6', source: 'n3', target: 'n6' },
   { id: 'e5-6', source: 'n5', target: 'n6' },
-  { id: 'e6-7', source: 'n6', target: 'n7' },
+  { id: 'e6-tucker', source: 'n6', target: 'n_tucker' },
+  { id: 'etucker-webgpu', source: 'n_tucker', target: 'n_webgpu' },
+  { id: 'etucker-7', source: 'n_tucker', target: 'n7' },
 ];
 
 const scenario = [
@@ -46,18 +50,18 @@ const scenario = [
   { time: 6000, updates: { n2: 'success', n4: 'running' } }, // HEC-RAS finishes, scour starts
   { time: 8000, updates: { n4: 'success', n5: 'running' } }, // Scour finishes, bishop starts
   { time: 10000, updates: { n5: 'success', n6: 'running' } }, // Bishop finishes, EnKF starts
-  { time: 12000, updates: { n6: 'success', n7: 'running' } },
-  { time: 13500, updates: { n7: 'success' } },
+  { time: 12000, updates: { n6: 'success', n_tucker: 'running' } },
+  { time: 14000, updates: { n_tucker: 'success', n_webgpu: 'running', n7: 'running' } },
+  { time: 15500, updates: { n_webgpu: 'success', n7: 'success' } },
 ];
 
 export function ExecutionGraph() {
   const [nodes, setNodes, onNodesChange] = useNodesState(defaultNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [isPlaying, setIsPlaying] = useState(false);
 
   // Derive edges dynamically based on node status
-  useMemo(() => {
-    const updatedEdges = defaultEdges.map((edge) => {
+  const edges = useMemo(() => {
+    return defaultEdges.map((edge) => {
       const sourceNode = nodes.find((n) => n.id === edge.source);
       const isSourceSuccess = sourceNode?.data.status === 'success';
       const isSourceRunning = sourceNode?.data.status === 'running';
@@ -76,8 +80,7 @@ export function ExecutionGraph() {
         },
       };
     });
-    setEdges(updatedEdges);
-  }, [nodes, setEdges]);
+  }, [nodes]);
 
   const startSimulation = () => {
     setIsPlaying(true);
@@ -110,7 +113,7 @@ export function ExecutionGraph() {
   };
 
   return (
-    <div className="w-full h-full relative dark:bg-[#020617] bg-slate-50">
+    <div className="w-full h-full relative dark:bg-[#020617] bg-slate-50 flex flex-col" style={{ width: '100%', height: '100%', minHeight: '550px' }}>
       <div className="absolute top-6 left-6 z-10 flex flex-col gap-2">
         <h2 className="text-xl font-bold dark:text-slate-100 text-slate-900 tracking-tight">PTDT v32 Execution Graph</h2>
         <p className="text-sm dark:text-slate-400 text-slate-500 font-mono">Prefect / Temporal Orchestration</p>
@@ -135,19 +138,23 @@ export function ExecutionGraph() {
         </button>
       </div>
 
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        fitView
-        fitViewOptions={{ padding: 0.2 }}
-        className="dark:bg-[#020617] bg-slate-50"
-      >
-        <Background color="#1e293b" gap={24} size={2} />
-        <Controls className="dark:!bg-slate-900 bg-slate-100 dark:!border-slate-800 border-slate-200 !fill-slate-400" />
-      </ReactFlow>
+      <div className="absolute inset-0 pt-28 pb-4 px-4 flex flex-col">
+        <div className="flex-1 w-full relative border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          onNodesChange={onNodesChange}
+          fitView
+          fitViewOptions={{ padding: 0.2 }}
+          className="dark:bg-[#020617] bg-slate-50"
+          style={{ width: '100%', height: '100%' }}
+        >
+          <Background color="#1e293b" gap={24} size={2} />
+          <Controls className="dark:!bg-slate-900 bg-slate-100 dark:!border-slate-800 border-slate-200 !fill-slate-400" />
+        </ReactFlow>
+        </div>
+      </div>
     </div>
   );
 }

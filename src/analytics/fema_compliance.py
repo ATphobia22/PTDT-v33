@@ -74,5 +74,5 @@ class FEMAHazusComplianceEngine:
             "status": status,
             "total_runs": total_runs,
             "actionable_breaches": breaches,
-            "safety_rating_tier": "TIER_1_SOVEREIGN" if mean_score >= 90.0 else "TIER_2_STABILIZED"
+            "safety_rating_tier": "TIER_1_TRI_STATE" if mean_score >= 90.0 else "TIER_2_STABILIZED"
         }

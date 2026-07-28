@@ -1,5 +1,5 @@
 import { Handle, Position } from '@xyflow/react';
-import { CheckCircle2, CircleDashed, Loader2, XCircle, Activity, Database, FileText, Droplets, Mountain, Waves, Zap } from 'lucide-react';
+import { CheckCircle2, CircleDashed, Loader2, XCircle, Activity, Database, FileText, Droplets, Mountain, Waves, Zap, Brain, Monitor } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 const iconMap = {
@@ -10,6 +10,8 @@ const iconMap = {
   bishop: Mountain,
   enkf: Zap,
   evidence: FileText,
+  tucker: Brain,
+  webgpu: Monitor,
 };
 
 export function SolverNode({ data }: any) {

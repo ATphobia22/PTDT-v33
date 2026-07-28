@@ -1,6 +1,6 @@
 {
-  "name": "Tucker OS",
-  "description": "Sovereign Cognitive Operating System v21.0 - Sovereign Infinity",
+  "name": "Tri-State Family Engineering System",
+  "description": "Family-centric river-dynamics simulation and local flood mitigation controls.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

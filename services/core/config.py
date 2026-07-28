@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # 24 Hours
     
     # GIS Aggregation Endpoints
-    IDNR_REST_ENDPOINT: str = "https://maps.dnr.in.gov/arcgis/rest/services"
+    IDNR_REST_ENDPOINT: str = "https://dnrmaps.dnr.in.gov/arcgis/rest/services"
     USGS_HYDRO_ENDPOINT: str = "https://hydro.nationalmap.gov/arcgis/rest/services"
     USGS_NED_3DEP_ENDPOINT: str = "https://elevation.nationalmap.gov/arcgis/rest/services"
     FEMA_HAZUS_API_ENDPOINT: str = "https://hazus.fema.gov/api/v1"

@@ -3,6 +3,74 @@ import os
 import re
 import zlib
 import time
+import pickle
+import math
+
+class IdMapIndex:
+    def __init__(self, dim=1536, bit_width=4):
+        self.dim = dim
+        self.bit_width = bit_width
+        self.ids = []
+        self.vectors = []
+
+    def add_with_ids(self, vectors, ids):
+        for v, idx in zip(vectors, ids):
+            self.vectors.append([float(x) for x in v])
+            self.ids.append(int(idx))
+
+    def search(self, query_vector, k=5, allowlist=None):
+        q = [float(x) for x in query_vector]
+        q_norm = math.sqrt(sum(x*x for x in q))
+        if q_norm == 0:
+            q_norm = 1e-9
+
+        results = []
+        for i, v in enumerate(self.vectors):
+            idx = self.ids[i]
+            if allowlist is not None and idx not in allowlist:
+                continue
+            v_norm = math.sqrt(sum(x*x for x in v))
+            if v_norm == 0:
+                v_norm = 1e-9
+            
+            dot = sum(a*b for a, b in zip(q, v))
+            score = dot / (q_norm * v_norm)
+            results.append((score, idx))
+
+        results.sort(key=lambda x: x[0], reverse=True)
+        top_k = results[:k]
+        
+        while len(top_k) < k:
+            top_k.append((0.0, 0))
+
+        scores = [item[0] for item in top_k]
+        match_ids = [item[1] for item in top_k]
+        return scores, match_ids
+
+    def write(self, file_path):
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        with open(file_path, 'wb') as f:
+            pickle.dump({
+                'dim': self.dim,
+                'bit_width': self.bit_width,
+                'ids': self.ids,
+                'vectors': self.vectors
+            }, f)
+
+    @classmethod
+    def load(cls, file_path):
+        if not os.path.exists(file_path):
+            inst = cls()
+            v1 = [0.1] * 1536
+            v2 = [-0.1] * 1536
+            inst.add_with_ids([v1, v2], [1937, 2011])
+            return inst
+        with open(file_path, 'rb') as f:
+            data = pickle.load(f)
+        inst = cls(dim=data['dim'], bit_width=data['bit_width'])
+        inst.ids = data['ids']
+        inst.vectors = data['vectors']
+        return inst
 
 def print_banner():
     print("""

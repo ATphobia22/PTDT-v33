@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Terminal as TerminalIcon, X, Maximize2, Minimize2, Command } from 'lucide-react';
+import { Terminal as TerminalIcon, X, Maximize2, Minimize2, Command, Minus } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 interface CommandEntry {
@@ -13,7 +13,7 @@ export function TerminalOverlay() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [history, setHistory] = useState<CommandEntry[]>([
-    { type: 'system', content: 'Tucker Sovereign Citadel Terminal v32.1', timestamp: new Date() },
+    { type: 'system', content: 'Tri-State Family System Terminal v32.1', timestamp: new Date() },
     { type: 'system', content: 'Type "help" for a list of available commands.', timestamp: new Date() }
   ]);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -47,9 +47,10 @@ export function TerminalOverlay() {
       case 'help':
         return [
           'Available commands:',
-          '  search [query]    - Search the Sovereign GIS datastore',
+          '  search [query]    - Search the Tri-State GIS datastore',
           '  analyze [target]  - Run deep analysis on target metric',
           '  status            - System operational status',
+          '  ask [question]    - Query the Tri-State Cognitive Kernel (Gemini AI)',
           '  clear             - Clear terminal output',
           '  exit              - Close terminal'
         ].join('\n');
@@ -63,14 +64,45 @@ export function TerminalOverlay() {
         return 'System Status: ONLINE\nActive Modules: WebGPU Twin, DAG Execution, Data Assimilation\nTelemetry: SYNCED (USGS, FEMA)';
       case 'search':
         if (args.length < 2) return 'Error: Missing search query. Usage: search [query]';
-        return `Searching for "${args.slice(1).join(' ')}"...\nFound 0 matching records in Sovereign database.`;
+        return `Searching for "${args.slice(1).join(' ')}"...\nFound 0 matching records in Tri-State database.`;
       case 'analyze':
         if (args.length < 2) return 'Error: Missing analysis target. Usage: analyze [target]';
         return `Initiating deep analysis on "${args.slice(1).join(' ')}"...\n[████████████] 100%\nAnalysis complete. No structural anomalies detected.`;
+      case 'ask':
+        if (args.length < 2) return 'Error: Please specify a question. Usage: ask [your question]';
+        try {
+          const query = args.slice(1).join(' ');
+          const res = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: query })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            return data.reply;
+          }
+          return `Error: Tri-State AI node returned status ${res.status}.`;
+        } catch (e) {
+          return `Error: Failed to connect to the Tri-State AI pipeline.`;
+        }
       case '':
         return null;
       default:
-        return `Command not found: ${mainCommand}. Type "help" for a list of commands.`;
+        // Automatically ask the Tri-State Cognitive Kernel
+        try {
+          const res = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: cmd })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            return data.reply;
+          }
+          return `Command not found: ${mainCommand}. Type "help" for a list of commands.`;
+        } catch (e) {
+          return `Command not found: ${mainCommand}. Type "help" for a list of commands.`;
+        }
     }
   };
 
@@ -108,7 +140,7 @@ export function TerminalOverlay() {
   return (
     <div 
       className={cn(
-        "fixed bottom-0 left-0 right-0 z-[100] bg-slate-950/95 backdrop-blur-md border-t border-indigo-500/30 shadow-2xl transition-all duration-300 flex flex-col font-mono text-sm text-slate-300",
+        "fixed bottom-0 left-0 w-full md:w-[50vw] z-[100] bg-slate-950/95 backdrop-blur-md border-t border-indigo-500/30 shadow-2xl transition-all duration-300 flex flex-col font-mono text-sm text-slate-300",
         isExpanded ? "h-[60vh]" : "h-[300px]"
       )}
     >
@@ -116,13 +148,28 @@ export function TerminalOverlay() {
       <div className="flex items-center justify-between px-4 py-2 border-b border-slate-800/80 bg-slate-900/50">
         <div className="flex items-center gap-2 text-indigo-400">
           <TerminalIcon size={16} />
-          <span className="text-xs font-bold uppercase tracking-widest">Sovereign Command Line</span>
+          <span className="text-xs font-bold uppercase tracking-widest">Tri-State Command Line</span>
         </div>
         <div className="flex items-center gap-2 text-slate-500">
-          <button onClick={() => setIsExpanded(!isExpanded)} className="hover:text-slate-300 p-1">
+          <button 
+            onClick={() => setIsExpanded(!isExpanded)} 
+            title={isExpanded ? "Collapse panel height" : "Expand panel height"} 
+            className="hover:text-slate-300 p-1"
+          >
             {isExpanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
           </button>
-          <button onClick={() => setIsOpen(false)} className="hover:text-slate-300 p-1">
+          <button 
+            onClick={() => setIsOpen(false)} 
+            title="Minimize terminal to tray" 
+            className="hover:text-slate-300 p-1"
+          >
+            <Minus size={16} />
+          </button>
+          <button 
+            onClick={() => setIsOpen(false)} 
+            title="Close terminal" 
+            className="hover:text-slate-300 p-1"
+          >
             <X size={16} />
           </button>
         </div>

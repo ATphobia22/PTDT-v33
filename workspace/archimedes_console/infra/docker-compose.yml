@@ -1,0 +1,28 @@
+services:
+  redis_langcache:
+    image: redis:7-alpine
+    container_name: ptdt_redis_cache
+    command: redis-server --maxmemory 2gb --maxmemory-policy allkeys-lru --save "" --appendonly no
+    ports:
+      - "6379:6379"
+    networks:
+      - ptdt_sovereign_net
+    restart: unless-stopped
+
+  chromadb_memory:
+    image: chromadb/chroma:latest
+    container_name: ptdt_chroma_vector
+    volumes:
+      - chroma_data:/chroma/chroma
+    ports:
+      - "8001:8000"
+    networks:
+      - ptdt_sovereign_net
+    restart: unless-stopped
+
+volumes:
+  chroma_data:
+
+networks:
+  ptdt_sovereign_net:
+    driver: bridge
