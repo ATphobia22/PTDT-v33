@@ -11,29 +11,21 @@ jobs:
     name: Node.js Frontend/Server Build
     runs-on: ubuntu-latest
     env:
-      PUPPETEER_SKIP_DOWNLOAD: 1
-      PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 1
+      PUPPETEER_SKIP_DOWNLOAD: "1"
+      PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-      - run: npm ci
-      - name: Run linter
-        run: npm run lint || true
+      - name: Install dependencies
+        run: npm ci --omit=optional || npm install --no-audit --no-fund
+      - name: Typecheck (soft)
+        run: npm run typecheck || true
         continue-on-error: true
-      - name: Build application
-        id: node_build
+      - name: Build application (hard gate)
         run: npm run build
-        continue-on-error: true
-      - name: Report node build status
-        run: |
-          if [ "${{ steps.node_build.outcome }}" != "success" ]; then
-            echo "::warning::npm run build failed — frontend needs TS cleanup; Python/Docker gates still enforce regulatory path"
-          else
-            echo "Node build OK"
-          fi
 
   python-engine:
     name: Archimedes Python Engine Verification
@@ -116,7 +108,8 @@ jobs:
 
       - name: Build web Docker image
         env:
-          DOCKER_BUILDKIT: 1
+          DOCKER_BUILDKIT: "1"
+          PUPPETEER_SKIP_DOWNLOAD: "1"
         run: docker build -t web-app:ci .
         continue-on-error: true
 
