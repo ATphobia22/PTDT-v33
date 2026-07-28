@@ -20,7 +20,9 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - name: Install dependencies
-        run: npm ci --omit=optional || npm install --no-audit --no-fund
+        run: |
+          # package.json was slimmed (no puppeteer / @base-ui); regenerate lock if needed
+          npm install --no-audit --no-fund
       - name: Typecheck (soft)
         run: npm run typecheck || true
         continue-on-error: true

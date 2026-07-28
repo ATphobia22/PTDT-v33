@@ -10,19 +10,23 @@ export default defineConfig(() => {
       alias: {
         '@': path.resolve(__dirname, './src'),
       },
+      conditions: ['import', 'module', 'browser', 'default'],
+    },
+    optimizeDeps: {
+      include: ['three', 'maplibre-gl', 'pmtiles'],
     },
     build: {
-      chunkSizeWarningLimit: 2000,
+      chunkSizeWarningLimit: 2500,
+      commonjsOptions: {
+        include: [/node_modules/],
+      },
       rollupOptions: {
         output: {
           manualChunks(id: string) {
             if (id.includes('node_modules')) {
-              if (id.includes('node_modules/three/')) {
-                return 'vendor-three';
-              }
-              if (id.includes('maplibre-gl') || id.includes('pmtiles')) {
-                return 'vendor-maps';
-              }
+              if (id.includes('three')) return 'vendor-three';
+              if (id.includes('maplibre-gl') || id.includes('pmtiles')) return 'vendor-maps';
+              if (id.includes('recharts') || id.includes('d3')) return 'vendor-charts';
               return 'vendor';
             }
           },

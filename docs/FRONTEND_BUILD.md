@@ -1,27 +1,25 @@
-# Frontend build green path
+# Frontend green path
 
-## Commands
-
-```bash
-npm install          # or npm ci when lockfile is current
-npm run typecheck    # soft in CI
-npm run build        # hard gate: vite + esbuild server.ts → dist/
-npm start            # node dist/server.cjs
-```
-
-## What we fixed for CI green
-
-1. **Removed `@base-ui/react`** from button/dialog/tabs — plain React primitives (no subpath resolution failures).
-2. **Removed `puppeteer`** from package.json dependencies (was pulling Chromium on install).
-3. **tsconfig** only includes `src`, `server.ts`, `vite.config.ts` — patch scripts and Python trees excluded.
-4. **`allowImportingTsExtensions` removed** — standard Vite resolution for `.tsx` imports without extension games.
-5. **CI `node-build`** hard-fails only on `npm run build`.
-
-## If build still fails locally
+## Local
 
 ```bash
-npm run build 2>&1 | tee build.log
-# Look for "Could not resolve" or Rollup parse errors in src/
+git pull origin main
+npm install
+npm run build
 ```
 
-Share the first error block and we fix file-by-file.
+Expected: `vite build` writes `dist/`, then `esbuild server.ts` writes `dist/server.cjs`.
+
+## What broke builds (fixed)
+
+| Issue | Fix |
+|-------|-----|
+| Static `three/webgpu` + `three/tsl` imports in DigitalTwinView while init path disabled | Removed; 3D uses WebGPU3DValley + R3F |
+| `npm ci` vs slimmed package.json (puppeteer / @base-ui removed) | CI uses `npm install` |
+| `@base-ui` subpath resolution | Plain React button/dialog/tabs |
+
+## CI
+
+- **node-build**: hard on `npm run build`
+- **python-engine**: hard LOMA/No-Rise/NAVD88
+- **docker-verify**: hard Archimedes health; web image soft
