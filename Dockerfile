@@ -3,13 +3,16 @@ FROM node:22-bookworm-slim
 
 WORKDIR /app
 
-# Avoid Chromium download during CI/image build (puppeteer is optional at runtime)
+# Avoid Chromium download if any transitive tool pulls puppeteer
 ENV PUPPETEER_SKIP_DOWNLOAD=1
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=1
+ENV NODE_ENV=production
 
-COPY package*.json ./
+COPY package.json ./
+COPY .npmrc ./
 
-RUN npm ci --include=dev
+# Use npm install — lockfile may lag package.json after dep removals
+RUN npm install --no-audit --no-fund --include=dev
 
 COPY . .
 
@@ -19,7 +22,6 @@ RUN npm prune --omit=dev
 
 EXPOSE 3000
 
-ENV NODE_ENV=production
 ENV PORT=3000
 
 HEALTHCHECK --interval=15s --timeout=5s --start-period=25s --retries=5 \

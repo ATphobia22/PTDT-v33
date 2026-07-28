@@ -10,10 +10,14 @@ export default defineConfig(() => {
       alias: {
         '@': path.resolve(__dirname, './src'),
       },
+      dedupe: ['three', 'react', 'react-dom'],
       conditions: ['import', 'module', 'browser', 'default'],
     },
     optimizeDeps: {
       include: ['three', 'maplibre-gl', 'pmtiles'],
+    },
+    ssr: {
+      noExternal: ['three'],
     },
     build: {
       chunkSizeWarningLimit: 2500,
