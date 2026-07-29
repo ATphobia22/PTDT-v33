@@ -1,49 +1,39 @@
 # backend/physics/qec_filter.py
-import numpy as np
-from typing import Dict, Any
+"""Telemetry quality gate — classical only (no quantum / stim / pymatching).
 
-try:
-    import stim
-    import pymatching
-except ImportError:
-    stim = None
-    pymatching = None
+Previous experimental QEC surface-code path was removed as non-physical for USGS hydrology.
+"""
+from __future__ import annotations
 
-def decode_sensor_noise(distance: int = 9) -> Dict[str, Any]:
-    """
-    Decodes physical channel noise in incoming USGS telemetry using a distance-9 surface code.
-    Returns logical error rates to confirm physical signal integrity.
-    """
-    if stim and pymatching:
-        try:
-            # Initialize a stim surface code circuit
-            circuit = stim.Circuit.generated(
-                "surface_code:unrotated_memory_z",
-                distance=distance,
-                rounds=distance,
-                after_clifford_depolarization=0.001
-            )
+from typing import Any, Dict, Optional
 
-            # Execute matching syndrome decoding
-            sampler = circuit.compile_detector_sampler()
-            detector_samples, obs_samples = sampler.sample(shots=1000, separate_observables=True)
 
-            matcher = pymatching.Matching.from_stim_circuit(circuit)
-            predictions = matcher.decode_batch(detector_samples)
-
-            errors = int(np.sum(predictions != obs_samples))
-            logical_error_rate = (errors / 1000) * 100.0
-            return {
-                "qec_distance": distance,
-                "logical_error_rate_pct": round(logical_error_rate, 5),
-                "status": "ORDER_LOCKED" if logical_error_rate < 0.01 else "UNSTABLE"
-            }
-        except Exception:
-            pass
-
-    # Fallback simulated response
+def decode_sensor_noise(
+    observed_stage_ft: Optional[float] = None,
+    prior_stage_ft: Optional[float] = None,
+    max_jump_ft: float = 5.0,
+) -> Dict[str, Any]:
+    """Simple classical QC for stage spikes before DAG ingest."""
+    if observed_stage_ft is None:
+        return {
+            "status": "NO_OBSERVATION",
+            "method": "classical_spike_gate",
+            "note": "No stage provided; skip QC.",
+        }
+    if prior_stage_ft is None:
+        return {
+            "status": "ACCEPTED_FIRST",
+            "observed_stage_ft": observed_stage_ft,
+            "method": "classical_spike_gate",
+        }
+    jump = abs(observed_stage_ft - prior_stage_ft)
+    ok = jump <= max_jump_ft
     return {
-        "qec_distance": distance,
-        "logical_error_rate_pct": 0.0009,
-        "status": "ORDER_LOCKED"
+        "status": "ACCEPTED" if ok else "FLAGGED_SPIKE",
+        "observed_stage_ft": observed_stage_ft,
+        "prior_stage_ft": prior_stage_ft,
+        "jump_ft": round(jump, 3),
+        "max_jump_ft": max_jump_ft,
+        "method": "classical_spike_gate",
+        "note": "Not a substitute for USGS published QC flags.",
     }
