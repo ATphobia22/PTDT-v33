@@ -2,22 +2,29 @@
 
 Use this as a **project control sheet**. Nothing here files itself. PE seal + official portals required.
 
-## Machine-readable export
+## Machine-readable export + SHA-256 validation
 
 ```bash
+# Fresh export
 python python/readiness_export.py
-# → 05_better_data_agency_package/09_readiness_gates.json
 
-# Optional status overlay:
-# {"gates": [{"id": "A2", "status": "in_progress"}, {"id": "B1", "status": "done"}]}
+# Set gate statuses from CLI
+python python/readiness_export.py --from-existing --set A2=in_progress --set B1=done
+
+# Overlay file
 python python/readiness_export.py --overlay my_status.json
+
+# Validate integrity of a saved file
+python python/readiness_export.py --validate 05_better_data_agency_package/09_readiness_gates.json
 ```
 
 Statuses: `not_started` | `in_progress` | `blocked` | `done`
 
+`integrity_sha256` is computed over canonical JSON **excluding** the hash field itself. `--validate` exits nonzero if the file was altered.
+
 ## A. FEMA LOMA (natural high ground path)
 
-**Portal:** FEMA Online LOMC (not homemade OAuth / GO scripts)
+**Portal:** FEMA Online LOMC
 
 | Gate | ID | Owner |
 |------|-----|-------|
@@ -29,50 +36,33 @@ Statuses: `not_started` | `in_progress` | `blocked` | `done`
 | FARA archived (if Zone A / unmapped / drainage trigger) | A6 | INFIP download |
 | Community # / FIRM panel re-checked on MSC | A7 | applicant |
 
-Project constants to **verify**, not trust blindly: LAG 377.2 ft, BFE 375.0 ft, NAVD 88.
-
 ## B. IDNR floodway / Construction in a Floodway
-
-**Authority:** IC 14-28-1, 312 IAC 10  
-**Tools:** INFIP, FARA, IDNR e-application / current Division of Water forms
 
 | Gate | ID | Owner |
 |------|-----|-------|
 | INFIP query for site BFE / stream | B1 | applicant |
-| Drainage area ≥ 1 sq mi assessed | B2 | PE / hydrology |
-| Floodway vs fringe determination (BAFL + FIRM) | B3 | PE |
+| Drainage area ≥ 1 sq mi assessed | B2 | PE |
+| Floodway vs fringe (BAFL + FIRM) | B3 | PE |
 | FARA generated + archived | B4 | INFIP |
-| Technical worksheets (cross-section / storage) | B5 | HEC-RAS + PE |
-| No-Rise **PE-signed** (0.000 ft language as PE states) | B6 | Indiana PE |
-| Compensatory storage method accepted by reviewer | B7 | PE (project screen uses 1.20×) |
+| Technical worksheets (HEC-RAS model-of-record) | B5 | PE |
+| No-Rise PE-signed | B6 | Indiana PE |
+| Compensatory storage method accepted | B7 | PE |
 | Public notice / adjacent owners | B8 | applicant |
 | Affirmation / state forms signed | B9 | applicant |
 
-## C. BRIC / mitigation funding (if pursued)
+## C. HMA / mitigation funding (if pursued)
 
 | Gate | ID | Owner |
 |------|-----|-------|
-| IDHS eGrants path identified | C1 | applicant |
-| FEMA BCA Toolkit run (not invented BCR) | C2 | PE / BCA analyst |
-| Scope, budget, SOW consistent with PE models | C3 | project team |
+| State applicant path (IDHS / FEMA GO) | C1 | applicant |
+| FEMA BCA Toolkit run | C2 | PE / BCA analyst |
+| Scope/budget/SOW consistent with PE models | C3 | project team |
+| FEMA-approved hazard mitigation plan coverage | C4 | local government |
 
-See `docs/FEMA_BCA_TOOLKIT.md`.
+See `docs/FEMA_HMA_REQUIREMENTS.md` and `docs/FEMA_BCA_TOOLKIT.md`.
 
-## D. Repo helpers (templates only)
+## Rejected labels
 
-```bash
-pip install reportlab numpy pytest
-python python/pe_transmittal_draft.py
-python python/norise_certificate_draft.py
-python python/better_data_package.py
-python python/hec_ras_coupler.py   # SCREENING_ONLY
-python python/readiness_export.py
-pytest tests/test_math_gates.py -q
-```
-
-## E. Rejected labels (never put on filed docs)
-
-- `APPROVED_CERTIFIED_TRI_STATE_NO_RISE`
-- `APPROVED_CERTIFIED_NO_RISE` from code governors
-- “Software is Daubert compliant” without PE-run HEC-RAS + survey
-- Automated FEMA GO OAuth submission scripts
+- Software `APPROVED_CERTIFIED_*` decisions
+- Invented BCR without Toolkit
+- Homemade FEMA GO OAuth “submission APIs”
