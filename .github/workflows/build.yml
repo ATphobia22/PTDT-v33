@@ -20,10 +20,8 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - name: Install dependencies
-        run: |
-          # package.json was slimmed (no puppeteer / @base-ui); regenerate lock if needed
-          npm install --no-audit --no-fund
-      - name: Typecheck (soft)
+        run: npm install --no-audit --no-fund
+      - name: Typecheck (soft until TS surface is clean)
         run: npm run typecheck || true
         continue-on-error: true
       - name: Build application (hard gate)
@@ -41,9 +39,17 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install pytest
       - name: Verify Engine Core
         run: |
           python -c "from archimedes_engine import ArchimedesEngine; e = ArchimedesEngine(); assert e.base_flood_elevation_ft == 375.0; assert e.lowest_adjacent_grade_ft == 377.2; print('Engine Core Verified')"
+      - name: Math gates pytest (hard)
+        run: pytest tests/test_math_gates.py -q
+      - name: Readiness export (hard)
+        run: |
+          python python/readiness_export.py
+          test -f 05_better_data_agency_package/09_readiness_gates.json
+          python python/readiness_export.py --validate 05_better_data_agency_package/09_readiness_gates.json
       - name: Generate regulatory package (hard gate)
         run: |
           python -c "
