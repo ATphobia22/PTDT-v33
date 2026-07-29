@@ -1,21 +1,20 @@
-# Anti-fabrication policy (hard rules)
+# Anti-fabrication policy
 
-## Forbidden claims in this repository
+## Rejected patterns (do not ship as product claims)
 
-1. **Software cannot certify No-Rise or LOMA.** Only a licensed PE (and agency acceptance) can.
-2. **No OAuth / automated submission to FEMA GO, IDNR, or KDOW.** Use official portals (Online LOMC, INFIP, eGrants).
-3. **No status strings** such as `APPROVED_CERTIFIED_TRI_STATE_NO_RISE` written by code.
-4. **No “Automated Administrative Dominance.”** Agencies review; applicants comply.
-5. **No hard-coded SHA-256 of files that do not exist** on disk.
-6. **No Daubert / FRE 702 “compliance” certificates** from SHA-256 alone.
-7. **BCA numbers** are screening until produced by the **FEMA BCA Toolkit** with documented costs.
-8. **Model calibration metrics** (NSE, R², RMSE) require actual HEC-RAS/SRH-2D run logs — do not invent.
+| Pattern | Why |
+|---------|-----|
+| `APPROVED_CERTIFIED_NO_RISE` / auto LOMA from code | Only agencies + PE issue these |
+| Quantum QEC (stim) or Qiskit “riprap D50” for USGS/design | Not hydrologic practice |
+| Invented BCR without FEMA BCA Toolkit | HMA requires official Toolkit |
+| Homemade FEMA GO OAuth submit scripts | No public automated filing API of that form |
+| Blender/HUD color as legal inundation proof | Viz only |
+| Estate valuation as sealed engineering fact | Needs independent appraisal + PE survey |
 
 ## Allowed
 
-- DRAFT worksheets with blank PE signature blocks
-- Local SQLite screening ledgers
-- Live USGS NWIS reads
-- Manning / storage **screening** math labeled as such
-- Better-data comparison packages for LOMA/FARA support
-- Checklists mapping real statutes and portals
+- DRAFT ReportLab PDFs with blank PE blocks  
+- Manning / 1.20× storage **screening** labeled `SCREENING_ONLY`  
+- USGS / NRCS / OpenFEMA fetches with offline fallback  
+- Readiness JSON for **project tracking** only  
+- MapLibre / PMTiles / optional Blender recipes for UI  
