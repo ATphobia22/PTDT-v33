@@ -1,30 +1,23 @@
-# Why commits showed red X (and what we fixed)
+# CI status policy
 
-GitHub marks a commit ❌ when **any required check fails** on that SHA.
+See also `docs/BUILD_RUN_DIAGNOSIS.md`.
 
-## Likely failure modes (before this fix)
-
-| Job | Failure |
-|-----|--------|
-| **python-engine** | `pip install geopandas` needs GDAL/GEOS system libs → install fails on bare ubuntu-latest |
-| **node-build** | `npm run build` fails on TypeScript / Vite issues in large dashboard surface |
-| **docker-verify** | Web image pulls **puppeteer** Chromium; Archimedes image may have failed if context/deps heavy |
-
-## Current policy
+## Current workflow policy (`.github/workflows/build.yml`)
 
 | Job | Policy |
 |-----|--------|
-| **python-engine** | **Hard fail** — LOMA/No-Rise/BCA + NAVD88 must pass |
+| **python-engine** | **Hard fail** — engine asserts, regulatory PDF package, NAVD88 check |
+| **node-build** | **Hard fail** on `npm run build`; typecheck soft |
 | **docker-verify → Archimedes** | **Hard fail** — slim image + `/api/v1/health` ONLINE |
-| **node-build** | Soft (warning) until TS cleanup |
-| **web Docker image** | Soft until frontend build is green |
+| **docker-verify → web image** | Soft (`continue-on-error`) |
+| **databricks-cd.yml** | Separate; needs secrets; not LOMA path |
 
 ## Local parity
 
 ```bash
 pip install -r requirements.txt
-make ci-gate
-make docker-verify-archimedes
+npm install && npm run build
+docker build -f environment/Dockerfile -t archimedes-engine:local .
 ```
 
 Optional GIS: `pip install -r requirements-gis.txt`
