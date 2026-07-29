@@ -3,7 +3,7 @@
 **Property context:** 13101 Bonebank Road, Mount Vernon, IN 47620  
 **Intended path:** Letter of Map Amendment (LOMA) — natural high ground via **FEMA Online LOMC** (not a homemade OAuth script).
 
-Baseline constants in code (verify with PE/survey before filing):
+Baseline constants in project notes (**verify with PE/survey before filing**):
 
 - LAG = 377.2 ft MSL  
 - BFE = 375.0 ft MSL  
@@ -15,7 +15,7 @@ Baseline constants in code (verify with PE/survey before filing):
 - [ ] **Natural ground:** No artificial fill elevating the structure footprint (pure LOMA vs LOMR-F)
 - [ ] **Elevation delta:** LAG > BFE on the same vertical datum
 - [ ] **Datum:** All points NAVD 88 (convert NGVD 29 via [NGS NCAT](https://www.ngs.noaa.gov/NCAT/) if needed)
-- [ ] **FIRM panel / community:** Confirm current panel and community number on the effective FIRM (values in project notes must be re-checked on FEMA Map Service Center before filing)
+- [ ] **FIRM panel / community:** Confirm current panel and community number on the effective FIRM (re-check on FEMA Map Service Center before filing)
 
 ## Phase 2 — Document assembly
 
@@ -23,12 +23,12 @@ Baseline constants in code (verify with PE/survey before filing):
 |------|--------|--------|
 | Deed / tax plat | PDF | Posey County Recorder / Assessor |
 | Certified topographic / LiDAR work map | PDF | PE-sealed survey quality |
-| PE transmittal & certification | PDF | Indiana PE (IC 25-31-1); `archimedes_engine` emits a **template** only |
+| PE transmittal & certification | PDF | Indiana PE (IC 25-31-1); `python/pe_transmittal_draft.py` is a **blank** draft |
 | MT-EZ / Online LOMC fields | Web / PDF | Completed in FEMA Online LOMC wizard |
-| Supporting hydrology context | PDF/CSV | USGS gage context (e.g. 03378500) is supporting, not a LOMA substitute |
+| Supporting hydrology context | PDF/CSV | USGS gage context (e.g. 03378500 / 03322000) is supporting, not a LOMA substitute |
 | FARA (if Zone A / unmapped / drainage rules apply) | PDF | Generate via **INFIP**, download, archive |
 
-Local generator output directory: `05_final_portal_package/` (templates + BCA JSON). **Does not** submit to FEMA.
+Local generator output: `05_better_data_agency_package/` and draft PDFs. **Does not** submit to FEMA.
 
 ## Phase 3 — Official portal steps
 
@@ -38,11 +38,10 @@ Local generator output directory: `05_final_portal_package/` (templates + BCA JS
 4. Upload PE-sealed exhibits.
 5. Submit for FEMA review (LOMA processing is typically fee-exempt when no fill is involved; timelines vary).
 
-## Explicit non-goals (do not implement as “live federal API”)
+## Explicit non-goals
 
-- `https://fema.gov/oauth/token`
-- `https://api.fema.gov/v1/regulatory/submissions`
-- Scope `regulatory:submission:write`
-- `submit_fema_package.sh` curl POST of tarballs as if it were official clearance
+- Fake FEMA GO OAuth token endpoints
+- Automated “submit package” scripts presented as official clearance
+- Software-only elevation certificates
 
-Those endpoints/scopes are **not** documented public FEMA GO / LOMC APIs. See `docs/ANTI_FABRICATION.md`.
+See `docs/ANTI_FABRICATION.md`.
