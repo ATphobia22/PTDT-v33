@@ -1,30 +1,48 @@
-# LOMA Package Checklist: 13101 Bonebank Road
+# FEMA LOMA package checklist (real submission path)
 
-Use this checklist to ensure all regulatory and engineering artifacts are complete before submission to the FEMA Online LOMC portal.
+**Property context:** 13101 Bonebank Road, Mount Vernon, IN 47620  
+**Intended path:** Letter of Map Amendment (LOMA) — natural high ground via **FEMA Online LOMC** (not a homemade OAuth script).
 
-## 1. Engineering Certification (IC 25-31-1)
-- [ ] **PE Transmittal Letter**: Forensic statement certifying elevations and natural ground.
-- [ ] **Professional Seal**: Digital or physical P.E. seal applied to all maps and letters.
-- [ ] **IDNR No-Rise Certificate**: Certified statement of zero BFE impact (if applicable for nearby structures).
+Baseline constants in code (verify with PE/survey before filing):
 
-## 2. Topographic & Site Data
-- [ ] **LiDAR Work Map**: 1-foot contours referenced to NAVD 88.
-- [ ] **LAG Verification**: Verified elevation of **377.2 ft** recorded on MT-EZ/MT-1 form.
-- [ ] **Datum Alignment**: Confirmation that all data uses **NAVD 88** (NGVD 29 converted).
-- [ ] **Site Photos**: High-resolution photos of the structure and adjacent grade.
+- LAG = 377.2 ft MSL  
+- BFE = 375.0 ft MSL  
+- Datum = **NAVD 88**  
+- Clearance = +2.2 ft  
 
-## 3. Hydraulic Analysis (Archimedes Engine)
-- [ ] **BCA Payload**: JSON/CSV export of economic and elevation metrics.
-- [ ] **USGS Calibration**: Stage-discharge relationship verified against Gauge 03378500.
-- [ ] **Compensatory Storage**: Verification of 1.20x volume offset (if fill was used).
+## Phase 1 — Pre-submission verification
 
-## 4. Digital Sovereignty & Integrity
-- [ ] **SHA256 Manifest**: Cryptographic signature of the entire artifact package.
-- [ ] **Sovereign Node Link**: Secure URL for high-resolution render access.
-- [ ] **Forensic Case Study PDF**: Unified report for FEMA GO portal upload.
+- [ ] **Natural ground:** No artificial fill elevating the structure footprint (pure LOMA vs LOMR-F)
+- [ ] **Elevation delta:** LAG > BFE on the same vertical datum
+- [ ] **Datum:** All points NAVD 88 (convert NGVD 29 via [NGS NCAT](https://www.ngs.noaa.gov/NCAT/) if needed)
+- [ ] **FIRM panel / community:** Confirm current panel and community number on the effective FIRM (values in project notes must be re-checked on FEMA Map Service Center before filing)
 
-## 5. FEMA Portal Entry (Online LOMC)
-- [ ] **LAG Field**: Exactly "377.2" entered.
-- [ ] **BFE Field**: Exactly "375.0" entered.
-- [ ] **Vertical Datum**: Selected "NAVD 88".
-- [ ] **Legal Description**: Posey County, Point Township, Section 35 (13101 Bonebank Road).
+## Phase 2 — Document assembly
+
+| Item | Format | Notes |
+|------|--------|--------|
+| Deed / tax plat | PDF | Posey County Recorder / Assessor |
+| Certified topographic / LiDAR work map | PDF | PE-sealed survey quality |
+| PE transmittal & certification | PDF | Indiana PE (IC 25-31-1); `archimedes_engine` emits a **template** only |
+| MT-EZ / Online LOMC fields | Web / PDF | Completed in FEMA Online LOMC wizard |
+| Supporting hydrology context | PDF/CSV | USGS gage context (e.g. 03378500) is supporting, not a LOMA substitute |
+| FARA (if Zone A / unmapped / drainage rules apply) | PDF | Generate via **INFIP**, download, archive |
+
+Local generator output directory: `05_final_portal_package/` (templates + BCA JSON). **Does not** submit to FEMA.
+
+## Phase 3 — Official portal steps
+
+1. Open **FEMA Online LOMC** (current portal linked from fema.gov map amendment guidance).
+2. Create application → **Letter of Map Amendment (LOMA)**.
+3. Enter property address and community data from the **effective** FIRM.
+4. Upload PE-sealed exhibits.
+5. Submit for FEMA review (LOMA processing is typically fee-exempt when no fill is involved; timelines vary).
+
+## Explicit non-goals (do not implement as “live federal API”)
+
+- `https://fema.gov/oauth/token`
+- `https://api.fema.gov/v1/regulatory/submissions`
+- Scope `regulatory:submission:write`
+- `submit_fema_package.sh` curl POST of tarballs as if it were official clearance
+
+Those endpoints/scopes are **not** documented public FEMA GO / LOMC APIs. See `docs/ANTI_FABRICATION.md`.
