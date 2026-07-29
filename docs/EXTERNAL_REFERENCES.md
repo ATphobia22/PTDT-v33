@@ -11,7 +11,8 @@ These materials inform practice. They are **not** embedded as automated decision
 | NGS NCAT | Vertical datum transforms (NGVD 29 ↔ NAVD 88) |
 | USGS NWIS (e.g. 03378500, 03322000) | Stage/discharge telemetry |
 | FEMA Map Service Center / Online LOMC | Effective FIRM + LOMA filing |
-| FEMA BCA Toolkit | Official BCR for BRIC-type asks |
+| [FEMA BCA Toolkit](https://www.fema.gov/grants/tools/benefit-cost-analysis) | Official BCR for HMA/BRIC |
+| [IGIO Elevation](https://elevation.gio.in.gov/) / [IndianaMap](https://www.indianamap.org/) / [Purdue LiDAR](https://lidar.digitalforestry.org/) | Statewide QL2 3DEP access |
 | State of Indiana OCDO Data Governance Standard | Optional data-handling alignment for public agencies |
 
 ## Visualization preference
