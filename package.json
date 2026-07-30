@@ -9,7 +9,11 @@
     "start": "node dist/server.cjs",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "demos": "python3 -m http.server 8080",
+    "engine": "python3 archimedes_engine.py",
+    "readiness": "python3 python/readiness_export.py",
+    "test:math": "pytest tests/test_math_gates.py -q"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",
