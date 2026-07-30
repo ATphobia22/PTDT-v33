@@ -31,7 +31,7 @@
       <h1 class="text-lg font-bold tracking-wider uppercase text-cyan-400">SOVEREIGN CORE V33</h1>
     </div>
     <p class="text-xs text-slate-400 font-mono mt-1">Posey County · NAVD 88 · VISUALIZATION ONLY</p>
-    <p class="text-[10px] text-amber-400/90 mt-1 font-mono">Not HEC-RAS model-of-record · Not No-Rise / LOMA evidence</p>
+    <p class="text-[10px] text-amber-400/90 mt-1 font-mono">Not HEC-RAS · Not No-Rise / LOMA evidence</p>
 
     <div class="mt-4 pt-4 border-t border-slate-700/50 space-y-4">
       <div>
@@ -46,9 +46,14 @@
       <div class="grid grid-cols-2 gap-2 font-mono text-[11px] bg-slate-950/60 p-3 rounded-lg border border-slate-800">
         <div><span class="text-slate-500">BFE (hypothesis)</span><span class="text-slate-200 block">375.0 ft</span></div>
         <div><span class="text-slate-500">LAG (hypothesis)</span><span class="text-slate-200 block">377.2 ft</span></div>
-        <div><span class="text-slate-500">Renderer</span><span class="text-emerald-400 block font-bold">MapLibre GL</span></div>
+        <div><span class="text-slate-500">USGS 03378500</span><span id="usgs-stage" class="text-slate-200 block">—</span></div>
         <div><span class="text-slate-500">Keys required</span><span class="text-emerald-400 block font-bold">None</span></div>
       </div>
+
+      <button id="btn-usgs" type="button"
+              class="w-full py-2 text-xs font-mono uppercase tracking-wide bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg">
+        Refresh USGS stage (NWIS IV)
+      </button>
 
       <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
         <input id="toggle-buildings" type="checkbox" checked class="rounded" />
@@ -62,9 +67,9 @@
   </div>
 
   <script>
-    // Approximate Bonebank vicinity — confirm with survey for filings
     const TARGET_LNG = -87.9942;
     const TARGET_LAT = 37.8928;
+    const USGS_IV = 'https://waterservices.usgs.gov/nwis/iv/?format=json&sites=03378500&parameterCd=00065&siteStatus=all';
 
     const map = new maplibregl.Map({
       container: 'map',
@@ -78,7 +83,6 @@
             attribution: '© OpenStreetMap contributors',
             maxzoom: 19
           },
-          // Free terrain (no Mapbox/MapTiler key) — global, not 5cm LiDAR
           'terrain-source': {
             type: 'raster-dem',
             url: 'https://tiles.mapterhorn.com/tilejson.json',
@@ -139,6 +143,24 @@
       };
     }
 
+    async function fetchUsgsStage() {
+      const el = document.getElementById('usgs-stage');
+      el.textContent = '…';
+      try {
+        const res = await fetch(USGS_IV);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        const series = data && data.value && data.value.timeSeries;
+        if (!series || !series.length) throw new Error('empty series');
+        const v = series[0].values[0].value[0].value;
+        el.textContent = parseFloat(v).toFixed(2) + ' ft (gage)';
+        el.title = 'USGS instantaneous stage — not NAVD88 site LAG; context only';
+      } catch (err) {
+        el.textContent = 'offline / blocked';
+        console.warn('USGS IV fetch failed', err);
+      }
+    }
+
     map.on('load', () => {
       try {
         map.setTerrain({ source: 'terrain-source', exaggeration: 1.35 });
@@ -181,7 +203,6 @@
         stageDisplay.textContent = elev.toFixed(1) + ' FT';
         const opacity = 0.2 + ((elev - 365) / 25) * 0.5;
         map.setPaintProperty('flood-vfx-layer', 'fill-opacity', Math.min(0.75, opacity));
-        // Visual cue only — not regulatory inundation
         map.setPaintProperty(
           'flood-vfx-layer',
           'fill-color',
@@ -195,6 +216,8 @@
       document.getElementById('toggle-terrain').addEventListener('change', (e) => {
         map.setTerrain(e.target.checked ? { source: 'terrain-source', exaggeration: 1.35 } : null);
       });
+      document.getElementById('btn-usgs').addEventListener('click', fetchUsgsStage);
+      fetchUsgsStage();
     });
   </script>
 </body>

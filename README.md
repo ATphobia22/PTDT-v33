@@ -12,6 +12,7 @@
 | Call public APIs (USGS, NRCS SDA, OpenFEMA) with fallbacks | Guarantee live federal data without network |
 | Track A/B/C readiness gates (JSON + SHA-256) | Act as IDNR, FEMA, or a PE |
 | Document LARE, CWI, 319, HMA, HEC-RAS requirements | Substitute for HEC-RAS model-of-record |
+| Zero-key MapLibre **visualization** demos | Claim GLSL/noise as 2D-SWE or model-of-record |
 
 All elevation numbers below are **project hypotheses** until a PE/survey seals them.
 
@@ -21,12 +22,27 @@ All elevation numbers below are **project hypotheses** until a PE/survey seals t
 |------|---------|------|
 | **Archimedes engine** (PDFs, health API) | `pip install -r requirements.txt && python archimedes_engine.py` | **8000** |
 | **Dashboard + Node gateway** | `npm install && npm run dev` | **3000** |
+| **MapLibre demos (no build)** | `python -m http.server 8080` → `/demos/` | **8080** |
 | **Both via Compose** | `docker compose up --build` | 3000 + 8000 |
 
 Prefer **`npm install`** (CI does too). `npm ci` only if the lockfile matches `package.json`.
 
 Do **not** start `backend/main.py` unless you need the extended backend stack.  
-Do **not** treat `atphobia22-hydro-pipeline` / Databricks workflows as the local regulatory path.
+Do **not** treat Databricks / Istio as the local regulatory path.
+
+## Zero-key 3D demos
+
+| File | Description |
+|------|-------------|
+| `demos/ptdt-v33-sovereign.html` | OSM + Mapterhorn terrain + stage slider + optional USGS IV fetch |
+| `demos/ptdt-v33-glsl-flow.html` | Custom WebGL flow (procedural noise, viz only) |
+
+```bash
+python -m http.server 8080
+# http://localhost:8080/demos/ptdt-v33-sovereign.html
+```
+
+Details: `docs/ZERO_KEY_MAP_STACK.md` · PMTiles: `docs/MAPLIBRE_PMTILES.md`
 
 ## Architecture (simplified)
 
@@ -61,7 +77,7 @@ Helpers:
 ```bash
 python python/readiness_export.py
 python python/navd88_hard_check.py path/to/bca_elevation_data.json
-pytest tests/test_math_gates.py -q   # needs pytest
+pytest tests/test_math_gates.py -q   # needs pytest + numpy
 ```
 
 ## Quick start — UI
@@ -85,7 +101,7 @@ docker compose up --build
 | Job | Gate |
 |-----|------|
 | node-build | **Hard** `npm run build` (typecheck soft) |
-| python-engine | **Hard** package generate + NAVD88 |
+| python-engine | **Hard** pytest math gates, readiness export, package + NAVD88 |
 | docker-verify | **Hard** Archimedes health; web image soft |
 
 See `docs/BUILD_RUN_DIAGNOSIS.md` if a check is red.
@@ -105,23 +121,23 @@ See `docs/BUILD_RUN_DIAGNOSIS.md` if a check is red.
 |------|-----|
 | LOMA / Online LOMC | `docs/LOMA_PACKAGE_CHECKLIST.md` |
 | IDNR floodway / No-Rise | `docs/IDNR_PERMIT_CHECKLIST.md`, `docs/HEC_RAS_MODELING_REQUIREMENTS.md` |
+| HEC-RAS sensitivity | `docs/HEC_RAS_SENSITIVITY.md` |
 | HMA / BCA Toolkit | `docs/FEMA_HMA_REQUIREMENTS.md`, `docs/FEMA_BCA_TOOLKIT.md` |
 | Readiness gates | `docs/AGENCY_SUBMISSION_READINESS.md` |
 | Funding map (LARE, CWI, 319, …) | `docs/INDIANA_WATER_FUNDING_MAP.md` |
 | **All web sources & APIs** | **`docs/WEB_SOURCES_AND_APIS.md`** |
 | Anti-fabrication | `docs/ANTI_FABRICATION.md` |
+| External PE / BCA workstreams | `docs/EXTERNAL_WORKSTREAMS.md` |
 
-## Missing / not-yet-complete (honest inventory)
+## Missing / external (honest inventory)
 
-These are **gaps**, not hidden finished modules:
-
-1. **PE-sealed survey** of LAG/FFE (external; required for real LOMA)  
-2. **HEC-RAS model-of-record** existing vs proposed (external PE work)  
-3. **Official FEMA BCA Toolkit** run (not invented BCR in repo)  
-4. Frontend **typecheck** not a hard CI gate; large TS surface may still warn  
-5. `pytest` / `readiness_export` not in CI hard path yet  
-6. Full `backend/` stack optional and separate from Archimedes image  
-7. Databricks / Istio / Helm under `deploy/` are optional ops experiments  
+1. **PE-sealed survey** of LAG/FFE (required for real LOMA)  
+2. **HEC-RAS model-of-record** existing vs proposed (PE)  
+3. **Official FEMA BCA Toolkit** run (not invented BCR)  
+4. Frontend **typecheck** still soft in CI  
+5. Full `backend/` stack optional (Archimedes is the local engine)  
+6. Databricks / Istio under `deploy/` experimental only  
+7. Site-specific PMTiles / 5 cm LiDAR tiles (self-host via PDAL + tippecanoe)
 
 ## License / use
 
