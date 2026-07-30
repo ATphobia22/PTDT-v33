@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PTDT v33 — GLSL flow layer (MapLibre custom WebGL)</title>
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #0b0f19; }
+    #map { position: absolute; inset: 0; }
+    .glass-hud {
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <div class="glass-hud absolute top-6 left-6 z-10 w-96 max-w-[90vw] p-5 rounded-2xl text-slate-100">
+    <div class="flex items-center gap-3">
+      <span class="w-3 h-3 rounded-full bg-cyan-400 animate-pulse"></span>
+      <h1 class="text-lg font-bold uppercase text-cyan-400">GLSL FLOW MATRIX</h1>
+    </div>
+    <p class="text-xs text-slate-400 font-mono mt-1">Custom WebGL · VISUALIZATION ONLY</p>
+    <p class="text-[10px] text-amber-400 mt-1 font-mono">Procedural noise ≠ 2D shallow-water equations · Not HEC-RAS</p>
+
+    <div class="mt-4 space-y-3">
+      <div class="flex justify-between text-xs font-mono">
+        <span>Flow speed scale</span>
+        <span id="speed-val" class="text-cyan-400 font-bold">1.0x</span>
+      </div>
+      <input id="speed-slider" type="range" min="0" max="4" step="0.1" value="1"
+             class="w-full accent-cyan-400" />
+    </div>
+  </div>
+
+  <script>
+    const TARGET_LNG = -87.9942;
+    const TARGET_LAT = 37.8928;
+    let flowVelocityScale = 1.0;
+    let simulationElapsedTime = 0.0;
+
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: {
+        version: 8,
+        sources: {
+          'osm-tiles': {
+            type: 'raster',
+            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+            tileSize: 256,
+            attribution: '© OpenStreetMap contributors'
+          },
+          'terrain-source': {
+            type: 'raster-dem',
+            url: 'https://tiles.mapterhorn.com/tilejson.json',
+            tileSize: 512
+          }
+        },
+        layers: [{ id: 'background-tiles', type: 'raster', source: 'osm-tiles' }]
+      },
+      center: [TARGET_LNG, TARGET_LAT],
+      zoom: 14.8,
+      pitch: 55,
+      bearing: -10,
+      antialias: true
+    });
+
+    const customHydrologyShaderLayer = {
+      id: 'custom-glsl-hydrology-layer',
+      type: 'custom',
+
+      onAdd: function (mapInstance, gl) {
+        const vertexSource = `
+          attribute vec2 a_pos;
+          uniform mat4 u_matrix;
+          varying vec2 v_uv;
+          void main() {
+            v_uv = a_pos;
+            gl_Position = u_matrix * vec4(a_pos, 0.0, 1.0);
+          }
+        `;
+
+        const fragmentSource = `
+          precision mediump float;
+          varying vec2 v_uv;
+          uniform float u_time;
+          uniform float u_velocity_scale;
+
+          float hash(vec2 p) {
+            return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+          }
+          float noise(vec2 p) {
+            vec2 i = floor(p);
+            vec2 f = fract(p);
+            vec2 u = f * f * (3.0 - 2.0 * f);
+            return mix(
+              mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x),
+              mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x),
+              u.y
+            );
+          }
+
+          void main() {
+            vec2 flowDirection = vec2(-1.0, -0.5);
+            float t = u_time * 0.3 * u_velocity_scale;
+            vec2 uv1 = v_uv * 1200.0 + flowDirection * t;
+            vec2 uv2 = v_uv * 1200.0 + flowDirection * (t + 0.5);
+            float n1 = noise(uv1);
+            float n2 = noise(uv2);
+            float w = abs(sin(u_time * 0.5));
+            float surge = mix(n1, n2, w);
+            vec3 shallow = vec3(0.02, 0.45, 0.65);
+            vec3 deep = vec3(0.12, 0.78, 0.92);
+            gl_FragColor = vec4(mix(shallow, deep, surge), 0.55);
+          }
+        `;
+
+        function compile(type, src) {
+          const s = gl.createShader(type);
+          gl.shaderSource(s, src);
+          gl.compileShader(s);
+          if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+            console.error(gl.getShaderInfoLog(s));
+          }
+          return s;
+        }
+
+        const vs = compile(gl.VERTEX_SHADER, vertexSource);
+        const fs = compile(gl.FRAGMENT_SHADER, fragmentSource);
+        this.program = gl.createProgram();
+        gl.attachShader(this.program, vs);
+        gl.attachShader(this.program, fs);
+        gl.linkProgram(this.program);
+
+        this.aPos = gl.getAttribLocation(this.program, 'a_pos');
+        this.uMatrix = gl.getUniformLocation(this.program, 'u_matrix');
+        this.uTime = gl.getUniformLocation(this.program, 'u_time');
+        this.uVel = gl.getUniformLocation(this.program, 'u_velocity_scale');
+
+        const c = maplibregl.MercatorCoordinate.fromLngLat({ lng: TARGET_LNG, lat: TARGET_LAT });
+        const w = 0.004;
+        const verts = new Float32Array([
+          c.x - w, c.y - w,
+          c.x + w, c.y - w,
+          c.x - w, c.y + w,
+          c.x - w, c.y + w,
+          c.x + w, c.y - w,
+          c.x + w, c.y + w
+        ]);
+        this.buffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
+        gl.bufferData(gl.ARRAY_BUFFER, verts, gl.STATIC_DRAW);
+      },
+
+      render: function (gl, matrix) {
+        gl.useProgram(this.program);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
+        gl.enableVertexAttribArray(this.aPos);
+        gl.vertexAttribPointer(this.aPos, 2, gl.FLOAT, false, 0, 0);
+        simulationElapsedTime += 0.03;
+        gl.uniformMatrix4fv(this.uMatrix, false, matrix);
+        gl.uniform1f(this.uTime, simulationElapsedTime);
+        gl.uniform1f(this.uVel, flowVelocityScale);
+        gl.enable(gl.BLEND);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+        map.triggerRepaint();
+      }
+    };
+
+    map.on('load', () => {
+      try {
+        map.setTerrain({ source: 'terrain-source', exaggeration: 1.35 });
+      } catch (e) {
+        console.warn('Terrain unavailable', e);
+      }
+      map.addLayer(customHydrologyShaderLayer);
+
+      document.getElementById('speed-slider').addEventListener('input', (e) => {
+        flowVelocityScale = parseFloat(e.target.value);
+        document.getElementById('speed-val').textContent = flowVelocityScale.toFixed(1) + 'x';
+      });
+    });
+  </script>
+</body>
+</html>

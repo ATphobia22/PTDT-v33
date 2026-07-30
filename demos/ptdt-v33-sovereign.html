@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PTDT v33 — Sovereign 3D Node (MapLibre, no API key)</title>
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #0b0f19; }
+    #map { position: absolute; inset: 0; }
+    .glass-hud {
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    }
+    .maplibregl-ctrl-group {
+      background: rgba(15, 23, 42, 0.9) !important;
+      border: 1px solid rgba(56, 189, 248, 0.3) !important;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <div class="glass-hud absolute top-6 left-6 z-10 w-96 max-w-[90vw] p-5 rounded-2xl text-slate-100 font-sans">
+    <div class="flex items-center gap-3">
+      <span class="w-3 h-3 rounded-full bg-cyan-400 animate-pulse"></span>
+      <h1 class="text-lg font-bold tracking-wider uppercase text-cyan-400">SOVEREIGN CORE V33</h1>
+    </div>
+    <p class="text-xs text-slate-400 font-mono mt-1">Posey County · NAVD 88 · VISUALIZATION ONLY</p>
+    <p class="text-[10px] text-amber-400/90 mt-1 font-mono">Not HEC-RAS model-of-record · Not No-Rise / LOMA evidence</p>
+
+    <div class="mt-4 pt-4 border-t border-slate-700/50 space-y-4">
+      <div>
+        <div class="flex justify-between text-xs font-mono mb-1">
+          <span class="text-slate-300">Simulated stage (screen)</span>
+          <span id="stage-val" class="text-cyan-400 font-bold">375.0 FT</span>
+        </div>
+        <input id="flood-slider" type="range" min="365" max="390" step="0.1" value="375"
+               class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400" />
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 font-mono text-[11px] bg-slate-950/60 p-3 rounded-lg border border-slate-800">
+        <div><span class="text-slate-500">BFE (hypothesis)</span><span class="text-slate-200 block">375.0 ft</span></div>
+        <div><span class="text-slate-500">LAG (hypothesis)</span><span class="text-slate-200 block">377.2 ft</span></div>
+        <div><span class="text-slate-500">Renderer</span><span class="text-emerald-400 block font-bold">MapLibre GL</span></div>
+        <div><span class="text-slate-500">Keys required</span><span class="text-emerald-400 block font-bold">None</span></div>
+      </div>
+
+      <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+        <input id="toggle-buildings" type="checkbox" checked class="rounded" />
+        Extruded building vectors
+      </label>
+      <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+        <input id="toggle-terrain" type="checkbox" checked class="rounded" />
+        3D terrain (Mapterhorn DEM)
+      </label>
+    </div>
+  </div>
+
+  <script>
+    // Approximate Bonebank vicinity — confirm with survey for filings
+    const TARGET_LNG = -87.9942;
+    const TARGET_LAT = 37.8928;
+
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: {
+        version: 8,
+        sources: {
+          'osm-tiles': {
+            type: 'raster',
+            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+            tileSize: 256,
+            attribution: '© OpenStreetMap contributors',
+            maxzoom: 19
+          },
+          // Free terrain (no Mapbox/MapTiler key) — global, not 5cm LiDAR
+          'terrain-source': {
+            type: 'raster-dem',
+            url: 'https://tiles.mapterhorn.com/tilejson.json',
+            tileSize: 512
+          },
+          'osm-buildings': {
+            type: 'geojson',
+            data: {
+              type: 'FeatureCollection',
+              features: [{
+                type: 'Feature',
+                properties: { height: 8, base_height: 0, name: 'Placeholder footprint' },
+                geometry: {
+                  type: 'Polygon',
+                  coordinates: [[
+                    [TARGET_LNG - 0.0008, TARGET_LAT - 0.0006],
+                    [TARGET_LNG + 0.0008, TARGET_LAT - 0.0006],
+                    [TARGET_LNG + 0.0008, TARGET_LAT + 0.0006],
+                    [TARGET_LNG - 0.0008, TARGET_LAT + 0.0006],
+                    [TARGET_LNG - 0.0008, TARGET_LAT - 0.0006]
+                  ]]
+                }
+              }]
+            }
+          }
+        },
+        layers: [
+          { id: 'background-tiles', type: 'raster', source: 'osm-tiles' }
+        ]
+      },
+      center: [TARGET_LNG, TARGET_LAT],
+      zoom: 15.2,
+      pitch: 55,
+      bearing: -15,
+      antialias: true,
+      maxPitch: 85
+    });
+
+    map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
+
+    function floodGeometry(lng, lat, radius) {
+      return {
+        type: 'FeatureCollection',
+        features: [{
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'Polygon',
+            coordinates: [[
+              [lng - radius * 2, lat - radius],
+              [lng + radius * 2, lat - radius],
+              [lng + radius * 2, lat + radius],
+              [lng - radius * 2, lat + radius],
+              [lng - radius * 2, lat - radius]
+            ]]
+          }
+        }]
+      };
+    }
+
+    map.on('load', () => {
+      try {
+        map.setTerrain({ source: 'terrain-source', exaggeration: 1.35 });
+      } catch (e) {
+        console.warn('Terrain unavailable', e);
+      }
+
+      map.addLayer({
+        id: '3d-buildings-layer',
+        type: 'fill-extrusion',
+        source: 'osm-buildings',
+        paint: {
+          'fill-extrusion-color': '#1e293b',
+          'fill-extrusion-height': ['get', 'height'],
+          'fill-extrusion-base': ['get', 'base_height'],
+          'fill-extrusion-opacity': 0.85
+        }
+      });
+
+      map.addSource('flood-plane', {
+        type: 'geojson',
+        data: floodGeometry(TARGET_LNG, TARGET_LAT, 0.012)
+      });
+
+      map.addLayer({
+        id: 'flood-vfx-layer',
+        type: 'fill',
+        source: 'flood-plane',
+        paint: {
+          'fill-color': '#06b6d4',
+          'fill-opacity': 0.4,
+          'fill-outline-color': '#22d3ee'
+        }
+      });
+
+      const slider = document.getElementById('flood-slider');
+      const stageDisplay = document.getElementById('stage-val');
+      slider.addEventListener('input', (e) => {
+        const elev = parseFloat(e.target.value);
+        stageDisplay.textContent = elev.toFixed(1) + ' FT';
+        const opacity = 0.2 + ((elev - 365) / 25) * 0.5;
+        map.setPaintProperty('flood-vfx-layer', 'fill-opacity', Math.min(0.75, opacity));
+        // Visual cue only — not regulatory inundation
+        map.setPaintProperty(
+          'flood-vfx-layer',
+          'fill-color',
+          elev >= 377.2 ? '#ef4444' : '#06b6d4'
+        );
+      });
+
+      document.getElementById('toggle-buildings').addEventListener('change', (e) => {
+        map.setLayoutProperty('3d-buildings-layer', 'visibility', e.target.checked ? 'visible' : 'none');
+      });
+      document.getElementById('toggle-terrain').addEventListener('change', (e) => {
+        map.setTerrain(e.target.checked ? { source: 'terrain-source', exaggeration: 1.35 } : null);
+      });
+    });
+  </script>
+</body>
+</html>
