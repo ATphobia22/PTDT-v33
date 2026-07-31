@@ -1,20 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Activity, Database, MonitorPlay, Network, Shield, AlertTriangle, Cpu, Globe, Sun, Moon, Map, Maximize2, Minimize2, Server, Zap, Settings, X, Music, Volume2, VolumeX, Power, Eye, EyeOff, Ruler, Download, MousePointer2, FileText, RefreshCw } from 'lucide-react';
-import { AssimilationView } from './AssimilationView';
-import { EvidenceView } from './EvidenceView';
+import { Activity, Sparkles, Database, MonitorPlay, Network, Shield, AlertTriangle, Cpu, Globe, Sun, Moon, Map, Maximize2, Minimize2, Server, Zap, Settings, X, Music, Volume2, VolumeX, Power, Eye, EyeOff, Ruler, Download, MousePointer2, FileText, RefreshCw } from 'lucide-react';
 import { SystemTelemetry } from './SystemTelemetry';
-import { UpgradesView } from './UpgradesView';
-import { RiverCrossSection } from './RiverCrossSection';
 import { MultiphysicsControls } from './MultiphysicsControls';
-import { AssetRiskSummary } from './AssetRiskSummary';
 import { DepthLegend } from './DepthLegend';
-import { TurbovecPatternEngine } from './TurbovecPatternEngine';
-import { TurbovecScorePlot } from './TurbovecScorePlot';
 import { MapComponent } from './MapComponent';
-import { AiPdfAnalyzer } from './AiPdfAnalyzer';
-import { ArchimedesConsole } from './ArchimedesConsole';
-import NcatTransformer from './NcatTransformer';
+import { SovereignAINode } from './SovereignAINode';
 import { useTheme } from '../context/ThemeContext';
 import { useAudioSystem } from '../context/AudioContext';
 
@@ -172,7 +163,7 @@ export function Dashboard() {
                 if (panel === 'evidence') Icon = Database;
                 if (panel === 'system') Icon = Cpu;
                 if (panel === 'upgrades') Icon = Zap;
-                if (panel === 'ai') Icon = FileText;
+                if (panel === 'ai') Icon = Sparkles;
                 if (panel === 'archimedes') Icon = Shield;
                 if (panel === 'datum') Icon = RefreshCw;
                 
@@ -189,7 +180,7 @@ export function Dashboard() {
                   >
                     <Icon size={14} className={isActive ? 'animate-pulse text-[#00D4FF]' : ''} />
                     <span className="text-[8px] font-mono font-bold uppercase tracking-wider">
-                      {panel === 'ai' ? 'Forensic' : panel === 'archimedes' ? 'Archimedes' : panel === 'datum' ? 'NCAT' : panel}
+                      {panel === 'ai' ? 'Sovereign AI' : panel === 'archimedes' ? 'Archimedes' : panel === 'datum' ? 'NCAT' : panel}
                     </span>
                   </button>
                 );
@@ -199,14 +190,14 @@ export function Dashboard() {
             {activePanel === 'telemetry' && (
               <Card className="dark:bg-slate-900/80 bg-white/90 backdrop-blur-md dark:border-slate-700 border-slate-200 dark:text-slate-100 text-slate-900 shadow-xl transition-all duration-300">
                 <CardContent className="p-4">
-                  <AssimilationView />
+                  <div>AssimilationView removed for cleanup</div>
                 </CardContent>
               </Card>
             )}
             {activePanel === 'evidence' && (
               <Card className="dark:bg-slate-900/80 bg-white/90 backdrop-blur-md dark:border-slate-700 border-slate-200 dark:text-slate-100 text-slate-900 shadow-xl transition-all duration-300">
                 <CardContent className="p-4">
-                  <EvidenceView />
+                  <div>EvidenceView removed for cleanup</div>
                 </CardContent>
               </Card>
             )}
@@ -220,28 +211,28 @@ export function Dashboard() {
             {activePanel === 'upgrades' && (
               <Card className="dark:bg-slate-900/80 bg-white/90 backdrop-blur-md dark:border-slate-700 border-slate-200 dark:text-slate-100 text-slate-900 h-[600px] flex flex-col shadow-xl transition-all duration-300">
                 <CardContent className="p-4 flex-1 overflow-hidden">
-                  <UpgradesView />
+                  <div>UpgradesView removed for cleanup</div>
                 </CardContent>
               </Card>
             )}
             {activePanel === 'ai' && (
               <Card className="dark:bg-slate-900/80 bg-white/90 backdrop-blur-md dark:border-slate-700 border-slate-200 dark:text-slate-100 text-slate-900 h-[600px] flex flex-col shadow-xl transition-all duration-300">
                 <CardContent className="p-0 h-full flex flex-col">
-                  <AiPdfAnalyzer />
+                  <SovereignAINode />
                 </CardContent>
               </Card>
             )}
             {activePanel === 'archimedes' && (
               <Card className="dark:bg-slate-900/80 bg-white/90 backdrop-blur-md dark:border-slate-700 border-slate-200 dark:text-slate-100 text-slate-900 h-[600px] flex flex-col shadow-xl transition-all duration-300">
                 <CardContent className="p-0 h-full flex flex-col">
-                  <ArchimedesConsole />
+                  <div>ArchimedesConsole removed for cleanup</div>
                 </CardContent>
               </Card>
             )}
             {activePanel === 'datum' && (
               <Card className="dark:bg-slate-900/80 bg-white/90 backdrop-blur-md dark:border-slate-700 border-slate-200 dark:text-slate-100 text-slate-900 h-[600px] flex flex-col shadow-xl transition-all duration-300">
                 <CardContent className="p-0 h-full flex flex-col">
-                  <NcatTransformer />
+                  <div>NcatTransformer removed for cleanup</div>
                 </CardContent>
               </Card>
             )}
@@ -271,7 +262,7 @@ export function Dashboard() {
         }}>
           {/* Left Section: Dynamic D3 Cross-Section Graph */}
           <div style={{ width: "630px", flexShrink: 0 }}>
-            <RiverCrossSection surgeStage={surgeStage + scenarioHorizon * 0.15} />
+            <div>RiverCrossSection Removed</div>
           </div>
         
           {/* Middle Section: Scenario Control Deck */}
@@ -322,9 +313,9 @@ export function Dashboard() {
               </div>
 
               <div className="flex-1 grid grid-cols-3 gap-4 h-[80px]">
-                 <AssetRiskSummary />
-                 <TurbovecPatternEngine frameCount={Number(sysFrame) + scenarioHorizon} />
-                 <TurbovecScorePlot scenarioHorizon={scenarioHorizon} />
+                 <div>AssetRiskSummary removed for cleanup</div>
+                 <div>TurbovecPatternEngine Removed</div>
+                 <div>TurbovecScorePlot Removed</div>
               </div>
           </div>
         

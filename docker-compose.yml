@@ -1,34 +1,22 @@
+version: '3.8'
 services:
-  archimedes:
-    build:
-      context: .
-      dockerfile: environment/Dockerfile
-    ports:
-      - "8000:8000"
-    environment:
-      - PYTHONUNBUFFERED=1
-    healthcheck:
-      test: ["CMD", "curl", "-sf", "http://127.0.0.1:8000/api/v1/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 6
-      start_period: 20s
-
   web:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
       - PORT=3000
     depends_on:
-      archimedes:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000/',r=>process.exit(r.statusCode<500?0:1)).on('error',()=>process.exit(1))"]
-      interval: 15s
-      timeout: 5s
-      retries: 6
-      start_period: 25s
+      - archimedes
+
+  archimedes:
+    build:
+      context: .
+      dockerfile: environment/Dockerfile
+    ports:
+      - "8000:8000"
+    command: python3 archimedes_engine.py
+    volumes:
+      - .:/app
+    working_dir: /app

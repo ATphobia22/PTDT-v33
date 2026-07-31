@@ -1,7 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import * as pmtiles from 'pmtiles';
+import * as gisService from '../services/gisService';
+import * as THREE from 'three';
+import { PDT3DAssets } from '../3d-assets';
 import { 
   Map, 
   Building2, 
@@ -26,10 +28,13 @@ import {
   ChevronUp,
   ChevronDown,
   Landmark,
-  Microscope
+  Microscope,
+  Play,
+  Pause
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { ScientificProofOverlay } from './ScientificProofOverlay';
+import { PoseyGISTools } from './PoseyGISTools';
 
 interface CameraPreset {
   name: string;
@@ -161,16 +166,140 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
   const [buildingOpacity, setBuildingOpacity] = useState<number>(0.8);
   const [showLabels, setShowLabels] = useState<boolean>(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
+  const [sidebarTab, setSidebarTab] = useState<'3d' | 'gis'>('gis');
   const [activePreset, setActivePreset] = useState<string>('Point Township, IN');
   const [buildingCount, setBuildingCount] = useState<number>(0);
   const [tilesLoading, setTilesLoading] = useState<boolean>(false);
   const [is3D, setIs3D] = useState<boolean>(true);
   const [showProof, setShowProof] = useState<boolean>(false);
+  const [isSimulating, setIsSimulating] = useState<boolean>(false);
+  
+  // Infrastructure & Ecology States
+  const [showTrees, setShowTrees] = useState<boolean>(true);
+  const [showRoads, setShowRoads] = useState<boolean>(true);
+  const [showStructures, setShowStructures] = useState<boolean>(true);
+
+  // Regional Data States
+  const [historicSites, setHistoricSites] = useState<any>(null);
+  const [femaZones, setFemaZones] = useState<any>(null);
+  const [dnrFloodplain, setDnrFloodplain] = useState<any>(null);
+
+  const assetLoader = useRef(new PDT3DAssets());
+  const threeLayerRef = useRef<any>(null);
 
   // High-performance states to minimize initial memory overhead
   const [isIntersecting, setIsIntersecting] = useState(true);
   const [terrainLoaded, setTerrainLoaded] = useState(false);
   const [terrainActive, setTerrainActive] = useState(false);
+
+  // Helper to dynamically load high-density terrain mesh data on-demand
+  const loadTerrain = useCallback((mapInstance: maplibregl.Map) => {
+    if (!mapInstance || terrainLoaded) return;
+    try {
+      // Configure on-demand AWS terrarium DEM tiles encoding to render real-time elevations
+      mapInstance.addSource('terrain-dem', {
+        type: 'raster-dem',
+        tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+        encoding: 'terrarium',
+        tileSize: 256,
+        maxzoom: 15
+      });
+      
+      mapInstance.setTerrain({ source: 'terrain-dem', exaggeration: 1.5 });
+      setTerrainLoaded(true);
+      setTerrainActive(true);
+      console.log('Tri-State 3D Terrain Mesh lazy-loaded dynamically on navigation.');
+    } catch (err) {
+      console.warn('Terrain DEM source failed to initialize:', err);
+    }
+  }, [terrainLoaded]);
+
+  // Calculates/estimates current screen building elements
+  const updateBuildingCount = useCallback(() => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+    try {
+      const activeLayerId = sourceType === 'overture' ? '3d-buildings-overture' : 
+        (map.getLayer('3d-buildings-osm') ? '3d-buildings-osm' : '3d-buildings-osm-fallback');
+
+      if (!map.getLayer(activeLayerId)) return;
+
+      const features = map.queryRenderedFeatures({ layers: [activeLayerId] });
+      const count = features.length;
+      setBuildingCount(prev => prev === count ? prev : count);
+    } catch (e) {
+      // Quiet fail if layers not loaded fully
+    }
+  }, [sourceType]);
+
+  // Helper to build robust MapLibre Expression syntax for Extrusion colors
+  const getBuildingPaintProperties = useCallback((source: TileSourceType): any => {
+    const heightKey = source === 'overture' ? 'height' : 'render_height';
+    
+    switch (buildingTheme) {
+      case 'cyber':
+        return {
+          'fill-extrusion-color': [
+            'interpolate',
+            ['linear'],
+            ['coalesce', ['get', heightKey], 10],
+            0, '#ec4899',   // Electric Pink
+            15, '#a855f7',  // Deep Purple
+            45, '#3b82f6',  // Cyber Blue
+            100, '#06b6d4', // Bright Cyan
+            250, '#10b981'  // Emerald green high-rise
+          ],
+        };
+      case 'warm':
+        return {
+          'fill-extrusion-color': [
+            'interpolate',
+            ['linear'],
+            ['coalesce', ['get', heightKey], 8],
+            0, '#ea580c',   // Terracotta / Burnt Orange
+            15, '#f59e0b',  // Soft Sandstone
+            50, '#d97706',  // Amber Clay
+            150, '#b45309'  // Dark brick
+          ],
+        };
+      case 'glass':
+        return {
+          'fill-extrusion-color': [
+            'interpolate',
+            ['linear'],
+            ['coalesce', ['get', heightKey], 12],
+            0, '#e2e8f0',   // Translucent white
+            20, '#bae6fd',  // Soft blue glass
+            75, '#38bdf8',  // Mirror cyan
+            180, '#0284c7'  // Deep blue spire
+          ],
+        };
+      case 'thematic':
+      default:
+        // Elegant slate color schema matching dark/light themes
+        return {
+          'fill-extrusion-color': (theme === 'dark' || theme === 'blueprint') 
+            ? [
+                'interpolate',
+                ['linear'],
+                ['coalesce', ['get', heightKey], 10],
+                0, '#1e293b',   // Slate 800
+                30, '#334155',  // Slate 700
+                80, '#475569',  // Slate 600
+                200, '#64748b'  // Slate 500
+              ]
+            : [
+                'interpolate',
+                ['linear'],
+                ['coalesce', ['get', heightKey], 10],
+                0, '#f1f5f9',   // Slate 50
+                30, '#e2e8f0',  // Slate 200
+                80, '#cbd5e1',  // Slate 300
+                200, '#94a3b8'  // Slate 400
+              ],
+        };
+    }
+  }, [buildingTheme, theme]);
 
   // Setup Intersection Observer to lazy load the entire map canvas only when visible
   useEffect(() => {
@@ -190,28 +319,6 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
     return () => observer.disconnect();
   }, []);
 
-  // Helper to dynamically load high-density terrain mesh data on-demand
-  const loadTerrain = (mapInstance: maplibregl.Map) => {
-    if (!mapInstance || terrainLoaded) return;
-    try {
-      // Configure on-demand AWS terrarium DEM tiles encoding to render real-time elevations
-      mapInstance.addSource('terrain-dem', {
-        type: 'raster-dem',
-        tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
-        encoding: 'terrarium',
-        tileSize: 256,
-        maxzoom: 15
-      });
-      
-      mapInstance.setTerrain({ source: 'terrain-dem', exaggeration: 1.5 });
-      setTerrainLoaded(true);
-      setTerrainActive(true);
-      console.log('Tri-State 3D Terrain Mesh lazy-loaded dynamically on navigation.');
-    } catch (err) {
-      console.warn('Terrain DEM source failed to initialize:', err);
-    }
-  };
-
   // Initialize PMTiles Protocol globally
   useEffect(() => {
     if (!protocolAdded.current) {
@@ -227,9 +334,9 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
 
   
   useEffect(() => {
-    if (!mapLoaded || !mapRef.current || !layerOpacities) return;
+    if (!mapLoaded || !mapRef.current || !layerOpacities || !mapRef.current.isStyleLoaded()) return;
     
-    // We assume Mapbox is loaded
+    // We assume MapLibre is loaded
     const externalLayers = [
       { id: 'geo-mesh-data', key: 'geospatial' },
       { id: 'hydro-live-data', key: 'hydrodynamic' },
@@ -317,7 +424,7 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
         // PMTiles Overture Buildings Source
         map.addSource('overture-buildings', {
           type: 'vector',
-          url: 'pmtiles://https://overturemaps-extras-us-west-2.s3.amazonaws.com/tiles/2026-05-20.0/buildings.pmtiles',
+          url: 'pmtiles://https://data.source.coop/protomaps/openstreetmap/tiles/v3.pmtiles',
         });
 
         map.addLayer({
@@ -333,20 +440,84 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
         });
       } else {
         // OpenFreeMap OSM Vector Buildings Layer
-        // When using the default OpenFreeMap styles, the 'openmaptiles' source contains vector building features.
-        // If it's not present or style fails, we load it manually.
         const sourceExists = map.getSource('openmaptiles');
         
         if (sourceExists) {
-          // Hide standard flat buildings to prevent rendering duplicates
+          // Hide standard flat buildings
           const layers = map.getStyle().layers;
           if (layers) {
             layers.forEach(layer => {
               if (layer.id.includes('building') && layer.type !== 'fill-extrusion') {
                 map.setLayoutProperty(layer.id, 'visibility', 'none');
               }
+              if (layer.id.includes('forest') || layer.id.includes('wood') || layer.id.includes('park')) {
+                map.setLayoutProperty(layer.id, 'visibility', 'none');
+              }
             });
           }
+
+          // 1. Specialized Residential Layer (Houses)
+          map.addLayer({
+            id: '3d-houses',
+            type: 'fill-extrusion',
+            source: 'openmaptiles',
+            'source-layer': 'building',
+            filter: ['all', 
+              ['any', ['==', ['get', 'type'], 'house'], ['==', ['get', 'class'], 'residential'], ['==', ['get', 'class'], 'house']],
+              ['!=', ['get', 'type'], 'barn']
+            ],
+            paint: {
+              'fill-extrusion-color': (theme === 'dark' || theme === 'blueprint') ? '#1e293b' : '#f8fafc',
+              'fill-extrusion-height': ['*', ['coalesce', ['get', 'render_height'], 15], heightMultiplier],
+              'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
+              'fill-extrusion-opacity': buildingOpacity
+            }
+          });
+
+          // 2. Specialized Agricultural Layer (Barns)
+          map.addLayer({
+            id: '3d-barns',
+            type: 'fill-extrusion',
+            source: 'openmaptiles',
+            'source-layer': 'building',
+            filter: ['any', ['==', ['get', 'type'], 'barn'], ['==', ['get', 'class'], 'barn']],
+            paint: {
+              'fill-extrusion-color': (theme === 'dark' || theme === 'blueprint') ? '#451a03' : '#92400e',
+              'fill-extrusion-height': ['*', ['coalesce', ['get', 'render_height'], 25], heightMultiplier],
+              'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
+              'fill-extrusion-opacity': buildingOpacity
+            }
+          });
+
+          // 3. 3D Road Network (Draped Line)
+          map.addLayer({
+            id: '3d-roads-highspeed',
+            type: 'line',
+            source: 'openmaptiles',
+            'source-layer': 'transportation',
+            filter: ['all', ['==', ['get', 'class'], 'primary']],
+            layout: { 'line-cap': 'round', 'line-join': 'round' },
+            paint: {
+              'line-color': (theme === 'dark' || theme === 'blueprint') ? '#00D4FF' : '#4f46e5',
+              'line-width': ['interpolate', ['linear'], ['zoom'], 12, 1, 15, 4],
+              'line-opacity': 0.8
+            }
+          });
+
+          // 4. Ecological Canopy (Trees/Forests)
+          map.addLayer({
+            id: '3d-canopy',
+            type: 'fill-extrusion',
+            source: 'openmaptiles',
+            'source-layer': 'landuse',
+            filter: ['any', ['==', ['get', 'class'], 'wood'], ['==', ['get', 'class'], 'forest']],
+            paint: {
+              'fill-extrusion-color': (theme === 'dark' || theme === 'blueprint') ? '#064e3b' : '#14532d',
+              'fill-extrusion-height': 15,
+              'fill-extrusion-base': 0,
+              'fill-extrusion-opacity': 0.4
+            }
+          });
 
           map.addLayer({
             id: '3d-buildings-osm',
@@ -359,27 +530,82 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
               visibility: 'visible'
             }
           });
-        } else {
-          // Fallback manually adding OpenFreeMap MVT Source
-          map.addSource('osm-mvt', {
-            type: 'vector',
-            tiles: ['https://tiles.openfreemap.org/v1/openmaptiles/{z}/{x}/{y}.pbf'],
-            minzoom: 0,
-            maxzoom: 14
+        }
+      }
+
+      // Add Custom Three.js Layer for Detailed Assets
+      const customLayer: maplibregl.CustomLayerInterface = {
+        id: '3d-detailed-assets',
+        type: 'custom',
+        renderingMode: '3d',
+        onAdd: function (map, gl) {
+          this.camera = new THREE.Camera();
+          this.scene = new THREE.Scene();
+
+          // Lights
+          const light1 = new THREE.DirectionalLight(0xffffff, 1);
+          light1.position.set(0, -70, 100).normalize();
+          this.scene.add(light1);
+
+          const light2 = new THREE.DirectionalLight(0xffffff, 0.5);
+          light2.position.set(0, 70, 100).normalize();
+          this.scene.add(light2);
+
+          const ambLight = new THREE.AmbientLight(0x404040, 1);
+          this.scene.add(ambLight);
+
+          this.map = map;
+          this.renderer = new THREE.WebGLRenderer({
+            canvas: map.getCanvas(),
+            context: gl,
+            antialias: true
           });
 
-          map.addLayer({
-            id: '3d-buildings-osm-fallback',
-            type: 'fill-extrusion',
-            source: 'osm-mvt',
-            'source-layer': 'building',
-            minzoom: 12,
-            paint: getBuildingPaintProperties('openfreemap'),
-            layout: {
-              visibility: 'visible'
+          this.renderer.autoClear = false;
+
+          // Add some initial detailed assets at specific locations
+          const loader = assetLoader.current;
+          HISTORIC_SITES_PRESETS.forEach(site => {
+            const house = loader.createHouse([0, 0, 0], 2);
+            house.userData = { lngLat: site.center };
+            this.scene.add(house);
+
+            // Add a few trees around each site
+            for (let i = 0; i < 3; i++) {
+              const offsetLng = (Math.random() - 0.5) * 0.001;
+              const offsetLat = (Math.random() - 0.5) * 0.001;
+              const tree = loader.createTree([0, 0, 0], 0.8 + Math.random());
+              tree.userData = { lngLat: [site.center[0] + offsetLng, site.center[1] + offsetLat] as [number, number] };
+              this.scene.add(tree);
             }
           });
+        },
+        render: function (gl, matrix) {
+          const m = new THREE.Matrix4().fromArray(matrix);
+          
+          this.scene.children.forEach(child => {
+            if (child.userData.lngLat) {
+              const coord = maplibregl.MercatorCoordinate.fromLngLat(child.userData.lngLat);
+              const l = new THREE.Matrix4()
+                .makeTranslation(coord.x, coord.y, coord.z || 0)
+                .scale(new THREE.Vector3(coord.meterInMercatorCoordinateUnits(), -coord.meterInMercatorCoordinateUnits(), coord.meterInMercatorCoordinateUnits()))
+                .multiply(new THREE.Matrix4().makeRotationX(Math.PI / 2));
+              
+              child.matrixAutoUpdate = false;
+              child.matrix = l;
+            }
+          });
+
+          this.camera.projectionMatrix = m;
+          this.renderer.resetState();
+          this.renderer.render(this.scene, this.camera);
+          this.map.triggerRepaint();
         }
+      };
+
+      if (!map.getLayer('3d-detailed-assets')) {
+        map.addLayer(customLayer);
+        threeLayerRef.current = customLayer;
       }
 
       // Estimate rendered features
@@ -387,16 +613,35 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
     });
 
     map.on('dataloading', () => {
-      setTilesLoading(true);
+      // setTilesLoading(true); // Avoid rapid state updates
     });
 
     map.on('idle', () => {
-      setTilesLoading(false);
-      updateBuildingCount();
+      // setTilesLoading(false);
+      // updateBuildingCount();
     });
 
     map.on('moveend', () => {
-      updateBuildingCount();
+      // updateBuildingCount(); // Avoid rapid state updates on camera rotate
+
+      const bounds = map.getBounds();
+      const bbox: [number, number, number, number] = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()];
+
+      // Debounced fetching of regional data
+      const timeoutId = setTimeout(async () => {
+        try {
+          const [fema, historic, dnr] = await Promise.all([
+            gisService.fetchFemaFloodZones(bbox),
+            gisService.fetchIndianaHistoricSites(bbox),
+            gisService.fetchDnrFloodplain(bbox)
+          ]);
+          setFemaZones(fema);
+          setHistoricSites(historic);
+          setDnrFloodplain(dnr);
+        } catch (err) {
+          console.error("Error fetching regional GIS data:", err);
+        }
+      }, 500);
 
       // Lazy-load high-density terrain mesh when near a Tri-State location
       const center = map.getCenter();
@@ -417,12 +662,12 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
       mapRef.current = null;
       setMapLoaded(false);
     };
-  }, [sourceType, theme, isIntersecting]); // Re-initialize when the data source, global theme, or intersection changes
+  }, [sourceType, theme, isIntersecting, updateBuildingCount]); // Re-initialize when the data source, global theme, or intersection changes
 
   // Reactive updates for theme styling, heights, and opacity (without full map reload)
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !mapLoaded) return;
+    if (!map || !mapLoaded || !map.isStyleLoaded()) return;
 
     const activeLayerId = sourceType === 'overture' ? '3d-buildings-overture' : 
       (map.getLayer('3d-buildings-osm') ? '3d-buildings-osm' : '3d-buildings-osm-fallback');
@@ -454,12 +699,12 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
       // Update colors
       map.setPaintProperty(activeLayerId, 'fill-extrusion-color', paintProps['fill-extrusion-color']);
     }
-  }, [buildingTheme, heightMultiplier, buildingOpacity, mapLoaded, sourceType]);
+  }, [buildingTheme, heightMultiplier, buildingOpacity, mapLoaded, sourceType, getBuildingPaintProperties]);
 
   // Handle Digital Twin Multiphysics Layer Toggles
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !mapLoaded) return;
+    if (!map || !mapLoaded || !map.isStyleLoaded()) return;
 
     // Apply Hydrodynamic Water Shading
     const layers = map.getStyle()?.layers;
@@ -549,7 +794,7 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
   // Cinematic Isometric Camera Rig (360 Sweep)
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !mapLoaded || !is3D) return;
+    if (!map || !mapLoaded || !isSimulating) return;
 
     let animationId: number;
     
@@ -564,109 +809,90 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
     
     animationId = requestAnimationFrame(rotateCamera);
     return () => cancelAnimationFrame(animationId);
-  }, [mapLoaded, is3D]);
+  }, [mapLoaded, isSimulating]);
 
-  // Handle Label Visibility Toggle
+  // Handle Component Toggles (Roads, Trees, Structures)
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !mapLoaded) return;
+    if (!map || !mapLoaded || !map.isStyleLoaded()) return;
 
-    const layers = map.getStyle()?.layers;
-    if (!layers) return;
-
-    layers.forEach(layer => {
-      if (layer.type === 'symbol' && (layer.id.includes('label') || layer.id.includes('text') || layer.id.includes('place'))) {
-        map.setLayoutProperty(layer.id, 'visibility', showLabels ? 'visible' : 'none');
+    const toggleVisibility = (layerId: string, visible: boolean) => {
+      if (map.getLayer(layerId)) {
+        map.setLayoutProperty(layerId, 'visibility', visible ? 'visible' : 'none');
       }
-    });
-  }, [showLabels, mapLoaded]);
+    };
 
-  // Calculates/estimates current screen building elements
-  const updateBuildingCount = () => {
+    toggleVisibility('3d-houses', showStructures);
+    toggleVisibility('3d-barns', showStructures);
+    toggleVisibility('3d-buildings-osm', showStructures);
+    toggleVisibility('3d-buildings-overture', showStructures);
+    toggleVisibility('3d-roads-highspeed', showRoads);
+    toggleVisibility('3d-canopy', showTrees);
+    toggleVisibility('historic-sites-layer', showStructures);
+    toggleVisibility('fema-flood-layer', externalLayers?.hydrodynamic || false);
+    toggleVisibility('dnr-flood-layer', externalLayers?.hydrodynamic || false);
+  }, [showStructures, showRoads, showTrees, mapLoaded, externalLayers?.hydrodynamic]);
+
+  // Update Regional Data Layers
+  useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
-    try {
-      const activeLayerId = sourceType === 'overture' ? '3d-buildings-overture' : 
-        (map.getLayer('3d-buildings-osm') ? '3d-buildings-osm' : '3d-buildings-osm-fallback');
+    if (!map || !mapLoaded || !map.isStyleLoaded()) return;
 
-      if (!map.getLayer(activeLayerId)) return;
+    const updateSource = (id: string, data: any) => {
+      const source = map.getSource(id) as maplibregl.GeoJSONSource;
+      if (source) {
+        source.setData(data || { type: "FeatureCollection", features: [] });
+      } else if (data) {
+        map.addSource(id, { type: 'geojson', data });
+      }
+    };
 
-      const features = map.queryRenderedFeatures({ layers: [activeLayerId] });
-      const count = features.length;
-      setBuildingCount(prev => prev === count ? prev : count);
-    } catch (e) {
-      // Quiet fail if layers not loaded fully
+    updateSource('historic-sites-source', historicSites);
+    updateSource('fema-flood-source', femaZones);
+    updateSource('dnr-flood-source', dnrFloodplain);
+
+    // Ensure layers exist
+    if (historicSites && !map.getLayer('historic-sites-layer')) {
+      map.addLayer({
+        id: 'historic-sites-layer',
+        type: 'fill-extrusion',
+        source: 'historic-sites-source',
+        paint: {
+          'fill-extrusion-color': '#fbbf24',
+          'fill-extrusion-height': 20,
+          'fill-extrusion-base': 0,
+          'fill-extrusion-opacity': 0.8
+        }
+      });
     }
-  };
 
-  // Helper to build robust MapLibre Expression syntax for Extrusion colors
-  const getBuildingPaintProperties = (source: TileSourceType): any => {
-    const heightKey = source === 'overture' ? 'height' : 'render_height';
-    
-    switch (buildingTheme) {
-      case 'cyber':
-        return {
-          'fill-extrusion-color': [
-            'interpolate',
-            ['linear'],
-            ['coalesce', ['get', heightKey], 10],
-            0, '#ec4899',   // Electric Pink
-            15, '#a855f7',  // Deep Purple
-            45, '#3b82f6',  // Cyber Blue
-            100, '#06b6d4', // Bright Cyan
-            250, '#10b981'  // Emerald green high-rise
-          ],
-        };
-      case 'warm':
-        return {
-          'fill-extrusion-color': [
-            'interpolate',
-            ['linear'],
-            ['coalesce', ['get', heightKey], 8],
-            0, '#ea580c',   // Terracotta / Burnt Orange
-            15, '#f59e0b',  // Soft Sandstone
-            50, '#d97706',  // Amber Clay
-            150, '#b45309'  // Dark brick
-          ],
-        };
-      case 'glass':
-        return {
-          'fill-extrusion-color': [
-            'interpolate',
-            ['linear'],
-            ['coalesce', ['get', heightKey], 12],
-            0, '#e2e8f0',   // Translucent white
-            20, '#bae6fd',  // Soft blue glass
-            75, '#38bdf8',  // Mirror cyan
-            180, '#0284c7'  // Deep blue spire
-          ],
-        };
-      case 'thematic':
-      default:
-        // Elegant slate color schema matching dark/light themes
-        return {
-          'fill-extrusion-color': (theme === 'dark' || theme === 'blueprint') 
-            ? [
-                'interpolate',
-                ['linear'],
-                ['coalesce', ['get', heightKey], 10],
-                0, '#1e293b',   // Slate 800
-                30, '#334155',  // Slate 700
-                80, '#475569',  // Slate 600
-                200, '#64748b'  // Slate 500
-              ]
-            : [
-                'interpolate',
-                ['linear'],
-                ['coalesce', ['get', heightKey], 10],
-                0, '#cbd5e1',   // Slate 300
-                30, '#94a3b8',  // Slate 400
-                80, '#64748b',  // Slate 500
-                200, '#475569'  // Slate 600
-              ]
-        };
+    if (femaZones && !map.getLayer('fema-flood-layer')) {
+      map.addLayer({
+        id: 'fema-flood-layer',
+        type: 'fill',
+        source: 'fema-flood-source',
+        paint: {
+          'fill-color': '#3b82f6',
+          'fill-opacity': 0.3,
+          'fill-outline-color': '#2563eb'
+        }
+      });
     }
-  };
+
+    if (dnrFloodplain && !map.getLayer('dnr-flood-layer')) {
+      map.addLayer({
+        id: 'dnr-flood-layer',
+        type: 'fill',
+        source: 'dnr-flood-source',
+        paint: {
+          'fill-color': '#10b981',
+          'fill-opacity': 0.25,
+          'fill-outline-color': '#059669'
+        }
+      });
+    }
+
+  }, [historicSites, femaZones, dnrFloodplain, mapLoaded]);
 
   const handleZoomIn = () => {
     mapRef.current?.zoomIn({ duration: 300 });
@@ -903,10 +1129,38 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
           </button>
         </div>
 
+        {/* Tab Bar */}
+        <div className="flex border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+          <button
+            onClick={() => setSidebarTab('3d')}
+            className={`flex-1 py-2 text-[10px] font-bold tracking-wider uppercase transition-colors ${
+              sidebarTab === '3d'
+                ? 'text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400 bg-white dark:bg-slate-900'
+                : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+            }`}
+          >
+            3D Control
+          </button>
+          <button
+            onClick={() => setSidebarTab('gis')}
+            className={`flex-1 py-2 text-[10px] font-bold tracking-wider uppercase transition-colors ${
+              sidebarTab === 'gis'
+                ? 'text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400 bg-white dark:bg-slate-900'
+                : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+            }`}
+          >
+            Posey GIS
+          </button>
+        </div>
+
         {/* Sidebar Content */}
         <div className="flex-1 overflow-y-auto p-4 space-y-5 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent">
           
-          {/* Scientific Proof Toggle */}
+          {sidebarTab === 'gis' ? (
+            <PoseyGISTools />
+          ) : (
+            <>
+              {/* Scientific Proof Toggle */}
           <button
             onClick={() => setShowProof(!showProof)}
             className={`w-full p-3 rounded-lg border flex items-center gap-3 transition-all cursor-pointer ${
@@ -919,6 +1173,22 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
             <div className="text-left">
               <div className="text-xs font-bold leading-tight">Scientific Proof</div>
               <div className="text-[9px] opacity-70">FEMA/INdnr Metrics Analysis</div>
+            </div>
+          </button>
+
+          {/* Animate Simulation Toggle */}
+          <button
+            onClick={() => setIsSimulating(!isSimulating)}
+            className={`w-full p-3 rounded-lg border flex items-center gap-3 transition-all cursor-pointer ${
+              isSimulating 
+                ? 'bg-emerald-600 border-emerald-600 text-white' 
+                : 'bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80'
+            }`}
+          >
+            {isSimulating ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            <div className="text-left">
+              <div className="text-xs font-bold leading-tight">Animate Simulation</div>
+              <div className="text-[9px] opacity-70">Cinematic 3D Sweep</div>
             </div>
           </button>
 
@@ -1033,6 +1303,41 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
           {/* Map Controls Checkboxes */}
           <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
             <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider font-mono">
+              Physical Asset Overlays
+            </label>
+            <div className="space-y-1.5">
+              <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer hover:text-slate-900 dark:hover:text-white">
+                <input
+                  type="checkbox"
+                  checked={showStructures}
+                  onChange={(e) => setShowStructures(e.target.checked)}
+                  className="rounded border-slate-300 dark:border-slate-700 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                />
+                Houses & Barns (3D)
+              </label>
+              <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer hover:text-slate-900 dark:hover:text-white">
+                <input
+                  type="checkbox"
+                  checked={showRoads}
+                  onChange={(e) => setShowRoads(e.target.checked)}
+                  className="rounded border-slate-300 dark:border-slate-700 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                />
+                Regional Road Network
+              </label>
+              <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer hover:text-slate-900 dark:hover:text-white">
+                <input
+                  type="checkbox"
+                  checked={showTrees}
+                  onChange={(e) => setShowTrees(e.target.checked)}
+                  className="rounded border-slate-300 dark:border-slate-700 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                />
+                Ecological Canopy (Trees)
+              </label>
+            </div>
+          </div>
+
+          <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider font-mono">
               View Filters
             </label>
             <div className="space-y-1.5">
@@ -1072,7 +1377,7 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
                     }}
                     className="mt-1.5 px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-700 text-white font-mono text-[9px] text-center font-bold tracking-wider uppercase cursor-pointer transition-all border border-indigo-500/10 shadow-sm"
                   >
-                    Prioritize & Load 3D Terrain
+                    Generate Terrain Mesh
                   </button>
                 )}
               </div>
@@ -1157,7 +1462,8 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
               ))}
             </div>
           </div>
-
+            </>
+          )}
         </div>
 
         {/* Sidebar Footer with Live Telemetry Stats */}

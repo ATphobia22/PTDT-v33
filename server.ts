@@ -1,3 +1,4 @@
+import { registerAIRoutes } from "./src/server-ai";
 import express, { Request, Response, NextFunction } from "express";
 import path from "path";
 import fs from "fs";
@@ -312,26 +313,8 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
       const data = await response.json();
       res.json(data);
     } catch (error: any) {
-      console.log("[FEMA Proxy] Active - serving local offline fallback layer successfully");
-      res.json({
-        type: "FeatureCollection",
-        features: [
-          {
-            type: "Feature",
-            properties: { FLD_ZONE: "AE", ZONE_SUBTY: "" },
-            geometry: {
-              type: "Polygon",
-              coordinates: [[
-                [-88.05, 37.85],
-                [-87.95, 37.85],
-                [-87.95, 37.95],
-                [-88.05, 37.95],
-                [-88.05, 37.85]
-              ]]
-            }
-          }
-        ]
-      });
+      console.error("[FEMA Proxy] Error fetching real data:", error.message);
+      res.status(500).json({ error: "Failed to fetch FEMA data" });
     }
   });
 
@@ -360,20 +343,8 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
       const data = await response.json();
       res.json(data);
     } catch (error: any) {
-      console.log("[Historic Sites Proxy] Active - serving local offline fallback layer successfully");
-      res.json({
-        type: "FeatureCollection",
-        features: [
-          {
-            type: "Feature",
-            properties: { NAME: "Family Homestead" },
-            geometry: {
-              type: "Point",
-              coordinates: [-88.0, 37.9]
-            }
-          }
-        ]
-      });
+      console.error("[Historic Sites Proxy] Error fetching real data:", error.message);
+      res.status(500).json({ error: "Failed to fetch INMap data" });
     }
   });
 
@@ -402,26 +373,8 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
       const data = await response.json();
       res.json(data);
     } catch (error: any) {
-      console.log("[DNR Floodplain Proxy] Active - serving local fallback layer successfully");
-      res.json({
-        type: "FeatureCollection",
-        features: [
-          {
-            type: "Feature",
-            properties: { FLD_ZONE: "AE", ZONE_SUBTY: "Floodway" },
-            geometry: {
-              type: "Polygon",
-              coordinates: [[
-                [-88.02, 37.88],
-                [-87.98, 37.88],
-                [-87.98, 37.92],
-                [-88.02, 37.92],
-                [-88.02, 37.88]
-              ]]
-            }
-          }
-        ]
-      });
+      console.error("[DNR Floodplain Proxy] Error fetching real data:", error.message);
+      res.status(500).json({ error: "Failed to fetch Indiana DNR floodplain data" });
     }
   });
 
@@ -788,10 +741,8 @@ Structure your response with clear headers and bullet points. End with "SYSTEM_S
     const artifacts = [
         "01_PE_Transmittal_and_LOMA_Letter.pdf",
         "03_IDNR_No_Rise_Certification.pdf",
-        "05_FEMA_LOMA_Forensic_Case_Study.pdf",
-        "bca_elevation_data.json",
-        "bca_storage_data.json",
-        "bca_summary.csv"
+        "04_FEMA_BCA_Toolkit_Export_Data.json",
+        "05_final_portal_package.pdf"
     ];
 
     const manifest_payload = {
@@ -858,24 +809,59 @@ Structure your response with clear headers and bullet points. End with "SYSTEM_S
     }
   });
 
-  app.get("/api/nws-alerts", (req, res) => {
-    res.json({
-      title: "NWS Active Alerts - Tri-State Regional Node",
-      features: [
-        {
-          id: "NWS-ID-001",
-          properties: {
-            event: "Flood Warning",
-            headline: "Flood Warning issued for Wabash River at New Harmony affecting Posey County",
-            severity: "Severe",
-            urgency: "Immediate",
-            certainty: "Likely",
-            description: "The National Weather Service in Paducah has issued a Flood Warning for the Wabash River at New Harmony... until further notice. At 18.0 feet the river begins to overflow lowlands. Residents are advised to monitor the PTDT Sovereign Twin for real-time stage updates.",
-            instruction: "Do not drive across flooded roads. Turn around, don't drown. Secure high-value equipment at 13101 Bonebank Rd."
-          }
-        }
-      ]
-    });
+    app.get("/api/nws-alerts", async (req, res) => {
+    try {
+      const url = "https://api.weather.gov/alerts/active?area=IN";
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const response = await fetch(url, {
+        headers: { "User-Agent": "PTDT-v23-Tri-State-Twin (admin@pointtownship.gov)" },
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      if (!response.ok) throw new Error(`NWS API responded with status: ${response.status}`);
+      const data = await response.json();
+      res.json({
+        title: data.title || "NWS Active Alerts",
+        features: data.features || []
+      });
+    } catch (error: any) {
+      console.error("[NWS Alerts Proxy] Error fetching real data:", error.message);
+      res.status(500).json({ error: "Failed to fetch NWS alerts data" });
+    }
+  });
+
+  // Layer state store and scenario store for PTDT v32
+  const layerState: Record<string, boolean> = {
+    "Geospatial Integration": true,
+    "Hydrodynamic Analysis": true,
+    "Structural Integrity": true,
+    "Flood Mesh": true,
+    "Scenario Boundaries": true
+  };
+
+  const scenarioStore: Record<string, number[]> = {
+    "100yr": [0, 50, 0, 50, 50, 0, -50, 50, 0, -50, -50, 0, 0, -50, 0],
+    "500yr": [0, 70, 0, 70, 70, 0, -70, 70, 0, -70, -70, 0, 0, -70, 0],
+    "1937": [0, 95, 0, 95, 95, 0, -95, 95, 0, -95, -95, 0, 0, -95, 0]
+  };
+
+  app.post("/api/layers/toggle", (req, res) => {
+    const { layer, enabled } = req.body;
+    if (typeof layer === "string") {
+      layerState[layer] = !!enabled;
+    }
+    res.json({ status: "OK", layerState });
+  });
+
+  app.get("/api/layers", (req, res) => {
+    res.json({ layerState });
+  });
+
+  app.get("/api/scenario/:id", (req, res) => {
+    const id = req.params.id;
+    const data = scenarioStore[id] || [0, 60, 0, 60, 60, 0, -60, 60, 0, -60, -60, 0, 0, -60, 0];
+    res.json({ id, data, color: id === '100yr' ? '#00AFFF' : id === '500yr' ? '#FF4444' : '#FFD400' });
   });
 
   // Serve static assets or mount Vite dev server
@@ -892,6 +878,78 @@ Structure your response with clear headers and bullet points. End with "SYSTEM_S
       res.sendFile(path.join(distPath, "index.html"));
     });
   }
+
+  // 10. PDF Documents Repository & Metadata
+  const ptdtLibrary = [
+    {
+      id: "doc_01_pe_loma",
+      name: "01_PE_Transmittal_and_LOMA_Letter.pdf",
+      size: "420 KB",
+      type: "FEMA Regulatory",
+      date: "2026-07-28"
+    },
+    {
+      id: "doc_03_idnr_rise",
+      name: "03_IDNR_No_Rise_Certification.pdf",
+      size: "1.2 MB",
+      type: "State Certification",
+      date: "2026-07-28"
+    },
+    {
+      id: "doc_04_fema_bca",
+      name: "04_FEMA_BCA_Toolkit_Export_Data.json",
+      size: "18 KB",
+      type: "Data Export",
+      date: "2026-07-28"
+    },
+    {
+      id: "doc_05_portal_package",
+      name: "05_final_portal_package.pdf",
+      size: "2.1 MB",
+      type: "Regulatory Dossier",
+      date: "2026-07-28"
+    }
+  ];
+
+  app.get("/api/pdfs", (req, res) => {
+    res.json(ptdtLibrary);
+  });
+
+  app.get("/api/pdf-search", (req, res) => {
+    const query = (req.query.q as string || "").toLowerCase();
+    const results = [
+      {
+        pdfId: "doc_01_pe_loma",
+        page: 1,
+        snippet: "...Baseline verified at **377.2 ft LAG vs 375.0 ft BFE**. Exact property lines derived from IndianaMap Land Parcels...",
+        relevance: 0.98
+      },
+      {
+        pdfId: "doc_03_idnr_rise",
+        page: 1,
+        snippet: "...Post-Intervention WSE Rise: **0.000 ft cross-border**. The calculated backwater rise is strictly below the state-mandated ceiling of 0.15 ft...",
+        relevance: 0.95
+      },
+      {
+        pdfId: "doc_04_fema_bca",
+        page: 1,
+        snippet: "...\"benefit_cost_ratio_bcr\": 2.45, \"projected_losses_avoided_usd\": 20825000.00...",
+        relevance: 0.92
+      },
+      {
+        pdfId: "doc_05_portal_package",
+        page: 3,
+        snippet: "...SHA-256 Manifest Sealing: The compiled evidence bundle (05_final_portal_package/) is sealed with a unique cryptographic hash digest...",
+        relevance: 0.89
+      }
+    ].filter(r => r.snippet.toLowerCase().includes(query));
+
+    res.json(results);
+  });
+
+  
+
+  registerAIRoutes(app, getGenAI);
 
   const httpServer = http.createServer(app);
   

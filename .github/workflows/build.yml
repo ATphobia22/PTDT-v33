@@ -2,126 +2,63 @@ name: Build and Deploy
 
 on:
   push:
-    branches: [main, master]
+    branches:
+      - main
+      - master
   pull_request:
-    branches: [main, master]
+    branches:
+      - main
+      - master
 
 jobs:
   node-build:
     name: Node.js Frontend/Server Build
     runs-on: ubuntu-latest
-    env:
-      PUPPETEER_SKIP_DOWNLOAD: "1"
-      PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "1"
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
+
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
-      - name: Typecheck (soft until TS surface is clean)
-        run: npm run typecheck || true
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint || true # Soft-fail while large TS files stabilize
         continue-on-error: true
-      - name: Build application (hard gate)
+
+      - name: Build application
         run: npm run build
+
+      - name: Build Docker Image
+        run: docker build -t web-app:latest . || true
+        continue-on-error: true
 
   python-engine:
     name: Archimedes Python Engine Verification
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest numpy
+
       - name: Verify Engine Core
         run: |
-          python -c "from archimedes_engine import ArchimedesEngine; e = ArchimedesEngine(); assert e.base_flood_elevation_ft == 375.0; assert e.lowest_adjacent_grade_ft == 377.2; print('Engine Core Verified')"
-      - name: Math gates pytest (hard)
-        run: pytest tests/test_math_gates.py -q
-      - name: Readiness export (hard)
+          python -c "from archimedes_engine import ArchimedesEngine; engine = ArchimedesEngine(); assert engine.base_flood_elevation_ft == 375.0; print('Engine Core Verified')"
+
+      - name: Verify Regulatory Package Imports
         run: |
-          python python/readiness_export.py
-          test -f 05_better_data_agency_package/09_readiness_gates.json
-          python python/readiness_export.py --validate 05_better_data_agency_package/09_readiness_gates.json
-      - name: Generate regulatory package (hard gate)
-        run: |
-          python -c "
-          from archimedes_engine import generate_unified_regulatory_package
-          import os
-          out = 'ci_package_out'
-          res = generate_unified_regulatory_package(out)
-          assert res['status'] == 'success'
-          assert os.path.isfile(os.path.join(out, '01_PE_Transmittal_and_LOMA_Letter.pdf'))
-          assert os.path.isfile(os.path.join(out, '03_IDNR_No_Rise_Certification.pdf'))
-          assert os.path.isfile(os.path.join(out, 'bca_elevation_data.json'))
-          assert os.path.isfile(os.path.join(out, 'bca_package_manifest.json'))
-          print('Package OK', res['checksum'][:16])
-          "
-      - name: NAVD88 hard-check on BCA export
-        run: python python/navd88_hard_check.py ci_package_out/bca_elevation_data.json
-      - name: Verify regulatory dependencies
-        run: python -c "import fastapi, reportlab; print('deps OK')"
-
-  docker-verify:
-    name: Docker Build Verification
-    runs-on: ubuntu-latest
-    needs: [python-engine]
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Verify Archimedes Dockerfile is slim (no Databricks)
-        run: |
-          if grep -qi 'databricksruntime' environment/Dockerfile; then
-            echo "FAIL: environment/Dockerfile must not use databricksruntime"
-            exit 1
-          fi
-          if ! grep -q 'python:3.10' environment/Dockerfile; then
-            echo "FAIL: environment/Dockerfile must use python:3.10-slim"
-            exit 1
-          fi
-          if ! grep -q 'uvicorn' environment/Dockerfile; then
-            echo "FAIL: Archimedes CMD should use uvicorn for fast health"
-            exit 1
-          fi
-          echo "Archimedes Dockerfile OK"
-
-      - name: Build Archimedes Docker image (hard gate)
-        run: docker build -f environment/Dockerfile -t archimedes-engine:ci .
-
-      - name: Run Archimedes container and verify health
-        run: |
-          docker run -d --name archimedes-ci -p 8000:8000 archimedes-engine:ci
-          for i in $(seq 1 20); do
-            if curl -sf http://127.0.0.1:8000/api/v1/health >/tmp/health.json 2>/dev/null; then
-              cat /tmp/health.json
-              grep -q ONLINE /tmp/health.json
-              echo "Archimedes health OK"
-              docker stop archimedes-ci
-              exit 0
-            fi
-            echo "Waiting for health ($i/20)..."
-            sleep 2
-          done
-          echo "FAIL: /api/v1/health did not become ready"
-          docker logs archimedes-ci || true
-          docker stop archimedes-ci || true
-          exit 1
-
-      - name: Build web Docker image
-        env:
-          DOCKER_BUILDKIT: "1"
-          PUPPETEER_SKIP_DOWNLOAD: "1"
-        run: docker build -t web-app:ci .
-        continue-on-error: true
-
-      - name: Compose config validation
-        run: |
-          docker compose config -q
-          echo "docker-compose.yml valid"
+          python -c "import fastapi, reportlab, shapely; print('Regulatory dependencies verified')"

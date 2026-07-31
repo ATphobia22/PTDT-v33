@@ -1,19 +1,13 @@
-import { useState } from 'react';
 import { Dashboard } from './components/Dashboard';
-import { DigitalTwinView } from './components/DigitalTwinView';
-import NextGenDigitalTwin from './components/NextGenDigitalTwin';
-import { OvertureTwinView } from './components/OvertureTwinView';
-import { SovereignCitadelView } from './components/SovereignCitadelView';
 import { DebugConsole } from './components/DebugConsole';
 import { TerminalOverlay } from './components/TerminalOverlay';
 import { useTheme } from './context/ThemeContext';
 import { useAudioSystem } from './context/AudioContext';
-import { Power, Activity, Cpu, Layers, Globe, Shield } from 'lucide-react';
+import { Power, Activity, Shield } from 'lucide-react';
 
 function App() {
   const { theme } = useTheme();
   const { isSystemOn, setSystemOn } = useAudioSystem();
-  const [activeSystemView, setActiveSystemView] = useState<'tactical' | 'webgpu' | 'nextgen' | 'overture' | 'citadel'>('tactical');
 
   if (!isSystemOn) {
     return (
@@ -31,10 +25,13 @@ function App() {
             <h1 className="text-sm font-bold tracking-widest text-[#00D4FF] uppercase">TRI-STATE FAMILY SYSTEM</h1>
             <p className="text-[10px] text-slate-500 uppercase">STATE: DEACTIVATED / DEEP STANDBY</p>
           </div>
+
           <div className="h-px bg-slate-800 w-full" />
+
           <p className="text-xs text-slate-400 leading-relaxed max-w-sm">
             Tri-State Family Engineering System has been shut down. Hydraulic twin sensors, USGS data streams, and automated simulation nodes are currently offline.
           </p>
+
           <button
             onClick={() => setSystemOn(true)}
             className="mt-2 w-full py-2 bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/40 hover:border-indigo-500/60 text-[#00D4FF] rounded text-xs font-bold font-mono tracking-widest transition-all duration-300 cursor-pointer flex items-center justify-center gap-2"
@@ -47,23 +44,6 @@ function App() {
     );
   }
 
-  const renderActiveView = () => {
-    switch (activeSystemView) {
-      case 'tactical':
-        return <Dashboard />;
-      case 'webgpu':
-        return <DigitalTwinView />;
-      case 'nextgen':
-        return <NextGenDigitalTwin />;
-      case 'overture':
-        return <OvertureTwinView />;
-      case 'citadel':
-        return <SovereignCitadelView />;
-      default:
-        return <Dashboard />;
-    }
-  };
-
   return (
     <div className={`${theme === 'dark' ? 'dark' : theme === 'blueprint' ? 'dark blueprint' : ''} w-screen h-screen overflow-hidden relative`}>
       {/* Universal Floating Cockpit Control Dock */}
@@ -72,39 +52,23 @@ function App() {
           <Shield size={13} className="animate-pulse" />
           <span className="hidden xs:inline text-[10px] tracking-widest">PTDT COMMAND</span>
         </div>
+        
         <div className="flex items-center gap-1">
-          {[
-            { id: 'tactical', name: 'Tactical GIS', icon: Activity, desc: 'Primary dashboard & real-time telemetry console' },
-            { id: 'webgpu', name: 'WebGPU 3D Sim', icon: Cpu, desc: 'WebAudio & Three.js physics multi-physics twin' },
-            { id: 'nextgen', name: 'NextGen Workbench', icon: Layers, desc: 'Multi-layer GIS analytical mapping stack' },
-            { id: 'overture', name: 'Overture PMT', icon: Globe, desc: 'Overture vector tiles & 3D buildings explorer' },
-            { id: 'citadel', name: 'Sovereign Citadel', icon: Shield, desc: 'Sovereign Citadel' }
-          ].map((sys) => {
-            const active = activeSystemView === sys.id;
-            const Icon = sys.icon;
-            return (
-              <button
-                key={sys.id}
-                onClick={() => setActiveSystemView(sys.id as any)}
-                title={sys.desc}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold transition-all cursor-pointer ${
-                  active
-                    ? 'bg-indigo-600 text-white shadow-lg'
-                    : 'dark:text-slate-400 text-slate-600 hover:dark:text-white hover:text-slate-900 hover:dark:bg-slate-800 hover:bg-slate-100'
-                }`}
-              >
-                <Icon size={12} className={active ? 'animate-bounce text-[#00D4FF]' : ''} />
-                <span className="hidden md:inline text-[9px] uppercase tracking-wider">{sys.name}</span>
-              </button>
-            );
-          })}
+          <div
+            title="Primary dashboard & real-time telemetry console"
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold transition-all bg-indigo-600 text-white shadow-lg"
+          >
+            <Activity size={12} className="animate-bounce text-[#00D4FF]" />
+            <span className="hidden md:inline text-[9px] uppercase tracking-wider">Tactical GIS</span>
+          </div>
         </div>
       </div>
       
       {/* Main View Container */}
       <div className="w-full h-full relative">
-        {renderActiveView()}
+        <Dashboard />
       </div>
+
       <DebugConsole />
       <TerminalOverlay />
     </div>

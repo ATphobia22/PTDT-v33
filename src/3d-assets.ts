@@ -2,19 +2,70 @@ import * as THREE from 'three';
 
 // Mock class for the 3D asset loader as suggested
 export class PDT3DAssets {
-  async loadEnvironment(scene: THREE.Scene) {
-    console.log("Loading 3D assets: buildings, roads, bridges, trees...");
-    // In a real environment, this would load LAZ/LAS files
-    // Here we add placeholders to the scene to represent them
+  createTree(position: [number, number, number], scale: number = 1) {
+    const group = new THREE.Group();
     
-    // Example: add a placeholder for a bridge
-    const bridgeGeometry = new THREE.BoxGeometry(10, 2, 2);
-    const bridgeMaterial = new THREE.MeshStandardMaterial({ color: '#808080' }); // Concrete color
-    const bridge = new THREE.Mesh(bridgeGeometry, bridgeMaterial);
-    bridge.position.set(0, 1, 0);
-    scene.add(bridge);
+    // Trunk
+    const trunkGeo = new THREE.CylinderGeometry(0.2 * scale, 0.3 * scale, 1.5 * scale, 8);
+    const trunkMat = new THREE.MeshStandardMaterial({ color: '#5D4037' });
+    const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+    trunk.position.y = 0.75 * scale;
+    group.add(trunk);
     
-    return true;
+    // Canopy
+    const canopyGeo = new THREE.ConeGeometry(1.2 * scale, 3 * scale, 8);
+    const canopyMat = new THREE.MeshStandardMaterial({ color: '#2E7D32' });
+    const canopy = new THREE.Mesh(canopyGeo, canopyMat);
+    canopy.position.y = 2.5 * scale;
+    group.add(canopy);
+    
+    group.position.set(...position);
+    return group;
+  }
+
+  createHouse(position: [number, number, number], scale: number = 1) {
+    const group = new THREE.Group();
+    
+    // Base
+    const baseGeo = new THREE.BoxGeometry(4 * scale, 3 * scale, 4 * scale);
+    const baseMat = new THREE.MeshStandardMaterial({ color: '#ECEFF1' });
+    const base = new THREE.Mesh(baseGeo, baseMat);
+    base.position.y = 1.5 * scale;
+    group.add(base);
+    
+    // Roof
+    const roofGeo = new THREE.ConeGeometry(3.5 * scale, 2 * scale, 4);
+    const roofMat = new THREE.MeshStandardMaterial({ color: '#37474F' });
+    const roof = new THREE.Mesh(roofGeo, roofMat);
+    roof.position.y = 4 * scale;
+    roof.rotation.y = Math.PI / 4;
+    group.add(roof);
+    
+    group.position.set(...position);
+    return group;
+  }
+
+  createBarn(position: [number, number, number], scale: number = 1) {
+    const group = new THREE.Group();
+    
+    // Base
+    const baseGeo = new THREE.BoxGeometry(6 * scale, 4 * scale, 10 * scale);
+    const baseMat = new THREE.MeshStandardMaterial({ color: '#D32F2F' }); // Barn Red
+    const base = new THREE.Mesh(baseGeo, baseMat);
+    base.position.y = 2 * scale;
+    group.add(base);
+    
+    // Gambrel Roof (Simplified as a stretched box + prism)
+    const roofGeo = new THREE.CylinderGeometry(4 * scale, 4 * scale, 10 * scale, 3);
+    const roofMat = new THREE.MeshStandardMaterial({ color: '#455A64' });
+    const roof = new THREE.Mesh(roofGeo, roofMat);
+    roof.position.y = 5 * scale;
+    roof.rotation.z = Math.PI / 2;
+    roof.rotation.x = Math.PI / 2;
+    group.add(roof);
+    
+    group.position.set(...position);
+    return group;
   }
 }
 
