@@ -16,6 +16,11 @@ import { LayerHUD } from './hud/LayerHUD';
 import { LegendHUD } from './hud/LegendHUD';
 import { TelemetryHUD } from './hud/TelemetryHUD';
 import { SimulationHUD } from './hud/SimulationHUD';
+import { FloodStageHUD } from './hud/FloodStageHUD';
+import { LocationContextHUD } from './hud/LocationContextHUD';
+import { AssetRiskHUD } from './hud/AssetRiskHUD';
+import { InfrastructureHUD } from './hud/InfrastructureHUD';
+import { CrossSectionHUD } from './hud/CrossSectionHUD';
 
 export function Dashboard() {
   const [activePanel, setActivePanel] = useState<'telemetry' | 'evidence' | 'system' | 'upgrades' | 'ai' | 'archimedes' | 'datum'>('telemetry');
@@ -47,7 +52,7 @@ export function Dashboard() {
   });
   
   const [surgeStage, setSurgeStage] = useState(377.2);
-  const [sysFrame, setSysFrame] = useState('0000');
+  const [sysFrame, setSysFrame] = useState('47620');
   const [scenarioHorizon, setScenarioHorizon] = useState(0);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -82,7 +87,7 @@ export function Dashboard() {
         const data = JSON.parse(event.data);
         if (data.type === 'TELEMETRY_UPDATE') {
           setSurgeStage(data.stage);
-          setSysFrame(data.frame.toString().padStart(4, '0'));
+          // Update frame logic if needed
         }
       } catch (err) {
         console.error('Error parsing telemetry stream:', err);
@@ -100,70 +105,109 @@ export function Dashboard() {
       </div>
 
       {/* Global Vignette/Gradient Overlay */}
-      <div className="absolute inset-0 z-5 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_0%,rgba(2,6,23,0.4)_100%)]" />
+      <div className="absolute inset-0 z-5 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_0%,rgba(2,6,23,0.5)_100%)]" />
 
       {/* HUD - Overlay */}
-      <div className="absolute inset-0 z-10 p-6 pointer-events-none flex flex-col justify-between">
+      <div className="absolute inset-0 z-10 p-6 pointer-events-none flex flex-col">
         <TopHeader sysFrame={sysFrame} />
 
         {!zenMode && (
           <>
-            {/* Left Column HUDs */}
-            <div className="flex flex-col gap-4 mt-20 items-start">
-              <CameraHUD />
-              <LayerHUD />
-            </div>
-
-            {/* Right Column Tools */}
-            <div className="absolute right-6 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2 pointer-events-auto">
-              {[
-                { id: "select", icon: MousePointer2, label: "Select Feature" },
-                { id: "measure", icon: Ruler, label: "Measure Distance/Area" },
-                { id: "export", icon: Download, label: "Export Spatial Data" },
-                { id: "fullscreen", icon: Maximize2, label: "Toggle Fullscreen" }
-              ].map((tool) => (
-                <button 
-                  key={tool.id} 
-                  title={tool.label} 
-                  onClick={() => setActiveTool(activeTool === tool.id ? null : tool.id)}
-                  className={`p-2.5 backdrop-blur-md border rounded-sm shadow-2xl transition-all cursor-pointer ${
-                    activeTool === tool.id 
-                      ? "bg-emerald-500 border-emerald-400 text-slate-950" 
-                      : "bg-slate-950/80 border-slate-800 text-slate-400 hover:text-emerald-400 hover:border-emerald-500/50"
-                  }`}>
-                  <tool.icon size={18} />
-                </button>
-              ))}
-              <div className="h-4" />
-              <button 
-                onClick={() => setShowSettingsModal(true)} 
-                className="p-2.5 bg-slate-950/80 border-slate-800 border rounded-sm hover:text-emerald-400 hover:border-emerald-500/50 text-slate-400 transition-all shadow-2xl cursor-pointer"
-                title="System Configuration Settings"
-              >
-                <Settings size={18} />
-              </button>
-            </div>
-
-            {/* Bottom HUD Section */}
-            <div className="flex justify-between items-end gap-6 mt-auto pointer-events-auto">
-              <div className="flex gap-6 items-end">
-                <SimulationHUD />
-                <TelemetryHUD />
+            {/* Middle Content Area */}
+            <div className="flex-1 flex justify-between items-center mt-12 mb-6">
+              {/* Left Sidebar */}
+              <div className="flex flex-col gap-4 items-start self-start mt-10">
+                <FloodStageHUD />
+                <LocationContextHUD />
+                <CameraHUD />
               </div>
-              
-              <div className="flex flex-col gap-4 items-end">
+
+              {/* Center Visualization Controls (Optional floating widgets could go here) */}
+              <div className="flex-1" />
+
+              {/* Right Sidebar */}
+              <div className="flex flex-col gap-4 items-end self-start mt-10">
+                <LayerHUD />
                 <LegendHUD />
-                <div className="flex gap-2">
-                   <div className="flex flex-col items-end px-3 py-1 bg-slate-950/80 backdrop-blur-md border border-slate-800 rounded-sm">
-                      <span className="text-[8px] text-slate-500 uppercase font-mono tracking-widest leading-tight">Node Integrity</span>
-                      <span className="text-[10px] text-emerald-400 font-black font-mono leading-tight">99.8% SECURE</span>
+                
+                {/* Floating Tool Bar */}
+                <div className="flex flex-col gap-2 pointer-events-auto">
+                  {[
+                    { id: "select", icon: MousePointer2, label: "Select Feature" },
+                    { id: "measure", icon: Ruler, label: "Measure Distance/Area" },
+                    { id: "export", icon: Download, label: "Export Spatial Data" },
+                    { id: "fullscreen", icon: Maximize2, label: "Toggle Fullscreen" }
+                  ].map((tool) => (
+                    <button 
+                      key={tool.id} 
+                      title={tool.label} 
+                      onClick={() => setActiveTool(activeTool === tool.id ? null : tool.id)}
+                      className={`p-2.5 backdrop-blur-md border rounded-sm shadow-2xl transition-all cursor-pointer ${
+                        activeTool === tool.id 
+                          ? "bg-emerald-500 border-emerald-400 text-slate-950" 
+                          : "bg-slate-950/80 border-slate-800 text-slate-400 hover:text-emerald-400 hover:border-emerald-500/50"
+                      }`}>
+                      <tool.icon size={18} />
+                    </button>
+                  ))}
+                  <div className="h-2" />
+                  <button 
+                    onClick={() => setShowSettingsModal(true)} 
+                    className="p-2.5 bg-slate-950/80 border-slate-800 border rounded-sm hover:text-emerald-400 hover:border-emerald-500/50 text-slate-400 transition-all shadow-2xl cursor-pointer"
+                    title="System Configuration Settings"
+                  >
+                    <Settings size={18} />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom HUD Section - Analytics & Insights Row */}
+            <div className="mt-auto pointer-events-auto">
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-3 mb-2">
+                   <div className="h-px bg-slate-800 flex-1" />
+                   <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">Analytics & Predictive Insights</span>
+                   <div className="h-px bg-slate-800 flex-1" />
+                </div>
+                
+                <div className="flex gap-4 items-stretch justify-between h-[200px]">
+                  <AssetRiskHUD />
+                  <InfrastructureHUD />
+                  <CrossSectionHUD />
+                  <SimulationHUD />
+                </div>
+
+                {/* Telemetry Strip */}
+                <div className="mt-4">
+                  <TelemetryHUD />
+                </div>
+              </div>
+
+              {/* Bottom Control Strip */}
+              <div className="flex justify-between items-center mt-6 pt-4 border-t border-slate-800/50">
+                <div className="flex gap-8">
+                   <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">Real-time Stream: USGS + Weather + IoT</span>
+                   </div>
+                   <div className="flex items-center gap-2">
+                      <Network size={14} className="text-emerald-500" />
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">AI/ML Forecasting: 24h / 72h Predictive Horizon</span>
+                   </div>
+                </div>
+
+                <div className="flex gap-4">
+                   <div className="flex flex-col items-end px-4 py-1.5 bg-slate-950/80 backdrop-blur-md border border-slate-800 rounded-sm">
+                      <span className="text-[8px] text-slate-500 uppercase font-mono tracking-widest leading-tight mb-0.5">Global Node Consensus</span>
+                      <span className="text-[10px] text-emerald-400 font-black font-mono leading-tight">99.98% VERIFIED</span>
                    </div>
                    <button 
                       onClick={() => setZenMode(true)} 
-                      className="p-2 bg-slate-950/80 border border-slate-800 rounded-sm hover:text-emerald-400 transition-all text-slate-500"
+                      className="p-2.5 bg-slate-950/80 border border-slate-800 rounded-sm hover:text-emerald-400 transition-all text-slate-500 group"
                       title="Collapse HUD"
                    >
-                      <EyeOff size={16} />
+                      <EyeOff size={18} className="group-hover:scale-110 transition-transform" />
                    </button>
                 </div>
               </div>
@@ -172,24 +216,26 @@ export function Dashboard() {
         )}
 
         {zenMode && (
-          <div className="absolute bottom-6 right-6 pointer-events-auto">
+          <div className="absolute bottom-10 right-10 pointer-events-auto">
             <button 
               onClick={() => setZenMode(false)} 
-              className="p-3 bg-slate-950/80 backdrop-blur-md border border-slate-800 rounded-full hover:text-emerald-400 transition-all text-slate-500 shadow-2xl"
+              className="p-4 bg-emerald-500 text-slate-950 rounded-full hover:bg-emerald-400 transition-all shadow-[0_0_30px_rgba(16,185,129,0.3)] group"
               title="Expand HUD"
             >
-              <Eye size={20} />
+              <Eye size={24} className="group-hover:scale-110 transition-transform" />
             </button>
           </div>
         )}
       </div>
 
       {/* Footer / Status Bar Strip */}
-      <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 z-[100]">
-        <div className="h-full bg-emerald-500/50 animate-pulse" style={{ width: '100%' }} />
+      <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-slate-900 z-[100] overflow-hidden">
+        <div className="h-full bg-emerald-500/30 animate-pulse w-full relative">
+           <div className="absolute inset-0 bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)]" style={{ width: '65%' }} />
+        </div>
       </div>
-      <div className="absolute bottom-1 right-2 z-[100] pointer-events-none">
-        <span className="text-[8px] font-mono text-slate-700 tracking-widest uppercase">PTDT Systems • Tucker Cognitive OS • {new Date().getFullYear()}</span>
+      <div className="absolute bottom-2 right-4 z-[100] pointer-events-none">
+        <span className="text-[9px] font-black font-mono text-slate-700 tracking-[0.3em] uppercase">PTDT Systems • Tucker Cognitive OS • L4 AUTONOMY</span>
       </div>
 
       {/* System Settings & Ambient Music Config Overlay */}

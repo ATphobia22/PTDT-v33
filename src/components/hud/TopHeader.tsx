@@ -9,18 +9,30 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ sysFrame }) => {
   return (
     <div className="fixed top-0 left-0 right-0 z-[100] p-4 flex justify-between items-start pointer-events-none">
       <div className="flex flex-col gap-1 pointer-events-auto">
-        <div className="flex items-center gap-3 px-4 py-2 bg-slate-950/80 backdrop-blur-md border border-emerald-500/30 rounded-sm">
-          <div className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-emerald-400 animate-pulse" />
+        <div className="flex items-center gap-3 px-4 py-2 bg-slate-950/90 backdrop-blur-xl border border-emerald-500/30 rounded-sm shadow-[0_0_20px_rgba(16,185,129,0.1)]">
+          <div className="flex items-center gap-3">
+            <Shield className="w-6 h-6 text-emerald-400 animate-pulse" />
             <div className="flex flex-col">
-              <span className="text-[10px] font-bold text-emerald-400 tracking-[0.2em] uppercase leading-none">PTDT v32.10.b</span>
-              <span className="text-[12px] font-black text-white tracking-wider leading-tight">CESIUM 3D DIGITAL TWIN</span>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black text-emerald-400 tracking-[0.3em] uppercase leading-none">PTDT v32.04</span>
+                <span className="text-[10px] font-mono text-slate-500 tracking-tighter">NODE_{sysFrame}</span>
+              </div>
+              <span className="text-[14px] font-black text-white tracking-widest leading-tight uppercase">Bonebank Digital Twin • Posey County, IN</span>
             </div>
           </div>
-          <div className="h-8 w-px bg-slate-800 mx-2" />
-          <div className="flex flex-col">
-            <span className="text-[9px] text-slate-500 uppercase font-mono tracking-widest">WGS84 Ellipsoid</span>
-            <span className="text-[9px] text-emerald-500/80 uppercase font-mono tracking-widest">NAVD88 Heights • True Scale</span>
+          <div className="h-10 w-px bg-slate-800/50 mx-2" />
+          <div className="flex flex-col justify-center">
+            <span className="text-[9px] text-slate-500 uppercase font-mono tracking-[0.2em] leading-none mb-1">Datum: WGS84 / NAVD88</span>
+            <div className="flex items-center gap-2">
+               <div className="flex items-center gap-1">
+                 <div className="w-1 h-1 rounded-full bg-emerald-500" />
+                 <span className="text-[8px] text-emerald-500/80 uppercase font-mono tracking-widest">Scale: 1:1</span>
+               </div>
+               <div className="flex items-center gap-1">
+                 <div className="w-1 h-1 rounded-full bg-emerald-500" />
+                 <span className="text-[8px] text-emerald-500/80 uppercase font-mono tracking-widest">Precision: High</span>
+               </div>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2 px-3 py-1 bg-slate-950/60 backdrop-blur-sm border-x border-b border-emerald-500/20 rounded-b-sm self-start ml-2">
@@ -29,40 +41,33 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ sysFrame }) => {
       </div>
 
       <div className="flex flex-col items-end gap-2 pointer-events-auto">
-        <div className="flex items-center gap-4 px-4 py-2 bg-slate-950/80 backdrop-blur-md border border-emerald-500/30 rounded-sm">
+        <div className="flex items-center gap-4 px-4 py-2 bg-slate-950/90 backdrop-blur-xl border border-emerald-500/30 rounded-sm shadow-[0_0_20px_rgba(16,185,129,0.1)]">
           <div className="flex flex-col items-end">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">Simulation Status</span>
-              <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest font-mono">Live</span>
-              </div>
-            </div>
-            <div className="flex gap-4 mt-1">
+            <div className="flex items-center gap-3">
               <div className="flex flex-col items-end">
-                <span className="text-[8px] text-slate-500 uppercase font-mono">HEC-RAS:</span>
-                <span className="text-[8px] text-emerald-400 font-mono">RUNNING</span>
-              </div>
-              <div className="flex flex-col items-end">
-                <span className="text-[8px] text-slate-500 uppercase font-mono">SWMM:</span>
-                <span className="text-[8px] text-emerald-400 font-mono">RUNNING</span>
-              </div>
-              <div className="flex flex-col items-end">
-                <span className="text-[8px] text-slate-500 uppercase font-mono">MODFLOW:</span>
-                <span className="text-[8px] text-emerald-400 font-mono">RUNNING</span>
+                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest font-mono leading-none">System Status</span>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                  <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] font-mono">Operational</span>
+                </div>
               </div>
             </div>
           </div>
-          <div className="h-8 w-px bg-slate-800 mx-2" />
-          <div className="flex flex-col items-end min-w-[100px]">
-             <div className="flex gap-2">
-               <span className="text-[8px] text-slate-500 uppercase font-mono">Last Update:</span>
-               <span className="text-[8px] text-white font-mono">{new Date().toLocaleTimeString('en-US', { hour12: false })} UTC</span>
-             </div>
-             <div className="flex gap-2">
-               <span className="text-[8px] text-slate-500 uppercase font-mono">Next Update:</span>
-               <span className="text-[8px] text-white font-mono">{new Date(Date.now() + 5000).toLocaleTimeString('en-US', { hour12: false })} UTC</span>
-             </div>
+          <div className="h-10 w-px bg-slate-800/50 mx-1" />
+          <div className="flex items-center gap-6">
+            <div className="flex flex-col items-end">
+              <span className="text-[8px] text-slate-500 uppercase font-mono tracking-tighter">HEC-RAS</span>
+              <span className="text-[9px] text-emerald-400 font-bold font-mono">LIVE_RUN</span>
+            </div>
+            <div className="flex flex-col items-end">
+              <span className="text-[8px] text-slate-500 uppercase font-mono tracking-tighter">SWMM_V5</span>
+              <span className="text-[9px] text-emerald-400 font-bold font-mono">LIVE_RUN</span>
+            </div>
+          </div>
+          <div className="h-10 w-px bg-slate-800/50 mx-1" />
+          <div className="flex flex-col items-end min-w-[120px]">
+             <span className="text-[9px] text-white font-mono font-bold tracking-widest">{new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase()}</span>
+             <span className="text-[10px] text-emerald-400 font-black font-mono tracking-[0.1em]">{new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })} UTC</span>
           </div>
         </div>
       </div>
