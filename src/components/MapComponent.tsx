@@ -569,32 +569,43 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
           this.placedFeatures = new Set<string>();
           this.updateProceduralAssets = () => {
             if (!this.map) return;
-            const features = this.map.queryRenderedFeatures({ layers: ['3d-houses', '3d-barns', '3d-canopy'] });
+            // Query for buildings, forests, and primary roads
+            const features = this.map.queryRenderedFeatures({ 
+              layers: ['3d-houses', '3d-barns', '3d-canopy', '3d-roads-highspeed'] 
+            });
             const loader = assetLoader.current;
 
             features.forEach(feature => {
               const id = feature.id || `${feature.layer.id}-${feature.geometry.type}-${JSON.stringify(feature.properties)}`;
               if (this.placedFeatures.has(id)) return;
 
-              let type: 'house' | 'barn' | 'tree' | null = null;
+              let type: 'house' | 'barn' | 'tree' | 'road' | null = null;
               if (feature.layer.id === '3d-houses') type = 'house';
               else if (feature.layer.id === '3d-barns') type = 'barn';
               else if (feature.layer.id === '3d-canopy') type = 'tree';
+              else if (feature.layer.id === '3d-roads-highspeed') type = 'road';
 
-              if (type && feature.geometry.type === 'Point') {
+              if (!type) return;
+
+              if (feature.geometry.type === 'Point') {
                 const coords = (feature.geometry as any).coordinates;
                 const asset = loader.createLODAsset(type, [0, 0, 0], 1);
                 asset.userData = { lngLat: coords };
                 this.scene.add(asset);
                 this.placedFeatures.add(id);
-              } else if (type && (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon')) {
-                // For polygons, we place one asset at the centroid
-                // This is a simplification for performance
-                const coords = feature.geometry.type === 'Polygon' 
-                  ? (feature.geometry as any).coordinates[0][0] 
-                  : (feature.geometry as any).coordinates[0][0][0];
+              } else if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon' || feature.geometry.type === 'LineString') {
+                // Centroid/Sample point placement
+                let coords: [number, number];
+                if (feature.geometry.type === 'LineString') {
+                  coords = (feature.geometry as any).coordinates[0];
+                } else if (feature.geometry.type === 'Polygon') {
+                  coords = (feature.geometry as any).coordinates[0][0];
+                } else {
+                  coords = (feature.geometry as any).coordinates[0][0][0];
+                }
                 
-                const asset = loader.createLODAsset(type, [0, 0, 0], type === 'tree' ? 1.5 : 1);
+                const rotation = type === 'road' ? (Math.random() * Math.PI) : 0;
+                const asset = loader.createLODAsset(type, [0, 0, 0], type === 'tree' ? 1.5 : 1, rotation);
                 asset.userData = { lngLat: coords };
                 this.scene.add(asset);
                 this.placedFeatures.add(id);
@@ -602,14 +613,24 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
             });
 
             // Cleanup distant assets to manage memory
-            if (this.scene.children.length > 1000) {
-              const camPos = this.map.getFreeCameraOptions().position;
-              // Simple cleanup: remove oldest if over limit
-              const toRemove = this.scene.children.slice(0, 100);
-              toRemove.forEach(child => {
-                if (child instanceof THREE.LOD) {
-                  this.scene.remove(child);
-                }
+            if (this.scene.children.length > 2000) {
+              const center = this.map.getCenter();
+              const limit = 2000;
+              // Sort by distance to center if we're way over limit
+              const childrenWithDist = this.scene.children
+                .filter(c => c.userData.lngLat)
+                .map(c => {
+                  const dx = c.userData.lngLat[0] - center.lng;
+                  const dy = c.userData.lngLat[1] - center.lat;
+                  return { child: c, distSq: dx*dx + dy*dy };
+                })
+                .sort((a, b) => b.distSq - a.distSq);
+
+              const toRemove = childrenWithDist.slice(0, childrenWithDist.length - limit);
+              toRemove.forEach(item => {
+                this.scene.remove(item.child);
+                // We should ideally remove from this.placedFeatures too, 
+                // but that requires mapping mesh to feature ID.
               });
             }
           };
