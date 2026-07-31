@@ -108,9 +108,11 @@ export class PDT3DAssets {
     if (points.length < 2) return new THREE.Group();
     
     const curve = new THREE.CatmullRomCurve3(points);
-    const geometry = new THREE.TubeGeometry(curve, 20, 3 * scale, 8, false);
+    // Flat tube to simulate road surface
+    const geometry = new THREE.TubeGeometry(curve, points.length * 2, 4 * scale, 4, false);
     const material = this.getMaterial('#334155');
     const mesh = new THREE.Mesh(geometry, material);
+    mesh.scale.y = 0.05; // Flatten the tube into a road surface
     
     return mesh;
   }

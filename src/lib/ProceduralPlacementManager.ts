@@ -59,9 +59,20 @@ export class ProceduralPlacementManager {
   }
 
   private placeRoadSpline(lngLatPoints: [number, number][], elevation: number, id: string) {
-    const points = lngLatPoints.map(() => new THREE.Vector3(0, 0, 0));
+    const origin = maplibregl.MercatorCoordinate.fromLngLat(lngLatPoints[0], elevation);
+    const meterScale = origin.meterInMercatorCoordinateUnits();
+
+    const points = lngLatPoints.map(p => {
+      const coord = maplibregl.MercatorCoordinate.fromLngLat(p, elevation);
+      return new THREE.Vector3(
+        (coord.x - origin.x) / meterScale,
+        0, // Draped on terrain anchor
+        (coord.y - origin.y) / meterScale
+      );
+    });
+
     const road = this.loader.createRoadSpline(points, 0.6);
-    road.userData = { lngLatPoints, elevation, id };
+    road.userData = { lngLat: lngLatPoints[0], elevation, id }; 
     this.scene.add(road);
     this.placedFeatures.add(id);
   }
@@ -102,14 +113,6 @@ export class ProceduralPlacementManager {
         if (child instanceof THREE.LOD) {
           child.update(camera);
         }
-      } else if (child.userData.lngLatPoints) {
-        const coord = maplibregl.MercatorCoordinate.fromLngLat(child.userData.lngLatPoints[0], child.userData.elevation || 0);
-        const l = new THREE.Matrix4()
-          .makeTranslation(coord.x, coord.y, coord.z || 0)
-          .scale(new THREE.Vector3(coord.meterInMercatorCoordinateUnits(), -coord.meterInMercatorCoordinateUnits(), coord.meterInMercatorCoordinateUnits()))
-          .multiply(new THREE.Matrix4().makeRotationX(Math.PI / 2));
-        child.matrixAutoUpdate = false;
-        child.matrix = l;
       }
     });
   }

@@ -637,14 +637,13 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
       // updateBuildingCount();
     });
 
+    let fetchTimeout: any = null;
     map.on('moveend', () => {
-      // updateBuildingCount(); // Avoid rapid state updates on camera rotate
-
       const bounds = map.getBounds();
       const bbox: [number, number, number, number] = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()];
 
-      // Debounced fetching of regional data
-      const timeoutId = setTimeout(async () => {
+      if (fetchTimeout) clearTimeout(fetchTimeout);
+      fetchTimeout = setTimeout(async () => {
         try {
           const regionData = await dataStreamer.fetchRegionData(bbox);
           if (placementManager.current && regionData.length > 0) {
@@ -654,14 +653,10 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
               }
             });
           }
-          
-          // Also update the UI state for flood zones etc if needed, but streamer handles fetching
-          // For now, let's keep the UI states synced if the streamer returned data
-          // (Simplified for this turn)
         } catch (error) {
           console.error("Regional data stream error:", error);
         }
-      }, 1000);
+      }, 800);
 
       // Lazy-load high-density terrain mesh when near a Tri-State location
       const center = map.getCenter();
