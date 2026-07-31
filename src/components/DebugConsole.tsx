@@ -49,6 +49,16 @@ export function DebugConsole() {
     }
   }, [logs, isOpen, isExpanded]);
 
+  const [stats, setStats] = useState({ drawCalls: 0, assetCount: 0, fps: 60 });
+
+  useEffect(() => {
+    const handlePerfUpdate = (e: any) => {
+      setStats(e.detail);
+    };
+    window.addEventListener('pdt-performance-update', handlePerfUpdate);
+    return () => window.removeEventListener('pdt-performance-update', handlePerfUpdate);
+  }, []);
+
   if (!isOpen) {
     return (
       <button 
@@ -76,9 +86,11 @@ export function DebugConsole() {
           <Activity size={16} className="text-emerald-500 animate-pulse" />
           <span className="text-xs font-bold uppercase tracking-widest text-emerald-400">System Health & Data Processing Log</span>
           
-          <div className="flex items-center gap-2 ml-4 text-[10px] bg-slate-950/50 px-2 py-0.5 rounded border border-slate-800">
+          <div className="flex items-center gap-3 ml-4 text-[10px] bg-slate-950/50 px-2 py-0.5 rounded border border-slate-800">
              <span className="flex items-center gap-1"><Server size={10} className="text-indigo-400" /> CPU: {Math.floor(Math.random() * 30 + 10)}%</span>
-             <span className="flex items-center gap-1 ml-2"><Cpu size={10} className="text-amber-400" /> RAM: {Math.floor(Math.random() * 20 + 40)}%</span>
+             <span className="flex items-center gap-1"><Cpu size={10} className="text-amber-400" /> RAM: {Math.floor(Math.random() * 20 + 40)}%</span>
+             <span className="flex items-center gap-1 border-l border-slate-800 pl-2 ml-1 text-emerald-400">Draws: {stats.drawCalls}</span>
+             <span className="flex items-center gap-1 text-sky-400">Assets: {stats.assetCount}</span>
           </div>
         </div>
         

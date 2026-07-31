@@ -587,14 +587,31 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
 
               if (!type) return;
 
+              const getElevation = (lngLat: [number, number]) => {
+                if (this.map.getTerrain()) {
+                  return this.map.queryTerrainElevation(lngLat) || 0;
+                }
+                return 0;
+              };
+
               if (feature.geometry.type === 'Point') {
                 const coords = (feature.geometry as any).coordinates;
                 const asset = loader.createLODAsset(type, [0, 0, 0], 1);
-                asset.userData = { lngLat: coords };
+                const elevation = getElevation(coords);
+                asset.userData = { lngLat: coords, elevation };
                 this.scene.add(asset);
                 this.placedFeatures.add(id);
+              } else if (feature.geometry.type === 'LineString' && type === 'road') {
+                // ... (existing road logic)
+                const coords = (feature.geometry as any).coordinates;
+                const points = coords.map((c: any) => new THREE.Vector3(0, 0, 0));
+                const road = loader.createRoadSpline(points, 0.5);
+                const elevation = getElevation(coords[0]);
+                road.userData = { lngLatPoints: coords, elevation };
+                this.scene.add(road);
+                this.placedFeatures.add(id);
               } else if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon' || feature.geometry.type === 'LineString') {
-                // Centroid/Sample point placement
+                // Centroid/Sample point placement for others
                 let coords: [number, number];
                 if (feature.geometry.type === 'LineString') {
                   coords = (feature.geometry as any).coordinates[0];
@@ -604,9 +621,10 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
                   coords = (feature.geometry as any).coordinates[0][0][0];
                 }
                 
+                const elevation = getElevation(coords);
                 const rotation = type === 'road' ? (Math.random() * Math.PI) : 0;
                 const asset = loader.createLODAsset(type, [0, 0, 0], type === 'tree' ? 1.5 : 1, rotation);
-                asset.userData = { lngLat: coords };
+                asset.userData = { lngLat: coords, elevation };
                 this.scene.add(asset);
                 this.placedFeatures.add(id);
               }
@@ -618,10 +636,11 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
               const limit = 2000;
               // Sort by distance to center if we're way over limit
               const childrenWithDist = this.scene.children
-                .filter(c => c.userData.lngLat)
+                .filter(c => c.userData.lngLat || c.userData.lngLatPoints)
                 .map(c => {
-                  const dx = c.userData.lngLat[0] - center.lng;
-                  const dy = c.userData.lngLat[1] - center.lat;
+                  const p = c.userData.lngLat || c.userData.lngLatPoints[0];
+                  const dx = p[0] - center.lng;
+                  const dy = p[1] - center.lat;
                   return { child: c, distSq: dx*dx + dy*dy };
                 })
                 .sort((a, b) => b.distSq - a.distSq);
@@ -629,17 +648,18 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
               const toRemove = childrenWithDist.slice(0, childrenWithDist.length - limit);
               toRemove.forEach(item => {
                 this.scene.remove(item.child);
-                // We should ideally remove from this.placedFeatures too, 
-                // but that requires mapping mesh to feature ID.
               });
             }
           };
 
           this.map.on('moveend', this.updateProceduralAssets);
           this.updateProceduralAssets();
+          
+          // Performance Monitor dispatch
+          this.lastPerfUpdate = 0;
         },
         render: function (gl: any, matrix: any) {
-          // Handle both old (gl, matrix) and new (parameters) signatures
+          // ... (matrix setup)
           let m_array: number[];
           if (matrix && Array.isArray(matrix)) {
             m_array = matrix;
@@ -651,9 +671,13 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
 
           const m = new THREE.Matrix4().fromArray(m_array);
           
+          let drawCalls = 0;
+          let assetCount = 0;
+
           this.scene.children.forEach((child: any) => {
+            assetCount++;
             if (child.userData.lngLat) {
-              const coord = maplibregl.MercatorCoordinate.fromLngLat(child.userData.lngLat);
+              const coord = maplibregl.MercatorCoordinate.fromLngLat(child.userData.lngLat, child.userData.elevation || 0);
               const l = new THREE.Matrix4()
                 .makeTranslation(coord.x, coord.y, coord.z || 0)
                 .scale(new THREE.Vector3(coord.meterInMercatorCoordinateUnits(), -coord.meterInMercatorCoordinateUnits(), coord.meterInMercatorCoordinateUnits()))
@@ -662,12 +686,30 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
               child.matrixAutoUpdate = false;
               child.matrix = l;
 
-              // Update LOD
               if (child instanceof THREE.LOD) {
                 child.update(this.camera);
               }
+              drawCalls++; 
+            } else if (child.userData.lngLatPoints) {
+              const coord = maplibregl.MercatorCoordinate.fromLngLat(child.userData.lngLatPoints[0], child.userData.elevation || 0);
+              const l = new THREE.Matrix4()
+                .makeTranslation(coord.x, coord.y, coord.z || 0)
+                .scale(new THREE.Vector3(coord.meterInMercatorCoordinateUnits(), -coord.meterInMercatorCoordinateUnits(), coord.meterInMercatorCoordinateUnits()))
+                .multiply(new THREE.Matrix4().makeRotationX(Math.PI / 2));
+              child.matrixAutoUpdate = false;
+              child.matrix = l;
+              drawCalls++;
             }
           });
+
+          // Throttle performance updates
+          const now = performance.now();
+          if (now - this.lastPerfUpdate > 1000) {
+            window.dispatchEvent(new CustomEvent('pdt-performance-update', {
+              detail: { drawCalls, assetCount, fps: 0 } // FPS calculated elsewhere or omitted
+            }));
+            this.lastPerfUpdate = now;
+          }
 
           this.camera.projectionMatrix = m;
           this.renderer.resetState();

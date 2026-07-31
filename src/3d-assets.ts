@@ -79,7 +79,9 @@ export class PDT3DAssets {
         group.add(roof);
       }
     } else if (type === 'road') {
-      // Simplified road segment
+      // If we had coordinates here, we'd use TubeGeometry.
+      // Since we're using a generic segment, we'll keep the plane for now
+      // but styled better.
       const width = 6 * scale;
       const length = 10 * scale;
       const roadGeo = new THREE.PlaneGeometry(width, length);
@@ -100,6 +102,17 @@ export class PDT3DAssets {
     }
 
     return group;
+  }
+
+  createRoadSpline(points: THREE.Vector3[], scale: number = 1): THREE.Object3D {
+    if (points.length < 2) return new THREE.Group();
+    
+    const curve = new THREE.CatmullRomCurve3(points);
+    const geometry = new THREE.TubeGeometry(curve, 20, 3 * scale, 8, false);
+    const material = this.getMaterial('#334155');
+    const mesh = new THREE.Mesh(geometry, material);
+    
+    return mesh;
   }
 
   // Legacy support for older calls
