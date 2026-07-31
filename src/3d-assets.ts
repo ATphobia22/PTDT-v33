@@ -1,72 +1,86 @@
 import * as THREE from 'three';
 
-// Mock class for the 3D asset loader as suggested
 export class PDT3DAssets {
-  createTree(position: [number, number, number], scale: number = 1) {
+  private materialCache: Map<string, THREE.Material> = new Map();
+
+  private getMaterial(color: string, wireframe: boolean = false): THREE.Material {
+    const key = `${color}-${wireframe}`;
+    if (!this.materialCache.has(key)) {
+      this.materialCache.set(key, new THREE.MeshStandardMaterial({ color, wireframe }));
+    }
+    return this.materialCache.get(key)!;
+  }
+
+  createLODAsset(type: 'house' | 'barn' | 'tree', position: [number, number, number], scale: number = 1): THREE.LOD {
+    const lod = new THREE.LOD();
+    
+    // Level 0: High Detail (Close)
+    const highDetail = this.createDetailedMesh(type, scale, 0);
+    lod.addLevel(highDetail, 0);
+
+    // Level 1: Medium Detail (Mid-range)
+    const midDetail = this.createDetailedMesh(type, scale, 1);
+    lod.addLevel(midDetail, 150);
+
+    // Level 2: Low Detail (Far - Placeholder/Proxy)
+    const lowDetail = this.createDetailedMesh(type, scale, 2);
+    lod.addLevel(lowDetail, 400);
+
+    lod.position.set(...position);
+    return lod;
+  }
+
+  private createDetailedMesh(type: 'house' | 'barn' | 'tree', scale: number, detailLevel: number): THREE.Object3D {
     const group = new THREE.Group();
     
-    // Trunk
-    const trunkGeo = new THREE.CylinderGeometry(0.2 * scale, 0.3 * scale, 1.5 * scale, 8);
-    const trunkMat = new THREE.MeshStandardMaterial({ color: '#5D4037' });
-    const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-    trunk.position.y = 0.75 * scale;
-    group.add(trunk);
-    
-    // Canopy
-    const canopyGeo = new THREE.ConeGeometry(1.2 * scale, 3 * scale, 8);
-    const canopyMat = new THREE.MeshStandardMaterial({ color: '#2E7D32' });
-    const canopy = new THREE.Mesh(canopyGeo, canopyMat);
-    canopy.position.y = 2.5 * scale;
-    group.add(canopy);
-    
-    group.position.set(...position);
+    if (type === 'tree') {
+      const segments = detailLevel === 0 ? 12 : (detailLevel === 1 ? 6 : 4);
+      
+      const trunkGeo = new THREE.CylinderGeometry(0.2 * scale, 0.3 * scale, 1.5 * scale, segments);
+      const trunk = new THREE.Mesh(trunkGeo, this.getMaterial('#5D4037'));
+      trunk.position.y = 0.75 * scale;
+      group.add(trunk);
+      
+      const canopyGeo = new THREE.ConeGeometry(1.2 * scale, 3 * scale, segments);
+      const canopy = new THREE.Mesh(canopyGeo, this.getMaterial('#2E7D32'));
+      canopy.position.y = 2.5 * scale;
+      group.add(canopy);
+    } else if (type === 'house') {
+      const baseGeo = new THREE.BoxGeometry(4 * scale, 3 * scale, 4 * scale);
+      const base = new THREE.Mesh(baseGeo, this.getMaterial('#ECEFF1'));
+      base.position.y = 1.5 * scale;
+      group.add(base);
+      
+      if (detailLevel < 2) {
+        const roofGeo = new THREE.ConeGeometry(3.5 * scale, 2 * scale, 4);
+        const roof = new THREE.Mesh(roofGeo, this.getMaterial('#37474F'));
+        roof.position.y = 4 * scale;
+        roof.rotation.y = Math.PI / 4;
+        group.add(roof);
+      }
+    } else if (type === 'barn') {
+      const baseGeo = new THREE.BoxGeometry(6 * scale, 4 * scale, 10 * scale);
+      const base = new THREE.Mesh(baseGeo, this.getMaterial('#D32F2F'));
+      base.position.y = 2 * scale;
+      group.add(base);
+      
+      if (detailLevel < 2) {
+        const roofGeo = new THREE.CylinderGeometry(4 * scale, 4 * scale, 10 * scale, 3);
+        const roof = new THREE.Mesh(roofGeo, this.getMaterial('#455A64'));
+        roof.position.y = 5 * scale;
+        roof.rotation.z = Math.PI / 2;
+        roof.rotation.x = Math.PI / 2;
+        group.add(roof);
+      }
+    }
+
     return group;
   }
 
-  createHouse(position: [number, number, number], scale: number = 1) {
-    const group = new THREE.Group();
-    
-    // Base
-    const baseGeo = new THREE.BoxGeometry(4 * scale, 3 * scale, 4 * scale);
-    const baseMat = new THREE.MeshStandardMaterial({ color: '#ECEFF1' });
-    const base = new THREE.Mesh(baseGeo, baseMat);
-    base.position.y = 1.5 * scale;
-    group.add(base);
-    
-    // Roof
-    const roofGeo = new THREE.ConeGeometry(3.5 * scale, 2 * scale, 4);
-    const roofMat = new THREE.MeshStandardMaterial({ color: '#37474F' });
-    const roof = new THREE.Mesh(roofGeo, roofMat);
-    roof.position.y = 4 * scale;
-    roof.rotation.y = Math.PI / 4;
-    group.add(roof);
-    
-    group.position.set(...position);
-    return group;
-  }
-
-  createBarn(position: [number, number, number], scale: number = 1) {
-    const group = new THREE.Group();
-    
-    // Base
-    const baseGeo = new THREE.BoxGeometry(6 * scale, 4 * scale, 10 * scale);
-    const baseMat = new THREE.MeshStandardMaterial({ color: '#D32F2F' }); // Barn Red
-    const base = new THREE.Mesh(baseGeo, baseMat);
-    base.position.y = 2 * scale;
-    group.add(base);
-    
-    // Gambrel Roof (Simplified as a stretched box + prism)
-    const roofGeo = new THREE.CylinderGeometry(4 * scale, 4 * scale, 10 * scale, 3);
-    const roofMat = new THREE.MeshStandardMaterial({ color: '#455A64' });
-    const roof = new THREE.Mesh(roofGeo, roofMat);
-    roof.position.y = 5 * scale;
-    roof.rotation.z = Math.PI / 2;
-    roof.rotation.x = Math.PI / 2;
-    group.add(roof);
-    
-    group.position.set(...position);
-    return group;
-  }
+  // Legacy support for older calls
+  createTree(pos: [number, number, number], scale: number = 1) { return this.createLODAsset('tree', pos, scale); }
+  createHouse(pos: [number, number, number], scale: number = 1) { return this.createLODAsset('house', pos, scale); }
+  createBarn(pos: [number, number, number], scale: number = 1) { return this.createLODAsset('barn', pos, scale); }
 }
 
 export const createBerm = (point: THREE.Vector3, height: number, material: string) => {

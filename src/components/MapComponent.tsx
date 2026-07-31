@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import * as pmtiles from 'pmtiles';
 import * as gisService from '../services/gisService';
 import * as THREE from 'three';
 import { PDT3DAssets } from '../3d-assets';
@@ -562,28 +563,74 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
           });
 
           this.renderer.autoClear = false;
+          this.clock = new THREE.Clock();
 
-          // Add some initial detailed assets at specific locations
-          const loader = assetLoader.current;
-          HISTORIC_SITES_PRESETS.forEach(site => {
-            const house = loader.createHouse([0, 0, 0], 2);
-            house.userData = { lngLat: site.center };
-            this.scene.add(house);
+          // Procedural Placement System
+          this.placedFeatures = new Set<string>();
+          this.updateProceduralAssets = () => {
+            if (!this.map) return;
+            const features = this.map.queryRenderedFeatures({ layers: ['3d-houses', '3d-barns', '3d-canopy'] });
+            const loader = assetLoader.current;
 
-            // Add a few trees around each site
-            for (let i = 0; i < 3; i++) {
-              const offsetLng = (Math.random() - 0.5) * 0.001;
-              const offsetLat = (Math.random() - 0.5) * 0.001;
-              const tree = loader.createTree([0, 0, 0], 0.8 + Math.random());
-              tree.userData = { lngLat: [site.center[0] + offsetLng, site.center[1] + offsetLat] as [number, number] };
-              this.scene.add(tree);
+            features.forEach(feature => {
+              const id = feature.id || `${feature.layer.id}-${feature.geometry.type}-${JSON.stringify(feature.properties)}`;
+              if (this.placedFeatures.has(id)) return;
+
+              let type: 'house' | 'barn' | 'tree' | null = null;
+              if (feature.layer.id === '3d-houses') type = 'house';
+              else if (feature.layer.id === '3d-barns') type = 'barn';
+              else if (feature.layer.id === '3d-canopy') type = 'tree';
+
+              if (type && feature.geometry.type === 'Point') {
+                const coords = (feature.geometry as any).coordinates;
+                const asset = loader.createLODAsset(type, [0, 0, 0], 1);
+                asset.userData = { lngLat: coords };
+                this.scene.add(asset);
+                this.placedFeatures.add(id);
+              } else if (type && (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon')) {
+                // For polygons, we place one asset at the centroid
+                // This is a simplification for performance
+                const coords = feature.geometry.type === 'Polygon' 
+                  ? (feature.geometry as any).coordinates[0][0] 
+                  : (feature.geometry as any).coordinates[0][0][0];
+                
+                const asset = loader.createLODAsset(type, [0, 0, 0], type === 'tree' ? 1.5 : 1);
+                asset.userData = { lngLat: coords };
+                this.scene.add(asset);
+                this.placedFeatures.add(id);
+              }
+            });
+
+            // Cleanup distant assets to manage memory
+            if (this.scene.children.length > 1000) {
+              const camPos = this.map.getFreeCameraOptions().position;
+              // Simple cleanup: remove oldest if over limit
+              const toRemove = this.scene.children.slice(0, 100);
+              toRemove.forEach(child => {
+                if (child instanceof THREE.LOD) {
+                  this.scene.remove(child);
+                }
+              });
             }
-          });
+          };
+
+          this.map.on('moveend', this.updateProceduralAssets);
+          this.updateProceduralAssets();
         },
-        render: function (gl, matrix) {
-          const m = new THREE.Matrix4().fromArray(matrix);
+        render: function (gl: any, matrix: any) {
+          // Handle both old (gl, matrix) and new (parameters) signatures
+          let m_array: number[];
+          if (matrix && Array.isArray(matrix)) {
+            m_array = matrix;
+          } else if (gl && gl.defaultProjectionData) {
+            m_array = gl.defaultProjectionData.mainMatrix;
+          } else {
+            return;
+          }
+
+          const m = new THREE.Matrix4().fromArray(m_array);
           
-          this.scene.children.forEach(child => {
+          this.scene.children.forEach((child: any) => {
             if (child.userData.lngLat) {
               const coord = maplibregl.MercatorCoordinate.fromLngLat(child.userData.lngLat);
               const l = new THREE.Matrix4()
@@ -593,6 +640,11 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
               
               child.matrixAutoUpdate = false;
               child.matrix = l;
+
+              // Update LOD
+              if (child instanceof THREE.LOD) {
+                child.update(this.camera);
+              }
             }
           });
 
