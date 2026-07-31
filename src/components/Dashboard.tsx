@@ -1,13 +1,21 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Activity, Sparkles, Database, MonitorPlay, Network, Shield, AlertTriangle, Cpu, Globe, Sun, Moon, Map, Maximize2, Minimize2, Server, Zap, Settings, X, Music, Volume2, VolumeX, Power, Eye, EyeOff, Ruler, Download, MousePointer2, FileText, RefreshCw } from 'lucide-react';
-import { SystemTelemetry } from './SystemTelemetry';
-import { MultiphysicsControls } from './MultiphysicsControls';
-import { DepthLegend } from './DepthLegend';
+import { 
+  Settings, X, Music, Volume2, VolumeX, Power, 
+  Eye, EyeOff, Ruler, Download, MousePointer2,
+  Maximize2, Minimize2, Activity, Globe, Network, Moon, Sun, Map
+} from 'lucide-react';
 import { MapComponent } from './MapComponent';
-import { SovereignAINode } from './SovereignAINode';
 import { useTheme } from '../context/ThemeContext';
 import { useAudioSystem } from '../context/AudioContext';
+
+// HUD Components
+import { TopHeader } from './hud/TopHeader';
+import { CameraHUD } from './hud/CameraHUD';
+import { LayerHUD } from './hud/LayerHUD';
+import { LegendHUD } from './hud/LegendHUD';
+import { TelemetryHUD } from './hud/TelemetryHUD';
+import { SimulationHUD } from './hud/SimulationHUD';
 
 export function Dashboard() {
   const [activePanel, setActivePanel] = useState<'telemetry' | 'evidence' | 'system' | 'upgrades' | 'ai' | 'archimedes' | 'datum'>('telemetry');
@@ -85,247 +93,103 @@ export function Dashboard() {
   }, []);
 
   return (
-    <div className="relative w-full h-screen overflow-hidden dark:bg-slate-950 bg-slate-100 dark:text-slate-100 text-slate-900 font-sans transition-colors duration-300">
+    <div className="relative w-full h-screen overflow-hidden bg-slate-950 text-slate-100 font-sans select-none">
       {/* Background Map - Full Screen */}
-      
-      {/* Floating Map Toolbox */}
-      
-      <div className="absolute right-6 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2 pointer-events-auto">
-        {[
-          { id: "select", icon: MousePointer2, label: "Select Feature" },
-          { id: "measure", icon: Ruler, label: "Measure Distance/Area" },
-          { id: "export", icon: Download, label: "Export Spatial Data" }
-        ].map((tool) => (
-          <button 
-            key={tool.id} 
-            title={tool.label} 
-            onClick={() => setActiveTool(activeTool === tool.id ? null : tool.id)}
-            className={`p-2 backdrop-blur-md border rounded shadow-xl transition-colors cursor-pointer ${
-              activeTool === tool.id 
-                ? "bg-indigo-600 border-indigo-500 text-white" 
-                : "dark:bg-slate-900/80 bg-white/90 dark:border-slate-700 border-slate-200 dark:text-slate-300 text-slate-700 hover:dark:text-[#00D4FF] hover:text-indigo-600 hover:dark:bg-slate-800"
-            }`}>
-            <tool.icon size={18} />
-          </button>
-        ))}
-      </div>
-
       <div className="absolute inset-0 z-0">
         <MapComponent layers={layers} layerOpacities={layerOpacities} />
       </div>
 
+      {/* Global Vignette/Gradient Overlay */}
+      <div className="absolute inset-0 z-5 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_0%,rgba(2,6,23,0.4)_100%)]" />
+
       {/* HUD - Overlay */}
       <div className="absolute inset-0 z-10 p-6 pointer-events-none flex flex-col justify-between">
-        {/* Header */}
-        <header className="flex items-center justify-between pointer-events-auto">
-          <div className="dark:bg-[#001428]/85 bg-white/95 backdrop-blur-md border-l-4 dark:border-[#00D4FF] border-indigo-600 py-2 px-4 shadow-xl border dark:border-transparent border-slate-200">
-            <h1 className="text-sm font-bold tracking-wider dark:text-[#00D4FF] text-indigo-700">TRI-STATE FAMILY SYSTEM: NODE 13101</h1>
-            <div className="text-[11px] font-mono dark:text-slate-400 text-slate-600 mt-1 uppercase tracking-widest flex items-center gap-2">
-              <span>SYS_FRAME: <span className="dark:text-white text-indigo-900 font-bold">{sysFrame}</span></span>
-              <span className="h-3 w-px dark:bg-slate-700 bg-slate-300"></span>
-              <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full dark:bg-[#00D4FF] bg-emerald-500 animate-pulse"></span> STATUS: ACTIVE SECURE</span>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <button 
-              onClick={() => setZenMode(!zenMode)} 
-              className={`p-2 border rounded transition-colors shadow-xl cursor-pointer mr-2 ${zenMode ? "bg-indigo-600 border-indigo-500 text-white" : "dark:bg-[#001428]/85 bg-white dark:border-slate-700/50 border-slate-200 hover:dark:bg-[#003366] hover:bg-slate-50 dark:text-[#00D4FF] text-indigo-600"}`} 
-              title="Toggle Zen Mode (Hide Panels)"> 
-              {zenMode ? <EyeOff size={18} /> : <Eye size={18} />} 
-            </button>
-            <button 
-              onClick={() => setShowSettingsModal(true)} 
-              className="p-2 dark:bg-[#001428]/85 bg-white dark:border-slate-700/50 border-slate-200 border rounded hover:dark:bg-[#003366] hover:bg-slate-50 dark:text-[#00D4FF] text-indigo-600 transition-colors shadow-xl cursor-pointer"
-              title="System Configuration Settings"
-            >
-              <Settings size={18} />
-            </button>
-            <button 
-              onClick={toggleTheme} 
-              className="p-2 dark:bg-[#001428]/85 bg-white dark:border-slate-700/50 border-slate-200 border rounded hover:dark:bg-[#003366] hover:bg-slate-50 dark:text-[#00D4FF] text-indigo-600 transition-colors shadow-xl cursor-pointer"
-              title={theme === 'dark' ? 'Switch to Day Mode' : theme === 'blueprint' ? 'Switch to Night Mode' : 'Switch to Blueprint Mode'}
-            >
-              {theme === 'dark' ? <Sun size={18} className="text-[#00D4FF]" /> : theme === 'blueprint' ? <Moon size={18} className="text-[#00D4FF]" /> : <Moon size={18} className="text-indigo-600" />}
-            </button>
-          </div>
-        </header>
+        <TopHeader sysFrame={sysFrame} />
 
-        {!zenMode && (<>
-        {/* Side Panels - HUD */}
-        <div className="flex-1 flex gap-6 mt-6 pointer-events-none">
-          <div className="w-96 flex flex-col gap-4 pointer-events-auto overflow-y-auto max-h-full pr-2 pb-16 scrollbar-hide">
-            
-            {/* HUD Tab Bar Navigation */}
-            <div className="flex dark:bg-[#001428]/90 bg-white/95 backdrop-blur-md dark:border-slate-700 border-slate-200 border rounded-lg p-1.5 gap-1 shadow-xl">
-              {(['telemetry', 'evidence', 'system', 'upgrades', 'ai', 'archimedes', 'datum'] as const).map((panel) => {
-                const isActive = activePanel === panel;
-                let Icon = Activity;
-                if (panel === 'evidence') Icon = Database;
-                if (panel === 'system') Icon = Cpu;
-                if (panel === 'upgrades') Icon = Zap;
-                if (panel === 'ai') Icon = Sparkles;
-                if (panel === 'archimedes') Icon = Shield;
-                if (panel === 'datum') Icon = RefreshCw;
-                
-                return (
-                  <button
-                    key={panel}
-                    onClick={() => setActivePanel(isActive ? 'telemetry' : panel)}
-                    className={`flex-1 flex flex-col items-center gap-1 py-1.5 px-1 rounded transition-all cursor-pointer ${
-                      isActive
-                        ? 'bg-indigo-600 text-white shadow-lg font-bold'
-                        : 'dark:text-slate-400 text-slate-600 dark:hover:text-white hover:text-slate-900 hover:dark:bg-slate-800/60 hover:bg-slate-100'
-                    }`}
-                    title={isActive ? `Minimize ${panel} panel` : `Open ${panel} panel`}
-                  >
-                    <Icon size={14} className={isActive ? 'animate-pulse text-[#00D4FF]' : ''} />
-                    <span className="text-[8px] font-mono font-bold uppercase tracking-wider">
-                      {panel === 'ai' ? 'Sovereign AI' : panel === 'archimedes' ? 'Archimedes' : panel === 'datum' ? 'NCAT' : panel}
-                    </span>
-                  </button>
-                );
-              })}
+        {!zenMode && (
+          <>
+            {/* Left Column HUDs */}
+            <div className="flex flex-col gap-4 mt-20 items-start">
+              <CameraHUD />
+              <LayerHUD />
             </div>
 
-            {activePanel === 'telemetry' && (
-              <Card className="dark:bg-slate-900/80 bg-white/90 backdrop-blur-md dark:border-slate-700 border-slate-200 dark:text-slate-100 text-slate-900 shadow-xl transition-all duration-300">
-                <CardContent className="p-4">
-                  <div>AssimilationView removed for cleanup</div>
-                </CardContent>
-              </Card>
-            )}
-            {activePanel === 'evidence' && (
-              <Card className="dark:bg-slate-900/80 bg-white/90 backdrop-blur-md dark:border-slate-700 border-slate-200 dark:text-slate-100 text-slate-900 shadow-xl transition-all duration-300">
-                <CardContent className="p-4">
-                  <div>EvidenceView removed for cleanup</div>
-                </CardContent>
-              </Card>
-            )}
-            {activePanel === 'system' && (
-              <Card className="dark:bg-slate-900/80 bg-white/90 backdrop-blur-md dark:border-slate-700 border-slate-200 dark:text-slate-100 text-slate-900 shadow-xl transition-all duration-300">
-                <CardContent className="p-4">
-                  <SystemTelemetry />
-                </CardContent>
-              </Card>
-            )}
-            {activePanel === 'upgrades' && (
-              <Card className="dark:bg-slate-900/80 bg-white/90 backdrop-blur-md dark:border-slate-700 border-slate-200 dark:text-slate-100 text-slate-900 h-[600px] flex flex-col shadow-xl transition-all duration-300">
-                <CardContent className="p-4 flex-1 overflow-hidden">
-                  <div>UpgradesView removed for cleanup</div>
-                </CardContent>
-              </Card>
-            )}
-            {activePanel === 'ai' && (
-              <Card className="dark:bg-slate-900/80 bg-white/90 backdrop-blur-md dark:border-slate-700 border-slate-200 dark:text-slate-100 text-slate-900 h-[600px] flex flex-col shadow-xl transition-all duration-300">
-                <CardContent className="p-0 h-full flex flex-col">
-                  <SovereignAINode />
-                </CardContent>
-              </Card>
-            )}
-            {activePanel === 'archimedes' && (
-              <Card className="dark:bg-slate-900/80 bg-white/90 backdrop-blur-md dark:border-slate-700 border-slate-200 dark:text-slate-100 text-slate-900 h-[600px] flex flex-col shadow-xl transition-all duration-300">
-                <CardContent className="p-0 h-full flex flex-col">
-                  <div>ArchimedesConsole removed for cleanup</div>
-                </CardContent>
-              </Card>
-            )}
-            {activePanel === 'datum' && (
-              <Card className="dark:bg-slate-900/80 bg-white/90 backdrop-blur-md dark:border-slate-700 border-slate-200 dark:text-slate-100 text-slate-900 h-[600px] flex flex-col shadow-xl transition-all duration-300">
-                <CardContent className="p-0 h-full flex flex-col">
-                  <div>NcatTransformer removed for cleanup</div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-          <div className="flex-1"></div>
-          
-          {/* Right Panel - Multiphysics Controls */}
-          <div className="w-80 pointer-events-auto">
-            <Card className="dark:bg-slate-900/80 bg-white/90 backdrop-blur-md dark:border-slate-700 border-slate-200 dark:text-slate-100 text-slate-900 shadow-xl transition-all duration-300">
-              <CardContent className="p-4">
-                <MultiphysicsControls layers={layers} setLayers={setLayers} layerOpacities={layerOpacities} setLayerOpacity={handleOpacityChange} />
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* UPDATED BOTTOM HUB CONTAINER: MATCHING EXACT PLACEMENT PATTERNS */}
-        <div style={{
-          position: "absolute",
-          bottom: "24px",
-          left: "24px",
-          right: "24px",
-          display: "flex",
-          gap: "24px",
-          pointerEvents: "auto",
-          height: "220px"
-        }}>
-          {/* Left Section: Dynamic D3 Cross-Section Graph */}
-          <div style={{ width: "630px", flexShrink: 0 }}>
-            <div>RiverCrossSection Removed</div>
-          </div>
-        
-          {/* Middle Section: Scenario Control Deck */}
-          <div style={{
-            flex: 1,
-            background: (theme === 'dark' || theme === 'blueprint') ? "rgba(0, 10, 20, 0.8)" : "rgba(255, 255, 255, 0.92)",
-            backdropFilter: "blur(16px)",
-            border: (theme === 'dark' || theme === 'blueprint') ? "1px solid rgba(0, 212, 255, 0.15)" : "1px solid rgba(99, 102, 241, 0.25)",
-            borderRadius: "6px",
-            padding: "16px",
-            display: "flex",
-            flexDirection: "column",
-            boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)"
-          }}>
-              <div className="flex justify-between items-center mb-2">
-                <div>
-                  <div className="dark:text-[#00D4FF] text-indigo-700 text-[13px] font-bold tracking-wider">
-                    ANALYTICS & PREDICTIVE INSIGHTS
-                  </div>
-                  <p className="text-[10px] dark:text-slate-400 text-slate-600 mt-0.5">
-                    Scenario Horizon: <span className="dark:text-white text-indigo-900 font-bold font-mono">{scenarioHorizon} Hrs</span> | Vector Lookup Active
-                  </p>
-                </div>
-                <button
-                  onClick={handleBackupExport}
-                  disabled={isExporting}
-                  className="flex items-center gap-1.5 px-2.5 py-1 text-[9px] dark:bg-[#00D4FF]/10 bg-indigo-50 hover:dark:bg-[#00D4FF]/20 hover:bg-indigo-100 border dark:border-[#00D4FF]/30 border-indigo-200 hover:dark:border-[#00D4FF]/60 hover:border-indigo-400 disabled:opacity-50 dark:text-[#00D4FF] text-indigo-600 rounded transition-all cursor-pointer font-bold font-mono"
-                  title="Export System Snapshot Archive (.ZIP)"
-                >
-                  <Database size={11} /> {isExporting ? "EXPORTING..." : "EXPORT BACKUP"}
+            {/* Right Column Tools */}
+            <div className="absolute right-6 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2 pointer-events-auto">
+              {[
+                { id: "select", icon: MousePointer2, label: "Select Feature" },
+                { id: "measure", icon: Ruler, label: "Measure Distance/Area" },
+                { id: "export", icon: Download, label: "Export Spatial Data" },
+                { id: "fullscreen", icon: Maximize2, label: "Toggle Fullscreen" }
+              ].map((tool) => (
+                <button 
+                  key={tool.id} 
+                  title={tool.label} 
+                  onClick={() => setActiveTool(activeTool === tool.id ? null : tool.id)}
+                  className={`p-2.5 backdrop-blur-md border rounded-sm shadow-2xl transition-all cursor-pointer ${
+                    activeTool === tool.id 
+                      ? "bg-emerald-500 border-emerald-400 text-slate-950" 
+                      : "bg-slate-950/80 border-slate-800 text-slate-400 hover:text-emerald-400 hover:border-emerald-500/50"
+                  }`}>
+                  <tool.icon size={18} />
                 </button>
+              ))}
+              <div className="h-4" />
+              <button 
+                onClick={() => setShowSettingsModal(true)} 
+                className="p-2.5 bg-slate-950/80 border-slate-800 border rounded-sm hover:text-emerald-400 hover:border-emerald-500/50 text-slate-400 transition-all shadow-2xl cursor-pointer"
+                title="System Configuration Settings"
+              >
+                <Settings size={18} />
+              </button>
+            </div>
+
+            {/* Bottom HUD Section */}
+            <div className="flex justify-between items-end gap-6 mt-auto pointer-events-auto">
+              <div className="flex gap-6 items-end">
+                <SimulationHUD />
+                <TelemetryHUD />
               </div>
               
-              {/* Slider */}
-              <div className="mb-4 mt-2 px-2">
-                <input 
-                  type="range" 
-                  min="0" max="72" 
-                  value={scenarioHorizon} 
-                  onChange={(e) => setScenarioHorizon(Number(e.target.value))}
-                  className="w-full dark:accent-[#00D4FF] accent-indigo-600 cursor-pointer" 
-                />
-                <div className="flex justify-between text-[9px] dark:text-slate-500 text-slate-400 font-mono mt-1">
-                  <span>T+0 (LIVE)</span>
-                  <span>T+36</span>
-                  <span>T+72 (FORECAST)</span>
+              <div className="flex flex-col gap-4 items-end">
+                <LegendHUD />
+                <div className="flex gap-2">
+                   <div className="flex flex-col items-end px-3 py-1 bg-slate-950/80 backdrop-blur-md border border-slate-800 rounded-sm">
+                      <span className="text-[8px] text-slate-500 uppercase font-mono tracking-widest leading-tight">Node Integrity</span>
+                      <span className="text-[10px] text-emerald-400 font-black font-mono leading-tight">99.8% SECURE</span>
+                   </div>
+                   <button 
+                      onClick={() => setZenMode(true)} 
+                      className="p-2 bg-slate-950/80 border border-slate-800 rounded-sm hover:text-emerald-400 transition-all text-slate-500"
+                      title="Collapse HUD"
+                   >
+                      <EyeOff size={16} />
+                   </button>
                 </div>
               </div>
+            </div>
+          </>
+        )}
 
-              <div className="flex-1 grid grid-cols-3 gap-4 h-[80px]">
-                 <div>AssetRiskSummary removed for cleanup</div>
-                 <div>TurbovecPatternEngine Removed</div>
-                 <div>TurbovecScorePlot Removed</div>
-              </div>
+        {zenMode && (
+          <div className="absolute bottom-6 right-6 pointer-events-auto">
+            <button 
+              onClick={() => setZenMode(false)} 
+              className="p-3 bg-slate-950/80 backdrop-blur-md border border-slate-800 rounded-full hover:text-emerald-400 transition-all text-slate-500 shadow-2xl"
+              title="Expand HUD"
+            >
+              <Eye size={20} />
+            </button>
           </div>
-        
-          {/* Right Section: Color Depth Metric Scale Block */}
-          <div style={{ width: "260px", flexShrink: 0 }}>
-            <DepthLegend />
-          </div>
-        </div>
-        </>
-      )}
+        )}
+      </div>
+
+      {/* Footer / Status Bar Strip */}
+      <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 z-[100]">
+        <div className="h-full bg-emerald-500/50 animate-pulse" style={{ width: '100%' }} />
+      </div>
+      <div className="absolute bottom-1 right-2 z-[100] pointer-events-none">
+        <span className="text-[8px] font-mono text-slate-700 tracking-widest uppercase">PTDT Systems • Tucker Cognitive OS • {new Date().getFullYear()}</span>
       </div>
 
       {/* System Settings & Ambient Music Config Overlay */}
