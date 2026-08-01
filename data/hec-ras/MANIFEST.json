@@ -1,0 +1,10 @@
+{
+  "run_id": "HEC-RAS-STUB-BONEBANK-000",
+  "site": "13101 Bonebank Road",
+  "vertical_datum": "NAVD88",
+  "firm_panel": "18129C0215D",
+  "model": "HEC-RAS 2D",
+  "sealed": false,
+  "note": "Placeholder only. Attach PE-sealed mesh before evidentiary use.",
+  "api": "/api/hec-ras/mesh"
+}
