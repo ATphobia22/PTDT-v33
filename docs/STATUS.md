@@ -1,12 +1,7 @@
 # PTDT / Bonebank — STATUS
 
-**COMPLETE** — zero-key government core path.
+**Core zero-key path: COMPLETE**  
+**PE seals: still human**  
+**Multi-hazard engines: STUB interfaces live at `/api/hazards/summary`**
 
-Latest: assemble **preserves** sovereign `server-main.ts` with live dual USGS (will not overwrite with legacy static 18.x stage).
-
-```bash
-npm install && npm run assemble && npm run dev
-bash scripts/verify-sovereign.sh
-```
-
-See `docs/PROJECT_COMPLETE.md`.
+See `docs/IMAGE_ROADMAP_INGEST.md` and `certification/`.
