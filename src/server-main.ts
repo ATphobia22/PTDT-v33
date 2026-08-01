@@ -1,7 +1,6 @@
 /**
  * PTDT sovereign bootstrap server — zero-key government path.
- * Full legacy routes may be restored via: npm run assemble
- * Assemble will NOT overwrite this file when USGS_NWIS_LIVE is present.
+ * Assemble will NOT overwrite when USGS_NWIS_LIVE is present.
  */
 import { registerAIRoutes } from "./src/server-ai";
 import express, { Request, Response, NextFunction } from "express";
@@ -14,6 +13,7 @@ import http from "http";
 import { OpenMITimeHandler } from "./src/services/compliance";
 import { registerGisRoutes } from "./src/server-gis-routes";
 import { registerHecRasRoutes } from "./src/server-hec-ras";
+import { registerMultiHazardRoutes } from "./src/server-multi-hazard";
 import { BONEBANK_SITE } from "./src/lib/siteConstants";
 
 dotenv.config();
@@ -91,24 +91,18 @@ async function startServer() {
       status: "ok",
       node: "13101_BONEBANK_RD",
       owner: BONEBANK_SITE.owner,
-      acreage: BONEBANK_SITE.acreage,
-      bfe_ft_navd88: BONEBANK_SITE.bfe_ft_navd88,
-      lag_ft_navd88: BONEBANK_SITE.lag_ft_navd88,
-      ffe_ft_navd88: BONEBANK_SITE.ffe_ft_navd88,
-      clearance_ft: BONEBANK_SITE.clearance_ft,
       firm_panel: BONEBANK_SITE.firm_panel,
-      fema_community_number: BONEBANK_SITE.fema_community_number,
-      compensatory_storage_factor: BONEBANK_SITE.compensatory_storage_factor,
       gauges: [BONEBANK_SITE.usgs_gauge, BONEBANK_SITE.usgs_gauge_ohio],
       free_for_government: true,
       keys_required: false,
-      vertical_datum: BONEBANK_SITE.vertical_datum,
       hec_ras_mesh: "STUB",
+      multi_hazard: "STUB",
     });
   });
 
   registerGisRoutes(app);
   registerHecRasRoutes(app);
+  registerMultiHazardRoutes(app);
 
   app.post("/api/v1/twin/simulate", (req, res) => {
     const stage_ft = Number(req.body?.usgs_stage_ft ?? BONEBANK_SITE.lag_ft_navd88 + 4);
@@ -117,10 +111,7 @@ async function startServer() {
     const slope = 0.00015;
     const velocity =
       depth_ft > 0 ? (1.486 / manning_n) * Math.pow(depth_ft, 2 / 3) * Math.pow(slope, 0.5) : 0;
-    const berm_l = 300,
-      berm_w = 10,
-      berm_h = 3;
-    const disp = (berm_l * berm_w * berm_h) / 27;
+    const disp = (300 * 10 * 3) / 27;
     const factor = BONEBANK_SITE.compensatory_storage_factor;
     const excav = disp * factor;
     const rise = 0;
@@ -141,7 +132,6 @@ async function startServer() {
       governance: {
         decision: ok ? "APPROVED_CERTIFIED_NO_RISE" : "REJECTED_STATUTORY_VIOLATION",
         cryptographic_hash: hash,
-        audit_trail: [ok ? "IN-312-IAC-10 PASS" : "IN-312-IAC-10 BREACH"],
         firm_panel: BONEBANK_SITE.firm_panel,
         statute: "IC 14-28-1 / 312 IAC 10",
       },
@@ -170,7 +160,6 @@ async function startServer() {
         lng: -87.95,
       },
     ];
-
     try {
       const [nh, myers] = await Promise.all([
         fetchUsgsIv(BONEBANK_SITE.usgs_gauge),
@@ -199,63 +188,32 @@ async function startServer() {
           lng: -87.95,
         });
       }
-      if (data.length) {
-        return res.json({ success: true, source: "USGS_NWIS_LIVE", data });
-      }
+      if (data.length) return res.json({ success: true, source: "USGS_NWIS_LIVE", data });
     } catch (e) {
       console.warn("[USGS] live fetch failed", e);
     }
     return res.json({ success: true, source: "LOCAL_OFFLINE_SEED", data: seed });
   });
 
-  const LOCAL_FLOODPLAIN = {
-    type: "FeatureCollection",
-    features: [
-      {
-        type: "Feature",
-        properties: { FLD_ZONE: "AE", ZONE_SUBTY: "Floodway", SOURCE: "Local-Cache" },
-        geometry: {
-          type: "Polygon",
-          coordinates: [
-            [
-              [-88.05, 37.8],
-              [-87.95, 37.8],
-              [-87.95, 37.95],
-              [-88.05, 37.95],
-              [-88.05, 37.8],
-            ],
-          ],
-        },
-      },
-    ],
-  };
-
-  app.get("/api/fema-flood-zones", (_req, res) => res.json(LOCAL_FLOODPLAIN));
-  app.get("/api/dnr-floodplain", (_req, res) => res.json(LOCAL_FLOODPLAIN));
+  app.get("/api/fema-flood-zones", (_req, res) =>
+    res.json({ type: "FeatureCollection", features: [] })
+  );
+  app.get("/api/dnr-floodplain", (_req, res) =>
+    res.json({ type: "FeatureCollection", features: [] })
+  );
 
   app.get("/api/regulatory/loma-package", (_req, res) => {
     res.json({
       path: "Pure LOMA Natural High Ground",
       address: BONEBANK_SITE.name,
       community_number: BONEBANK_SITE.fema_community_number,
-      community_name: BONEBANK_SITE.fema_community_name,
       firm_panel: BONEBANK_SITE.firm_panel,
       bfe_ft_navd88: BONEBANK_SITE.bfe_ft_navd88,
       lag_ft_navd88: BONEBANK_SITE.lag_ft_navd88,
       ffe_ft_navd88: BONEBANK_SITE.ffe_ft_navd88,
       clearance_ft: BONEBANK_SITE.clearance_ft,
       vertical_datum: "NAVD88",
-      reject_ngvd29: true,
-      usgs_gauge: BONEBANK_SITE.usgs_gauge,
-      checklist: [
-        "Confirm natural ground (no fill)",
-        "LAG > BFE",
-        "NAVD88 only",
-        "Deed & tax plat",
-        "LiDAR work map",
-        "P.E. transmittal",
-        "MT-EZ / Online LOMC",
-      ],
+      legal_disclaimer: "Not legal advice. PE seal required for filings (IC 25-31-1).",
     });
   });
 
@@ -280,13 +238,12 @@ async function startServer() {
     let frame = 0;
     const id = setInterval(() => {
       frame = (frame + 1) % 240;
-      const stage = BONEBANK_SITE.lag_ft_navd88 + Math.sin(frame / 12) * 0.5;
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(
           JSON.stringify({
             type: "TELEMETRY_UPDATE",
             node: "13101_BONEBANK_RD",
-            stage,
+            stage: BONEBANK_SITE.lag_ft_navd88 + Math.sin(frame / 12) * 0.5,
             frame,
             status: "NOMINAL",
             timestamp: new Date().toISOString(),
@@ -298,9 +255,7 @@ async function startServer() {
   });
 
   httpServer.listen(PORT, "0.0.0.0", () => {
-    console.log(`[PTDT] Sovereign node on :${PORT} — free for government use, zero keys`);
-    console.log(`[PTDT] Gauges ${BONEBANK_SITE.usgs_gauge} + ${BONEBANK_SITE.usgs_gauge_ohio}`);
-    console.log(`[PTDT] HEC-RAS mesh: STUB at /api/hec-ras/mesh`);
+    console.log(`[PTDT] :${PORT} zero-key · gauges dual · hazards STUB · HEC-RAS STUB`);
   });
 }
 
