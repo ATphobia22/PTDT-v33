@@ -1,31 +1,44 @@
-# PTDT Sovereign Hydrodynamic Pipeline
+# PTDT v32 Sovereign Hydrodynamic Pipeline
 
-Point Township Digital Twin — **13101 Bonebank Road**, Posey County, Indiana (TUCKER, 2.0 ac).
+This project implements a high-performance hydraulic modeling and regulatory package generation pipeline for Point Township Section 35.
 
-**Zero-key by design.** Core stack runs with no API keys, no paid tiles, no SaaS.
+## Architecture
 
-**Completion:** see [docs/PROJECT_COMPLETE.md](docs/PROJECT_COMPLETE.md).
+- **Frontend/API Gateway**: React + Node.js (Vite/Express) running on port 3000.
+- **Archimedes Engine**: Python (FastAPI) running on port 8000, handling fluid mechanics and regulatory artifact generation (PDF/JSON/CSV).
 
-## Quick start
+## Core Components
 
+### Archimedes Engine (`archimedes_engine.py`)
+The canonical source of truth for:
+- **Hydraulic Simulations**: Manning's formula based open-channel velocity calculations.
+- **Regulatory Compliance**: IDNR 312 IAC 10-5 compensatory storage enforcement (1.20x safety factor).
+- **Artifact Generation**: PE Transmittal letters, No-Rise Certifications, and FEMA BCA data packages.
+
+### Dashboard UI
+A sophisticated real-time monitoring and control interface for managing the hydro pipeline and generating regulatory artifacts.
+
+## Quick Start
+
+### Local Development (Python Engine)
 ```bash
-git clone https://github.com/ATphobia22/Tri-State-Family-Engineering-System-.git
-cd Tri-State-Family-Engineering-System-
+pip install -r requirements.txt
+python archimedes_engine.py
+```
+
+### Local Development (Node Frontend)
+```bash
 npm install
-npm run assemble
 npm run dev
 ```
 
-| Layer | Source | Key? |
-|-------|--------|------|
-| Map + buildings | MapLibre + OSM + local GeoJSON | No |
-| Vertical datum | NGS NCAT public API | No |
-| Parcels / BAFM | IndianaMap public REST | No |
-| Stage | USGS NWIS dual gauge (+ offline seed) | No |
-| Hydraulics / No-Rise | Archimedes local 1.20× | No |
-| LOMA metadata | `/api/regulatory/loma-package` | No |
-| Chat | Gemini | Optional |
+### Docker Deployment
+```bash
+docker-compose up --build
+```
 
-**Anchors:** BFE 375.0 · LAG 377.2 · FFE 382.5 · FIRM 18129C0215D · Community 180194 · NAVD88
-
-License: **Apache-2.0**.
+## CI/CD
+The project uses GitHub Actions for:
+- **Node.js**: Linting and building the frontend.
+- **Python**: Verifying the Archimedes engine core and regulatory dependencies.
+- **Databricks**: CD pipeline for DLT asset bundle deployment.

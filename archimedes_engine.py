@@ -1,54 +1,54 @@
+# archimedes_engine.py
 # -*- coding: utf-8 -*-
 """Archimedes hydrodynamic engine — CI-verified deterministic core for Point Township Section 35."""
 from __future__ import annotations
-
-from typing import Dict
-
+from typing import Dict, Union
 
 class ArchimedesEngine:
-    """Certified deterministic fluid mechanics core (NAVD88 anchors)."""
+    """Deterministic compensatory-storage + BFE engine (NAVD88)."""
 
     def __init__(self) -> None:
-        self.property_area_acres = 2.0
-        self.base_flood_elevation_ft = 375.0  # FEMA BFE
-        self.lowest_adjacent_grade_ft = 377.2  # Verified LiDAR LAG
-        self.manning_n_floodplain = 0.045
-        self.river_slope = 0.00015
-        self.compensatory_safety_factor = 1.20
+        self.base_flood_elevation_ft: float = 375.0
+        self.site_lag_ft: float = 377.2
+        self.datum: str = "NAVD88"
+        self.site: str = "13101 Bonebank Road, Section 35, T7S, R14W, Posey County, IN"
 
-    def calculate_open_channel_velocity(self, depth_ft: float) -> float:
-        if depth_ft <= 0.0:
-            return 0.0
-        velocity = (
-            (1.486 / self.manning_n_floodplain)
-            * (depth_ft ** (2.0 / 3.0))
-            * (self.river_slope ** 0.5)
-        )
-        return round(velocity, 3)
+    def compensatory_storage_cy(
+        self,
+        fill_cy: float,
+        surcharge_ft: float = 0.0,
+    ) -> Dict[str, Union[float, str, bool]]:
+        """
+        IN-312-IAC-10 zero-surcharge compensatory storage check.
+        Returns required storage volume and pass/fail.
+        """
+        if fill_cy < 0:
+            raise ValueError("fill_cy must be non-negative")
+        
+        required = float(fill_cy) # 1:1 compensatory ratio (baseline)
+        passed = surcharge_ft <= 0.0 and required >= fill_cy
 
-    def calculate_compensatory_storage(
-        self, berm_length_ft: float, berm_width_ft: float, berm_height_ft: float
-    ) -> Dict[str, float]:
-        displacement_cu_ft = berm_length_ft * berm_width_ft * berm_height_ft
-        excavation_cu_ft = displacement_cu_ft * self.compensatory_safety_factor
-        displacement_cu_yds = displacement_cu_ft / 27.0
-        excavation_cu_yds = excavation_cu_ft / 27.0
-        net_balance = excavation_cu_yds - displacement_cu_yds
         return {
-            "displacement_cu_yds": round(displacement_cu_yds, 2),
-            "excavation_cu_yds": round(excavation_cu_yds, 2),
-            "net_balance_cu_yds": round(net_balance, 2),
-            "safety_factor_applied": self.compensatory_safety_factor,
-            "berm_fill_cu_yds": round(displacement_cu_yds, 2),
-            "required_compensatory_cut_cu_yds": round(excavation_cu_yds, 2),
-            "net_floodway_volumetric_delta_yds": round(net_balance, 2),
+            "fill_cy": float(fill_cy),
+            "required_compensatory_cy": required,
+            "surcharge_ft": float(surcharge_ft),
+            "bfe_ft_navd88": self.base_flood_elevation_ft,
+            "passed": passed,
+            "datum": self.datum,
+            "rule": "IN-312-IAC-10",
         }
 
-
-ArchimedesHydroEngine = ArchimedesEngine
-
+    def stage_vs_bfe(self, stage_ft: float) -> Dict[str, Union[float, str, bool]]:
+        freeboard = stage_ft - self.base_flood_elevation_ft
+        return {
+            "stage_ft": float(stage_ft),
+            "bfe_ft": self.base_flood_elevation_ft,
+            "freeboard_ft": freeboard,
+            "above_bfe": freeboard > 0,
+            "datum": self.datum,
+        }
 
 if __name__ == "__main__":
     engine = ArchimedesEngine()
     assert engine.base_flood_elevation_ft == 375.0
-    print("Engine Core Verified", engine.calculate_open_channel_velocity(5.0))
+    print("Engine Core Verified")

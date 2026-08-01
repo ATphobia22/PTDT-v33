@@ -7,8 +7,8 @@ such as `[4, 5]`, `[7-9]`, `[10-12]` that were leftover from document assembly.
 Those markers were **not** valid in the embedded shell/Python/Swift/Verilog
 samples and cluttered the UI when code was displayed.
 
-They were removed in branch `fix/cleanup-errors`. The sample snippets themselves
-are retained as illustrative catalog entries for the digital-twin layer browser;
-they are not executed by the runtime.
+They were removed. The sample snippets themselves are retained as illustrative
+catalog entries (via `archivePath`) for the digital-twin layer browser; they
+are not executed by the runtime.
 
 No functional application logic was deleted.

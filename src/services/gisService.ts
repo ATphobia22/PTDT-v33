@@ -1,11 +1,9 @@
-import * as THREE from 'three';
-
 export interface GeoJSONFeature {
-  type: string;
-  properties: Record<string, any>;
+  type: "Feature";
+  properties: Record<string, any> | null;
   geometry: {
     type: string;
-    coordinates: any;
+    coordinates: unknown;
   };
 }
 
@@ -14,114 +12,83 @@ export interface GeoJSONFeatureCollection {
   features: GeoJSONFeature[];
 }
 
-export async function fetchFemaFloodZones(bbox: [number, number, number, number]): Promise<GeoJSONFeatureCollection> {
-  const url = `/api/fema-flood-zones`;
-  const params = new URLSearchParams({
-    bbox: bbox.join(',')
-  });
+export type BBox = [number, number, number, number]; // [xmin, ymin, xmax, ymax] WGS84
 
-  try {
-    const res = await fetch(`${url}?${params.toString()}`);
-    if (!res.ok) throw new Error('Failed to fetch FEMA data');
-    return await res.json();
-  } catch (error) {
-    console.error("FEMA API Error:", error);
-    return { type: "FeatureCollection", features: [] };
-  }
+const EMPTY_FC: GeoJSONFeatureCollection = { type: "FeatureCollection", features: [] };
+
+function isValidBBox(bbox: BBox): boolean {
+  return (
+    Array.isArray(bbox) &&
+    bbox.length === 4 &&
+    bbox.every((n) => typeof n === "number" && Number.isFinite(n))
+  );
 }
 
-export async function fetchIndianaHistoricSites(bbox: [number, number, number, number]): Promise<GeoJSONFeatureCollection> {
-  const url = `/api/historic-sites`;
-  const params = new URLSearchParams({
-    bbox: bbox.join(',')
-  });
-
-  try {
-    const res = await fetch(`${url}?${params.toString()}`);
-    if (!res.ok) throw new Error('Failed to fetch INMap data');
-    return await res.json();
-  } catch (error) {
-    console.error("INMap API Error:", error);
-    return { type: "FeatureCollection", features: [] };
-  }
-}
-
-export async function fetchDnrFloodplain(bbox: [number, number, number, number]): Promise<GeoJSONFeatureCollection> {
-  const url = `/api/dnr-floodplain`;
-  const params = new URLSearchParams({
-    bbox: bbox.join(',')
-  });
-
-  try {
-    const res = await fetch(`${url}?${params.toString()}`);
-    if (!res.ok) throw new Error('Failed to fetch Indiana DNR floodplain');
-    return await res.json();
-  } catch (error) {
-    console.error("DNR Floodplain API Error:", error);
-    return { type: "FeatureCollection", features: [] };
-  }
-}
-
-export async function fetchNwsAlerts(): Promise<any> {
-  const url = `/api/nws-alerts`;
+async function fetchGeoJson(url: string, label: string): Promise<GeoJSONFeatureCollection> {
   try {
     const res = await fetch(url);
-    if (!res.ok) throw new Error('Failed to fetch NWS alerts');
-    return await res.json();
+    if (!res.ok) throw new Error(`${label} HTTP ${res.status}`);
+    const data = (await res.json()) as GeoJSONFeatureCollection;
+    if (!data || data.type !== "FeatureCollection" || !Array.isArray(data.features)) {
+      return EMPTY_FC;
+    }
+    return data;
   } catch (error) {
-    console.error("NWS API Error:", error);
-    return { type: "FeatureCollection", features: [] };
+    console.error(`${label} Error:`, error);
+    return EMPTY_FC;
   }
 }
 
-/** Building footprints — local Bonebank sample + /api/gis/buildings proxy */
-export async function fetchBuildings(bbox: [number, number, number, number]): Promise<GeoJSONFeatureCollection> {
-  const params = new URLSearchParams({
-    xmin: String(bbox[0]),
-    ymin: String(bbox[1]),
-    xmax: String(bbox[2]),
-    ymax: String(bbox[3]),
-  });
-  try {
-    const res = await fetch(`/api/gis/buildings?${params}`);
-    if (!res.ok) throw new Error('Failed to fetch buildings');
-    return await res.json();
-  } catch (error) {
-    console.error("Buildings API Error:", error);
-    return { type: "FeatureCollection", features: [] };
-  }
+export async function fetchFemaFloodZones(bbox: BBox): Promise<GeoJSONFeatureCollection> {
+  if (!isValidBBox(bbox)) return EMPTY_FC;
+  const params = new URLSearchParams({ bbox: bbox.join(",") });
+  return fetchGeoJson(`/api/fema-flood-zones?${params}`, "FEMA");
 }
 
-export async function fetchParcels(bbox: [number, number, number, number]): Promise<GeoJSONFeatureCollection> {
+export async function fetchParcels(bbox: BBox): Promise<GeoJSONFeatureCollection> {
+  if (!isValidBBox(bbox)) return EMPTY_FC;
+  const [xmin, ymin, xmax, ymax] = bbox;
   const params = new URLSearchParams({
-    xmin: String(bbox[0]),
-    ymin: String(bbox[1]),
-    xmax: String(bbox[2]),
-    ymax: String(bbox[3]),
+    xmin: String(xmin),
+    ymin: String(ymin),
+    xmax: String(xmax),
+    ymax: String(ymax),
   });
-  try {
-    const res = await fetch(`/api/gis/parcels?${params}`);
-    if (!res.ok) throw new Error('Failed to fetch parcels');
-    return await res.json();
-  } catch (error) {
-    console.error("Parcels API Error:", error);
-    return { type: "FeatureCollection", features: [] };
-  }
+  return fetchGeoJson(`/api/gis/parcels?${params}`, "Parcels");
 }
 
-export async function fetchBafm(bbox: [number, number, number, number]): Promise<GeoJSONFeatureCollection> {
+export async function fetchBafm(bbox: BBox): Promise<GeoJSONFeatureCollection> {
+  if (!isValidBBox(bbox)) return EMPTY_FC;
+  const [xmin, ymin, xmax, ymax] = bbox;
   const params = new URLSearchParams({
-    xmin: String(bbox[0]),
-    ymin: String(bbox[1]),
-    xmax: String(bbox[2]),
-    ymax: String(bbox[3]),
+    xmin: String(xmin),
+    ymin: String(ymin),
+    xmax: String(xmax),
+    ymax: String(ymax),
   });
-  try {
-    const res = await fetch(`/api/gis/bafm?${params}`);
-    if (!res.ok) throw new Error('Failed to fetch BAFM');
-    return await res.json();
-  } catch (error) {
-    console.error("BAFM API Error:", error);
-    return { type: "FeatureCollection", features: [] };
-  }
+  return fetchGeoJson(`/api/gis/bafm?${params}`, "BAFM");
+}
+
+export async function fetchBuildings(bbox: BBox): Promise<GeoJSONFeatureCollection> {
+  if (!isValidBBox(bbox)) return EMPTY_FC;
+  const [xmin, ymin, xmax, ymax] = bbox;
+  const params = new URLSearchParams({
+    xmin: String(xmin),
+    ymin: String(ymin),
+    xmax: String(xmax),
+    ymax: String(ymax),
+  });
+  return fetchGeoJson(`/api/gis/buildings?${params}`, "Buildings");
+}
+
+export async function fetchIndianaHistoricSites(bbox: BBox): Promise<GeoJSONFeatureCollection> {
+  if (!isValidBBox(bbox)) return EMPTY_FC;
+  const params = new URLSearchParams({ bbox: bbox.join(",") });
+  return fetchGeoJson(`/api/gis/historic-sites?${params}`, "HistoricSites");
+}
+
+export async function fetchDnrFloodplain(bbox: BBox): Promise<GeoJSONFeatureCollection> {
+  if (!isValidBBox(bbox)) return EMPTY_FC;
+  const params = new URLSearchParams({ bbox: bbox.join(",") });
+  return fetchGeoJson(`/api/gis/dnr-floodplain?${params}`, "DNRFloodplain");
 }

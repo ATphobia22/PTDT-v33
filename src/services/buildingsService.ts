@@ -1,17 +1,8 @@
-/**
- * Building-footprint service — zero-key OSS-first
- * Sources (priority order):
- *   1. Local Bonebank sample GeoJSON (offline / CI)
- *   2. Microsoft USBuildingFootprints Indiana clip (public GeoJSON)
- *   3. Overture Maps buildings (PMTiles / GeoParquet bbox query when available)
- * Heights used for MapLibre fill-extrusion; fallback height derived from levels or constant.
- */
-
 import { BONEBANK_SITE } from "../lib/siteConstants";
 
 export interface GeoJSONFeature {
   type: "Feature";
-  properties: Record<string, unknown> | null;
+  properties: Record<string, any> | null;
   geometry: {
     type: string;
     coordinates: unknown;
@@ -53,18 +44,23 @@ function featureIntersectsBBox(f: GeoJSONFeature, bbox: BBox): boolean {
       c.forEach(walk);
     }
   };
+
   walk(geom.coordinates);
   if (coords.length === 0) return false;
 
+  // Any vertex inside or envelope overlap
   for (const [x, y] of coords) {
     if (x >= bbox[0] && x <= bbox[2] && y >= bbox[1] && y <= bbox[3]) return true;
   }
+
+  // Envelope overlap fallback
   const xs = coords.map((c) => c[0]);
   const ys = coords.map((c) => c[1]);
   const minX = Math.min(...xs);
   const maxX = Math.max(...xs);
   const minY = Math.min(...ys);
   const maxY = Math.max(...ys);
+
   return !(maxX < bbox[0] || minX > bbox[2] || maxY < bbox[1] || minY > bbox[3]);
 }
 
@@ -80,9 +76,10 @@ function clipToBBox(
 }
 
 /** Normalize height (meters) for MapLibre fill-extrusion-height. */
-export function normalizeBuildingHeight(props: Record<string, unknown> | null): number {
+export function normalizeBuildingHeight(props: Record<string, any> | null): number {
   if (!props) return DEFAULT_BUILDING_HEIGHT_M;
 
+  // Overture / Microsoft common keys
   const h =
     props.height ??
     props.Height ??
@@ -92,8 +89,10 @@ export function normalizeBuildingHeight(props: Record<string, unknown> | null): 
     props.EaveHeight;
 
   if (typeof h === "number" && Number.isFinite(h) && h > 0) {
+    // Heuristic: values > 100 are almost certainly feet
     return h > 100 ? h * METERS_PER_FOOT : h;
   }
+
   if (typeof h === "string") {
     const parsed = parseFloat(h);
     if (Number.isFinite(parsed) && parsed > 0) {
@@ -106,9 +105,11 @@ export function normalizeBuildingHeight(props: Record<string, unknown> | null): 
     props["building:levels"] ??
     props.BuildingLevels ??
     props.num_floors;
+
   if (typeof levels === "number" && levels > 0) {
-    return levels * 3.2;
+    return levels * 3.2; // ~10.5 ft floor-to-floor
   }
+
   if (typeof levels === "string") {
     const n = parseFloat(levels);
     if (Number.isFinite(n) && n > 0) return n * 3.2;
@@ -125,7 +126,7 @@ function enrichHeights(fc: GeoJSONFeatureCollection): GeoJSONFeatureCollection {
       properties: {
         ...(f.properties ?? {}),
         height_m: normalizeBuildingHeight(f.properties),
-        source: (f.properties as Record<string, unknown>)?.source ?? "unknown",
+        source: (f.properties as any)?.source ?? "unknown",
       },
     })),
   };
@@ -133,8 +134,9 @@ function enrichHeights(fc: GeoJSONFeatureCollection): GeoJSONFeatureCollection {
 
 /** Local offline sample for 13101 Bonebank Rd vicinity (deterministic CI / no-network). */
 export function getLocalBonebankBuildings(): GeoJSONFeatureCollection {
+  // Minimal representative footprints near BONEBANK_SITE center
   const [lon, lat] = BONEBANK_SITE.center;
-  const d = 0.00035;
+  const d = 0.00035; // ~35 m
 
   const features: GeoJSONFeature[] = [
     {
@@ -208,6 +210,12 @@ export function getLocalBonebankBuildings(): GeoJSONFeatureCollection {
   return { type: "FeatureCollection", features };
 }
 
+/**
+ * Microsoft USBuildingFootprints — Indiana statewide GeoJSON is large.
+ * We never download the full state file at runtime; instead we rely on a
+ * pre-clipped site sample or a server-side proxy that streams a bbox filter.
+ * Public release: https://github.com/microsoft/USBuildingFootprints
+ */
 const MS_INDIANA_CLIP_URL =
   process.env.MS_BUILDINGS_CLIP_URL ??
   "/data/buildings/indiana_bonebank_clip.geojson";
@@ -225,6 +233,10 @@ async function fetchMicrosoftClip(bbox: BBox): Promise<GeoJSONFeatureCollection>
   }
 }
 
+/**
+ * Overture Maps buildings — prefer server proxy that queries PMTiles / GeoParquet
+ * by bbox. Client never needs an API key.
+ */
 async function fetchOvertureBuildings(bbox: BBox): Promise<GeoJSONFeatureCollection> {
   if (!isValidBBox(bbox)) return EMPTY_FC;
   const params = new URLSearchParams({
@@ -233,6 +245,7 @@ async function fetchOvertureBuildings(bbox: BBox): Promise<GeoJSONFeatureCollect
     xmax: String(bbox[2]),
     ymax: String(bbox[3]),
   });
+
   try {
     const res = await fetch(`/api/gis/buildings/overture?${params}`);
     if (!res.ok) throw new Error(`Overture proxy HTTP ${res.status}`);
@@ -256,19 +269,23 @@ export async function fetchBuildings(
     return enrichHeights(getLocalBonebankBuildings());
   }
 
+  // Prefer Overture (has height attributes more often)
   const overture = await fetchOvertureBuildings(bbox);
   if (overture.features.length > 0) {
     return overture;
   }
 
+  // Microsoft clip
   const ms = await fetchMicrosoftClip(bbox);
   if (ms.features.length > 0) {
     return ms;
   }
 
+  // Deterministic offline sample
   return enrichHeights(clipToBBox(getLocalBonebankBuildings(), bbox));
 }
 
+/** Convenience for the canonical site. */
 export async function fetchBonebankBuildings(): Promise<GeoJSONFeatureCollection> {
   return fetchBuildings(BONEBANK_SITE.bbox);
 }

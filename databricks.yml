@@ -1,0 +1,45 @@
+# databricks.yml
+bundle:
+  name: tri-state-engineering-pipelines
+
+  variables:
+    environment:
+      description: Execution deployment workspace phase
+      default: development
+
+  environments:
+    development:
+      ws:
+        host: ${bundle.secrets/DATABRICKS_HOST}
+      # Maps targeting inside your secure enclave pipeline configurations
+      artifacts_path: /Shared/PTDT/bundles/${bundle.name}/artifacts
+
+  resources:
+    pipelines:
+      flood_modeling_pipeline:
+        name: ptdt_flood_modeling_${var.environment}
+        target: ptdt_hydro_analytics
+        edition: advanced
+        channel: current
+        storage: /Shared/PTDT/pipeline_storage/${var.environment}
+
+        libraries:
+          - notebook:
+              path: ./src/pipelines/flood_inundation_mapping.py
+
+        configuration:
+          pipelines.ncat_datum: "NAVD88"
+          pipelines.base_flood_elevation: "375.0"
+          pipelines.lowest_adjacent_grade: "377.2"
+          pipelines.target_corridor: "13101 Bonebank Road Corridor"
+
+        clusters:
+          - label: default
+            num_workers: 2
+            spark_conf:
+              spark.databricks.delta.schema.autoMerge.enabled: "true"
+            node_type_id: i3.xlarge
+            driver_node_type_id: i3.xlarge
+
+        continuous: false
+        development: true

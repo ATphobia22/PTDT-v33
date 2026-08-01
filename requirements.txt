@@ -7,4 +7,3 @@ shapely>=2.0.0
 # Optional — enabled when available
 psycopg2-binary>=2.9.9
 h5py>=3.10.0
-prometheus-client>=0.20.0

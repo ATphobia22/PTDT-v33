@@ -17,14 +17,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Run stray-token lint
         run: |
           chmod +x scripts/lint-stray-tokens.sh || true
           if [ -f scripts/lint-stray-tokens.sh ]; then
-            ./scripts/lint-stray-tokens.sh src/data.ts || {
-              echo "::warning::Stray footnote tokens still present in src/data.ts — see PR #6 sanitize branch"
-              exit 0
-            }
+            ./scripts/lint-stray-tokens.sh
           else
             echo "lint-stray-tokens.sh not present — skip"
           fi
@@ -45,7 +43,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-        continue-on-error: true
 
       - name: Run linter
         run: npm run lint
@@ -53,7 +50,6 @@ jobs:
 
       - name: Build application
         run: npm run build
-        continue-on-error: true
 
       - name: Build Docker Image
         run: docker build -t web-app:latest .
@@ -71,22 +67,15 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install core deps
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install fastapi uvicorn reportlab requests pydantic || true
-          if [ -f requirements.txt ]; then
-            pip install -r requirements.txt || echo "partial requirements install — continue"
-          fi
+          pip install -r requirements.txt
 
       - name: Verify Engine Core
         run: |
-          if [ -f archimedes_engine.py ]; then
-            python -c "from archimedes_engine import ArchimedesEngine; engine = ArchimedesEngine(); assert engine.base_flood_elevation_ft == 375.0; print('Engine Core Verified', engine.base_flood_elevation_ft)"
-          else
-            echo "archimedes_engine.py not at root — skip"
-          fi
+          python -c "from archimedes_engine import ArchimedesEngine; engine = ArchimedesEngine(); assert engine.base_flood_elevation_ft == 375.0; print('Engine Core Verified')"
 
       - name: Verify Regulatory Package Imports
         run: |
-          python -c "import fastapi, reportlab; print('Regulatory core verified')" || echo "optional deps missing — soft skip"
+          python -c "import fastapi, reportlab, shapely; print('Regulatory dependencies verified')"

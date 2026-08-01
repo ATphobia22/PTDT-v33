@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# scripts/lint-stray-tokens.sh
 # Fail CI if citation-style footnote markers reappear in src/data.ts
 set -euo pipefail
 
@@ -10,7 +11,7 @@ if [ ! -f "$TARGET" ]; then
 fi
 
 # Match [n], [n,m], [n-m], [n, m] style markers left over from doc assembly
-if grep -nE '\[([0-9]+([[:space:]]*[,\u2013-][[:space:]]*[0-9]+)*)\]' "$TARGET"; then
+if grep -nE '\[([0-9]+([[:space:]]*[,–-][[:space:]]*[0-9]+)*)\]' "$TARGET"; then
   echo "ERROR: stray footnote/citation tokens found in $TARGET"
   echo "Remove markers such as [4, 5] or [7-9] from embedded samples."
   exit 1

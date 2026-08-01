@@ -1,50 +1,34 @@
-name: "Databricks CD Pipeline"
+name: Databricks CD Pipeline
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
-  deploy:
+  deploy-bundle:
     name: "Deploy Asset Bundle"
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Check Databricks secrets and bundle
-        id: check
-        run: |
-          if [ -z "${{ secrets.DATABRICKS_HOST }}" ] || [ -z "${{ secrets.DATABRICKS_TOKEN }}" ]; then
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "DATABRICKS_HOST / DATABRICKS_TOKEN not configured — skipping deploy (expected on OSS/local)."
-          elif [ ! -f databricks.yml ] && [ ! -f bundle.yml ]; then
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "No databricks.yml / bundle.yml present — skipping deploy."
-          else
-            echo "skip=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Setup Databricks CLI
-        if: steps.check.outputs.skip != 'true'
-        uses: databricks/setup-cli@v0.9.0
+        uses: databricks/setup-cli@v1
 
-      - name: Validate Bundle
-        if: steps.check.outputs.skip != 'true'
-        run: databricks bundle validate
+      - name: Validate Asset Bundle Configurations
+        run: |
+          databricks bundle validate \
+            --environment development
         env:
           DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
           DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
 
-      - name: Deploy Bundle
-        if: steps.check.outputs.skip != 'true'
-        run: databricks bundle deploy
+      - name: Deploy Infrastructure Bundle Assets
+        run: |
+          databricks bundle deploy \
+            --environment development
         env:
           DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
           DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
-
-      - name: Report skip
-        if: steps.check.outputs.skip == 'true'
-        run: echo "Databricks CD skipped — configure secrets + databricks.yml when ready."

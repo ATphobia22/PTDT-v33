@@ -1,8 +1,3 @@
-/**
- * GIS routes: NCAT (NGS llh), IndianaMap parcels / BAFM, building footprints.
- * Zero-key, NAVD88-first. Offline fallbacks for CI and air-gapped runs.
- */
-
 import { Express, Request, Response } from "express";
 import {
   getLocalBonebankBuildings,
@@ -14,24 +9,26 @@ import { BONEBANK_SITE } from "./lib/siteConstants";
 
 const EMPTY_FC: GeoJSONFeatureCollection = { type: "FeatureCollection", features: [] };
 
-function parseBBox(q: Request["query"]): BBox | null {
+function parseBBox(q: any): BBox | null {
   const xmin = parseFloat(String(q.xmin ?? q.minLon ?? ""));
   const ymin = parseFloat(String(q.ymin ?? q.minLat ?? ""));
   const xmax = parseFloat(String(q.xmax ?? q.maxLon ?? ""));
   const ymax = parseFloat(String(q.ymax ?? q.maxLat ?? ""));
+
   if ([xmin, ymin, xmax, ymax].every((n) => Number.isFinite(n)) && xmin < xmax && ymin < ymax) {
     return [xmin, ymin, xmax, ymax];
   }
+
   if (typeof q.bbox === "string") {
     const parts = q.bbox.split(",").map(parseFloat);
     if (parts.length === 4 && parts.every(Number.isFinite) && parts[0] < parts[2] && parts[1] < parts[3]) {
       return parts as BBox;
     }
   }
+
   return null;
 }
 
-/** Official NGS NCAT llh vertical transform (inVertDatum / outVertDatum / orthoHt). */
 async function ncatTransform(lat: number, lon: number, orthoHt: number, inVert: string, outVert: string) {
   const params = new URLSearchParams({
     lat: String(lat),
@@ -40,13 +37,13 @@ async function ncatTransform(lat: number, lon: number, orthoHt: number, inVert: 
     inVertDatum: inVert,
     outVertDatum: outVert,
   });
+
   const url = `https://geodesy.noaa.gov/api/ncat/llh?${params}`;
   const res = await fetch(url, { headers: { Accept: "application/json" } });
   if (!res.ok) throw new Error(`NCAT HTTP ${res.status}`);
   return res.json();
 }
 
-/** Posey County offline fallback (NAVD88 ≈ local orthometric for this site). */
 function poseyOfflineFallback(lat: number, lon: number, orthoHt: number) {
   return {
     destLat: lat,
@@ -91,6 +88,7 @@ export function registerGisRoutes(app: Express): void {
       ymax,
       spatialReference: { wkid: 4326 },
     });
+
     const params = new URLSearchParams({
       f: "geojson",
       where: "1=1",
@@ -117,7 +115,6 @@ export function registerGisRoutes(app: Express): void {
           return res.json(data);
         }
       } catch {
-        /* try next */
       }
     }
 
@@ -127,6 +124,7 @@ export function registerGisRoutes(app: Express): void {
   app.get("/api/gis/bafm", async (req: Request, res: Response) => {
     const bbox = parseBBox(req.query) ?? BONEBANK_SITE.bbox;
     const [xmin, ymin, xmax, ymax] = bbox;
+
     const geometry = JSON.stringify({
       xmin,
       ymin,
@@ -134,6 +132,7 @@ export function registerGisRoutes(app: Express): void {
       ymax,
       spatialReference: { wkid: 4326 },
     });
+
     const params = new URLSearchParams({
       f: "geojson",
       where: "1=1",
@@ -157,11 +156,13 @@ export function registerGisRoutes(app: Express): void {
     } catch (err) {
       console.warn("[BAFM] remote failed", err);
     }
+
     return res.json(EMPTY_FC);
   });
 
   app.get("/api/gis/buildings", async (req: Request, res: Response) => {
     const bbox = parseBBox(req.query) ?? BONEBANK_SITE.bbox;
+
     const local = getLocalBonebankBuildings();
     const enriched = {
       type: "FeatureCollection" as const,
@@ -173,6 +174,7 @@ export function registerGisRoutes(app: Express): void {
         },
       })),
     };
+
     return res.json({
       ...enriched,
       bbox,
