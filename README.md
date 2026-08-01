@@ -2,60 +2,45 @@
 
 Point Township Digital Twin — **13101 Bonebank Road**, Posey County, Indiana.
 
-**Zero-key by design.** Government employees and the public can run the full core stack with no API keys, no paid map tiles, and no SaaS accounts.
+**Zero-key by design.** Government employees and the public can run the core stack with no API keys, no paid map tiles, and no SaaS accounts.
 
-## Free for public agencies
+See **[docs/GOVERNMENT_FREE_STACK.md](docs/GOVERNMENT_FREE_STACK.md)** and **[docs/STATUS.md](docs/STATUS.md)**.
 
-See **[docs/GOVERNMENT_FREE_STACK.md](docs/GOVERNMENT_FREE_STACK.md)** for the full inventory of free data sources and owned ATphobia22 assets.
+## Quick start
 
-| Layer | Source | Key required? |
-|---|---|---|
+```bash
+git clone https://github.com/ATphobia22/Tri-State-Family-Engineering-System-.git
+cd Tri-State-Family-Engineering-System-
+npm install
+npm run assemble    # restore full legacy routes + GIS wire
+npm run dev
+```
+
+| Layer | Source | Key? |
+|-------|--------|------|
 | Map + 3D buildings | MapLibre + OSM + local GeoJSON | No |
 | Vertical datum | NGS NCAT public API | No |
 | Parcels / BAFM | IndianaMap public REST | No |
-| Flood zones | FEMA NFHL (+ offline FC) | No |
+| Flood zones | FEMA NFHL (+ offline) | No |
 | Stage | USGS NWIS (+ offline) | No |
-| Hydraulics / No-Rise | ArchimedesEngine (local Python) | No |
-| Chat persona | Gemini (optional offline) | Optional |
+| Hydraulics / No-Rise | Archimedes (local) | No |
+| Chat persona | Gemini (optional) | Optional |
 
-License: **Apache-2.0** (`LICENSE`).
+License: **Apache-2.0**.
 
 ## Architecture
 
-- **Frontend/API**: React + Express (Vite) — port 3000
-- **Archimedes Engine**: Python FastAPI-ready core — BFE 375.0 ft NAVD88, LAG 377.2 ft (+2.2 ft clearance), 1.20× compensatory storage (IN 312 IAC 10)
-- **GIS routes**: `src/server-gis-routes.ts` — NCAT, parcels, BAFM, buildings, site constants
-
-## Quick start (no secrets)
-
-```bash
-npm install
-npm run dev
-# optional Python check:
-pip install fastapi uvicorn reportlab requests pydantic
-python -c "from archimedes_engine import ArchimedesEngine; print(ArchimedesEngine().base_flood_elevation_ft)"
-```
-
-Wire GIS once in `server.ts`:
-
-```ts
-import { registerGisRoutes } from "./src/server-gis-routes";
-registerGisRoutes(app);
-```
-
-## Site anchors
-
-- Owner (Think GIS): TUCKER
-- Acreage: 2.0
-- BFE 375.0 ft / LAG 377.2 ft NAVD88
-- USGS gauge 03378500 (Wabash at New Harmony)
+- **Bootstrap:** `server.ts` → `scripts/assemble-server-main.mjs` → `src/server-main.ts`
+- **GIS:** `src/server-gis-routes.ts` — `/api/gis/ncat|parcels|bafm|buildings|site`
+- **Site anchors:** `src/lib/siteConstants.ts` (TUCKER, 2.0 ac, BFE/LAG, gauge 03378500)
+- **Python:** `archimedes_engine.py` — 1.20× compensatory storage (IN 312 IAC 10)
 
 ## CI
 
-- **Build and Deploy**: Node + lexical soft-gate + Archimedes verify
-- **Databricks CD**: skipped automatically when secrets/bundle are absent (no failure noise)
+- Build: Node + soft lexical gate + Archimedes verify
+- Databricks CD: skipped when secrets/bundle absent
 
-## Sister repos (ATphobia22)
+## Sister repos
 
-- [Point-Township-Digital-Twin](https://github.com/ATphobia22/Point-Township-Digital-Twin) — Python twin utilities
-- [godfirst-llm-ml-protocol](https://github.com/ATphobia22/godfirst-llm-ml-protocol) — open AI governance (G1P)
+- [Point-Township-Digital-Twin](https://github.com/ATphobia22/Point-Township-Digital-Twin)
+- [godfirst-llm-ml-protocol](https://github.com/ATphobia22/godfirst-llm-ml-protocol)
