@@ -2,18 +2,22 @@ import { Express, Request, Response } from "express";
 import { runAllHazardEngines } from "./engines/multiHazardEngines";
 
 export function registerMultiHazardRoutes(app: Express): void {
-  app.get("/api/hazards/summary", (_req: Request, res: Response) => {
-    const engines = runAllHazardEngines();
+  app.get("/api/hazards/summary", async (_req: Request, res: Response) => {
+    const engines = await runAllHazardEngines();
     res.json({
-      status: "STUB",
-      note: "Multi-hazard engines are interface stubs — not calibrated operational products",
+      site: "13101 Bonebank Road",
       engines,
+      live: engines.filter((e) => e.status === "LIVE").map((e) => e.engine),
+      unavailable: engines.filter((e) => e.status === "UNAVAILABLE").map((e) => e.engine),
+      pe_gated: engines.filter((e) => e.status === "PE_GATED").map((e) => e.engine),
     });
   });
 
-  app.get("/api/hazards/:name", (req: Request, res: Response) => {
-    const engines = runAllHazardEngines();
-    const hit = engines.find((e) => e.engine.toLowerCase().includes(String(req.params.name).toLowerCase()));
+  app.get("/api/hazards/:name", async (req: Request, res: Response) => {
+    const engines = await runAllHazardEngines();
+    const hit = engines.find((e) =>
+      e.engine.toLowerCase().includes(String(req.params.name).toLowerCase())
+    );
     if (!hit) return res.status(404).json({ error: "unknown engine" });
     res.json(hit);
   });
