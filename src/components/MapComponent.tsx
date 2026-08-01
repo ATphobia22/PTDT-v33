@@ -200,14 +200,16 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
   const loadTerrain = useCallback((mapInstance: maplibregl.Map) => {
     if (!mapInstance || terrainLoaded) return;
     try {
-      // Configure on-demand AWS terrarium DEM tiles encoding to render real-time elevations
-      mapInstance.addSource('terrain-dem', {
-        type: 'raster-dem',
-        tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
-        encoding: 'terrarium',
-        tileSize: 256,
-        maxzoom: 15
-      });
+      if (!mapInstance.getSource('terrain-dem')) {
+        // Configure on-demand AWS terrarium DEM tiles encoding to render real-time elevations
+        mapInstance.addSource('terrain-dem', {
+          type: 'raster-dem',
+          tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+          encoding: 'terrarium',
+          tileSize: 256,
+          maxzoom: 15
+        });
+      }
       
       mapInstance.setTerrain({ source: 'terrain-dem', exaggeration: 1.5 });
       setTerrainLoaded(true);
@@ -399,20 +401,7 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
       center: initialPreset.center,
       zoom: initialPreset.zoom,
       pitch: initialPreset.pitch,
-      bearing: initialPreset.bearing,
-      transformRequest: (url, resourceType) => {
-        if (resourceType === 'Glyphs' && url.includes('/fonts/')) {
-          const decoded = decodeURIComponent(url);
-          const isBold = decoded.toLowerCase().includes('bold') || 
-                         decoded.toLowerCase().includes('semibold') || 
-                         decoded.toLowerCase().includes('medium') ||
-                         decoded.toLowerCase().includes('black');
-          const targetFont = isBold ? 'Metropolis Bold' : 'Metropolis Regular';
-          const newUrl = url.replace(/\/fonts\/[^\/]+\//, `/fonts/${encodeURIComponent(targetFont)}/`);
-          return { url: newUrl };
-        }
-        return { url };
-      }
+      bearing: initialPreset.bearing
     });
 
     mapRef.current = map;
