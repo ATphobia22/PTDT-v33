@@ -59,20 +59,18 @@ export const HydraulicFlowMonitor: React.FC = () => {
         </div>
       </div>
       
-      <div className="h-[120px] w-full mt-2">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-            <XAxis dataKey="time" stroke="#475569" fontSize={8} tickMargin={5} minTickGap={20} />
-            <YAxis stroke="#475569" fontSize={8} tickFormatter={(val) => `${val} cfs`} />
-            <Tooltip 
-              contentStyle={{ backgroundColor: 'rgba(2, 6, 23, 0.9)', border: '1px solid #1e293b', fontSize: '10px' }}
-              itemStyle={{ color: '#06b6d4' }}
-            />
-            <ReferenceLine y={1500} stroke="#ef4444" strokeDasharray="3 3" label={{ position: 'top', value: 'Safety Threshold', fill: '#ef4444', fontSize: 8 }} />
-            <Line type="monotone" dataKey="flow" stroke="#06b6d4" strokeWidth={2} dot={false} isAnimationActive={false} />
-          </LineChart>
-        </ResponsiveContainer>
+      <div className="h-[120px] w-full mt-2 overflow-hidden flex items-center justify-center">
+        <LineChart width={300} height={120} data={data} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+          <XAxis dataKey="time" stroke="#475569" fontSize={8} tickMargin={5} minTickGap={20} />
+          <YAxis stroke="#475569" fontSize={8} tickFormatter={(val) => `${val} cfs`} />
+          <Tooltip 
+            contentStyle={{ backgroundColor: 'rgba(2, 6, 23, 0.9)', border: '1px solid #1e293b', fontSize: '10px' }}
+            itemStyle={{ color: '#06b6d4' }}
+          />
+          <ReferenceLine y={1500} stroke="#ef4444" strokeDasharray="3 3" label={{ position: 'top', value: 'Safety Threshold', fill: '#ef4444', fontSize: 8 }} />
+          <Line type="monotone" dataKey="flow" stroke="#06b6d4" strokeWidth={2} dot={false} isAnimationActive={false} />
+        </LineChart>
       </div>
       
       <div className="flex justify-between items-end mt-1">
