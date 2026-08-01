@@ -73,3 +73,55 @@ export async function fetchNwsAlerts(): Promise<any> {
     return { type: "FeatureCollection", features: [] };
   }
 }
+
+/** Building footprints — local Bonebank sample + /api/gis/buildings proxy */
+export async function fetchBuildings(bbox: [number, number, number, number]): Promise<GeoJSONFeatureCollection> {
+  const params = new URLSearchParams({
+    xmin: String(bbox[0]),
+    ymin: String(bbox[1]),
+    xmax: String(bbox[2]),
+    ymax: String(bbox[3]),
+  });
+  try {
+    const res = await fetch(`/api/gis/buildings?${params}`);
+    if (!res.ok) throw new Error('Failed to fetch buildings');
+    return await res.json();
+  } catch (error) {
+    console.error("Buildings API Error:", error);
+    return { type: "FeatureCollection", features: [] };
+  }
+}
+
+export async function fetchParcels(bbox: [number, number, number, number]): Promise<GeoJSONFeatureCollection> {
+  const params = new URLSearchParams({
+    xmin: String(bbox[0]),
+    ymin: String(bbox[1]),
+    xmax: String(bbox[2]),
+    ymax: String(bbox[3]),
+  });
+  try {
+    const res = await fetch(`/api/gis/parcels?${params}`);
+    if (!res.ok) throw new Error('Failed to fetch parcels');
+    return await res.json();
+  } catch (error) {
+    console.error("Parcels API Error:", error);
+    return { type: "FeatureCollection", features: [] };
+  }
+}
+
+export async function fetchBafm(bbox: [number, number, number, number]): Promise<GeoJSONFeatureCollection> {
+  const params = new URLSearchParams({
+    xmin: String(bbox[0]),
+    ymin: String(bbox[1]),
+    xmax: String(bbox[2]),
+    ymax: String(bbox[3]),
+  });
+  try {
+    const res = await fetch(`/api/gis/bafm?${params}`);
+    if (!res.ok) throw new Error('Failed to fetch BAFM');
+    return await res.json();
+  } catch (error) {
+    console.error("BAFM API Error:", error);
+    return { type: "FeatureCollection", features: [] };
+  }
+}
