@@ -9,16 +9,22 @@ export const FloodStageHUD: React.FC = () => {
       <div className="flex flex-col gap-1">
         <div className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
           <Activity size={12} className="text-blue-400" />
-          Flood Stage
+          Flood Safety Vectors
         </div>
-        <div className="flex items-baseline gap-2">
-          <span className="text-[32px] font-black text-white leading-none tracking-tighter">18.7</span>
-          <span className="text-[14px] font-bold text-slate-400 uppercase font-mono">ft</span>
+        <div className="flex flex-col mt-2 gap-1.5">
+          <div className="flex justify-between items-baseline">
+            <span className="text-[9px] text-slate-500 uppercase font-mono">BFE Elevation</span>
+            <span className="text-[14px] text-white font-black font-mono">375.0 ft</span>
+          </div>
+          <div className="flex justify-between items-baseline">
+            <span className="text-[9px] text-slate-500 uppercase font-mono">Certified LAG</span>
+            <span className="text-[14px] text-emerald-400 font-black font-mono">377.2 ft</span>
+          </div>
         </div>
-        <div className="flex items-center gap-2 mt-1">
-           <div className="flex items-center gap-1 px-1.5 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded-sm">
-             <TrendingUp size={10} className="text-blue-400" />
-             <span className="text-[9px] font-bold text-blue-400 font-mono">+0.42 / hr</span>
+        <div className="flex items-center gap-2 mt-2">
+           <div className="flex-1 flex flex-col p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-sm">
+             <span className="text-[8px] font-bold text-emerald-500 uppercase tracking-widest leading-none mb-1">Natural Clearance</span>
+             <span className="text-[18px] font-black text-emerald-400 font-mono leading-none">+2.2 ft</span>
            </div>
         </div>
       </div>

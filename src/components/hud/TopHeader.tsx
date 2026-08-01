@@ -11,22 +11,22 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ sysFrame }) => {
       <div className="flex flex-col gap-1 pointer-events-auto">
         <div className="flex items-center gap-3 px-4 py-2 bg-slate-950/90 backdrop-blur-xl border border-emerald-500/30 rounded-sm shadow-[0_0_20px_rgba(16,185,129,0.1)]">
           <div className="flex items-center gap-3">
-            <Shield className="w-6 h-6 text-emerald-400 animate-pulse" />
+            <img src="/src/assets/images/ptdt_logo_1785574942150.jpg" alt="PTDT Logo" className="w-8 h-8 rounded-sm object-cover border border-emerald-500/50 shadow-[0_0_10px_rgba(16,185,129,0.3)] animate-pulse" />
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black text-emerald-400 tracking-[0.3em] uppercase leading-none">PTDT v32.04</span>
-                <span className="text-[10px] font-mono text-slate-500 tracking-tighter">NODE_{sysFrame}</span>
+                <span className="text-[10px] font-black text-emerald-400 tracking-[0.3em] uppercase leading-none">PTDT v33.2.0</span>
+                <span className="text-[10px] font-mono text-slate-500 tracking-tighter">NODE_13101_BONEBANK</span>
               </div>
-              <span className="text-[14px] font-black text-white tracking-widest leading-tight uppercase">Bonebank Digital Twin • Posey County, IN</span>
+              <span className="text-[14px] font-black text-white tracking-widest leading-tight uppercase">Master Sovereign Core • Point Township, IN</span>
             </div>
           </div>
           <div className="h-10 w-px bg-slate-800/50 mx-2" />
           <div className="flex flex-col justify-center">
-            <span className="text-[9px] text-slate-500 uppercase font-mono tracking-[0.2em] leading-none mb-1">Datum: WGS84 / NAVD88</span>
+            <span className="text-[9px] text-slate-500 uppercase font-mono tracking-[0.2em] leading-none mb-1">Datum: NAVD 88 / EPSG:3857</span>
             <div className="flex items-center gap-2">
                <div className="flex items-center gap-1">
                  <div className="w-1 h-1 rounded-full bg-emerald-500" />
-                 <span className="text-[8px] text-emerald-500/80 uppercase font-mono tracking-widest">Scale: 1:1</span>
+                 <span className="text-[8px] text-emerald-500/80 uppercase font-mono tracking-widest">Precision: 5cm LiDAR</span>
                </div>
                <div className="flex items-center gap-1">
                  <div className="w-1 h-1 rounded-full bg-emerald-500" />

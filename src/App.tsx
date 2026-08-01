@@ -12,6 +12,11 @@ function App() {
   if (!isSystemOn) {
     return (
       <div className="w-screen h-screen bg-slate-950 flex flex-col items-center justify-center font-mono p-6 relative overflow-hidden select-none">
+        {/* Background Image */}
+        <div 
+          className="absolute inset-0 z-0 bg-cover bg-center opacity-30" 
+          style={{ backgroundImage: 'url(/src/assets/images/ptdt_system_deactivated_1785575091081.jpg)' }}
+        />
         {/* CRT Scanline Effect */}
         <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(0,212,255,0.05)_0%,transparent_100%)] z-10" />
         <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_4px,3px_100%] z-20" />

@@ -19,25 +19,26 @@ export const SimulationHUD: React.FC = () => {
       
       <div className="space-y-3 font-mono">
         <div>
-          <span className="text-[8px] text-slate-500 uppercase block mb-1 tracking-widest">Simulation Hash (SHA-256)</span>
-          <div className="bg-slate-900/50 p-1.5 rounded-sm border border-slate-800/50">
-            <span className="text-[9px] text-white/80 break-all leading-tight">A3F7C9B1D2E4F8A6B0C9D7E2F1A4E6F8D9C0B1A2C3D4E5F6A7B8C9D0E1F2A3B4</span>
+          <span className="text-[8px] text-slate-500 uppercase block mb-1 tracking-widest">Master Cryptographic Seal</span>
+          <div className="bg-slate-900/50 p-1.5 rounded-sm border border-slate-800/50 text-emerald-400">
+            <span className="text-[9px] break-all leading-tight">B4782912564E70E863A7938BB3700647580830FB5A81E910A0DB49A20F73B32E</span>
           </div>
         </div>
-        <div>
-          <span className="text-[8px] text-slate-500 uppercase block mb-1 tracking-widest">Ethereum Tx Hash</span>
-          <div className="bg-slate-900/50 p-1.5 rounded-sm border border-slate-800/50">
-            <span className="text-[9px] text-emerald-400/80 break-all leading-tight">0X8F3A7C2D1E4B9A8F0C9D7E2F1A4E6F8D9C0B1A2C3D4E5F6A7B8C9D0E1F2A3B4C</span>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4 pt-1">
           <div className="flex flex-col">
-            <span className="text-[8px] text-slate-500 uppercase tracking-widest">Block Height</span>
-            <span className="text-[11px] text-white font-black">#47,281,345</span>
+            <span className="text-[8px] text-slate-500 uppercase tracking-widest">Superior BCR</span>
+            <span className="text-[14px] text-emerald-400 font-black">2.45</span>
           </div>
           <div className="flex flex-col items-end">
-            <span className="text-[8px] text-slate-500 uppercase tracking-widest">Sync Latency</span>
-            <span className="text-[11px] text-emerald-400 font-black">12.4ms</span>
+            <span className="text-[8px] text-slate-500 uppercase tracking-widest">FEMA BRIC BCR</span>
+            <span className="text-[14px] text-white font-black">1.41</span>
+          </div>
+        </div>
+        <div className="pt-1">
+          <span className="text-[8px] text-slate-500 uppercase block mb-1 tracking-widest">Statutory Mandate Source</span>
+          <div className="flex items-center justify-between px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-sm">
+             <span className="text-[9px] text-emerald-400 font-black uppercase">Indiana 312 IAC 10-5</span>
+             <span className="text-[9px] text-white/50 font-bold">1.20x Cut/Fill</span>
           </div>
         </div>
       </div>

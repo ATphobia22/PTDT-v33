@@ -20,6 +20,15 @@ export const AssetRiskHUD: React.FC = () => {
         </div>
 
         <div className="flex-1 space-y-2">
+          <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-sm mb-2">
+            <div className="flex justify-between items-center">
+              <span className="text-[8px] text-emerald-500 font-bold uppercase tracking-widest">HAZUS Safety Score</span>
+              <span className="text-[12px] text-emerald-400 font-black font-mono">98.4/100</span>
+            </div>
+            <div className="h-1 bg-slate-800 rounded-full mt-1.5 overflow-hidden">
+               <div className="h-full bg-emerald-500" style={{ width: '98.4%' }} />
+            </div>
+          </div>
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-rose-500" />

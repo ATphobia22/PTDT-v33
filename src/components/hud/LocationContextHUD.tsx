@@ -4,11 +4,12 @@ import { MapPin, Globe, Compass } from 'lucide-react';
 export const LocationContextHUD: React.FC = () => {
   const details = [
     { label: 'Parcel ID', value: '24-7-001-000' },
-    { label: 'Location', value: 'Bonebank, IN' },
-    { label: 'Jurisdiction', value: 'Posey County' },
-    { label: 'Elevation', value: '362 - 384 ft' },
-    { label: 'Zoning', value: 'Agricultural / Flood' },
-    { label: 'Accessibility', value: 'Limited (Water)' },
+    { label: 'Anchor Node', value: '13101 Bonebank Rd' },
+    { label: 'Jurisdiction', value: 'Posey County, IN' },
+    { label: 'Coordinates', value: '37.8412° N, 88.0145° W' },
+    { label: 'Elevation Range', value: '362 - 384 ft' },
+    { label: 'Section/Township', value: 'S35, T7S, R14W' },
+    { label: 'Accessibility', value: 'Limited (High Water)' },
   ];
 
   return (
