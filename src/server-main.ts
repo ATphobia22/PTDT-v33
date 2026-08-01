@@ -1,6 +1,7 @@
 /**
  * PTDT sovereign bootstrap server — zero-key government path.
  * Full legacy routes may be restored via: npm run assemble
+ * Assemble will NOT overwrite this file when USGS_NWIS_LIVE is present.
  */
 import { registerAIRoutes } from "./src/server-ai";
 import express, { Request, Response, NextFunction } from "express";
@@ -12,6 +13,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import http from "http";
 import { OpenMITimeHandler } from "./src/services/compliance";
 import { registerGisRoutes } from "./src/server-gis-routes";
+import { registerHecRasRoutes } from "./src/server-hec-ras";
 import { BONEBANK_SITE } from "./src/lib/siteConstants";
 
 dotenv.config();
@@ -75,6 +77,7 @@ async function startServer() {
   const app = express();
   const PORT = Number(process.env.PORT) || 3000;
   const timeHandler = new OpenMITimeHandler();
+  void timeHandler;
 
   app.use(express.json());
 
@@ -100,10 +103,12 @@ async function startServer() {
       free_for_government: true,
       keys_required: false,
       vertical_datum: BONEBANK_SITE.vertical_datum,
+      hec_ras_mesh: "STUB",
     });
   });
 
   registerGisRoutes(app);
+  registerHecRasRoutes(app);
 
   app.post("/api/v1/twin/simulate", (req, res) => {
     const stage_ft = Number(req.body?.usgs_stage_ft ?? BONEBANK_SITE.lag_ft_navd88 + 4);
@@ -143,7 +148,6 @@ async function startServer() {
     });
   });
 
-  /** Live dual-gauge USGS (New Harmony + John T. Myers) with offline seed */
   app.get("/api/usgs-telemetry", async (_req, res) => {
     const seedTs = new Date().toISOString();
     const seed: GaugeRow[] = [
@@ -296,6 +300,7 @@ async function startServer() {
   httpServer.listen(PORT, "0.0.0.0", () => {
     console.log(`[PTDT] Sovereign node on :${PORT} — free for government use, zero keys`);
     console.log(`[PTDT] Gauges ${BONEBANK_SITE.usgs_gauge} + ${BONEBANK_SITE.usgs_gauge_ohio}`);
+    console.log(`[PTDT] HEC-RAS mesh: STUB at /api/hec-ras/mesh`);
   });
 }
 

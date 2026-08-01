@@ -1,38 +1,27 @@
-# Project completion checklist — PTDT / Bonebank Sovereign Node
+# Project completion — FINAL
 
-**Status: COMPLETE for zero-key government core path** (2026-08-01)
+**Status: COMPLETE** for zero-key government core (2026-08-01).
 
-## Runnable core
+## Last suggestions delivered
 
-| Capability | Endpoint / artifact |
-|------------|---------------------|
-| Health + regulatory anchors | `GET /api/health` |
-| Live dual USGS | `GET /api/usgs-telemetry` (03378500 + 03322000) |
-| NCAT / parcels / BAFM / buildings | `/api/gis/*` |
-| Twin simulate + 1.20× storage | `POST /api/v1/twin/simulate` |
-| LOMA package metadata | `GET /api/regulatory/loma-package` |
-| HUD | Live stage, scenario strip, depth legend, site constants |
-| License | Apache-2.0 |
+| Item | Delivery |
+|------|----------|
+| MapLibre Bonebank extrusions | `src/lib/mapBonebankLayers.ts` + `/api/gis/buildings` |
+| HEC-RAS mesh path | `data/hec-ras/*` + `GET /api/hec-ras/mesh` + `/manifest` (`sealed: false`) |
+| Cesium | Optional only — `docs/CESIUM_OPTIONAL.md` |
+| Cross-section HUD | BFE/LAG/FFE schematic from siteConstants |
+| Assemble safety | Never overwrites live dual-USGS server-main |
 
-## Regulatory lock (PDF-sourced)
+## PE still required for
 
-- BFE 375.0 / LAG 377.2 / FFE 382.5 / +2.2 ft NAVD88
-- FIRM **18129C0215D** · Community **180194**
-- Compensatory **1.20×** (312 IAC 10)
-- Dual gauges New Harmony + John T. Myers
-
-## Explicitly out of scope (not required to “finish” core)
-
-- Paid Cesium ion tiles
-- Sealed HEC-RAS 2D mesh (DepthLegend remains UI bins until PE attaches run)
-- Databricks CD secrets
-- Gemini chat (optional key)
-- Merging stale feature branches (`feat/3d-building-footprints`, etc.) — main already has equivalent
+- Sealing HEC-RAS 2D (`MANIFEST.sealed = true`)
+- Signed LOMA / No-Rise package filing
 
 ## Start
 
 ```bash
 npm install && npm run assemble && npm run dev
+bash scripts/verify-sovereign.sh
 ```
 
-Government employees: no keys required for map, stage, GIS, simulate, LOMA metadata.
+Apache-2.0 · no mandatory keys.
