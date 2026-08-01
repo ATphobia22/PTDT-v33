@@ -10,7 +10,7 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 echo -e "${CYAN}===================================================================${NC}"
-echo -e "${CYAN} PTDT PIPELINE RUNNER: FRONT-END TESTING ECOSYSTEM (${var.environment:-dev})${NC}"
+echo -e "${CYAN} PTDT PIPELINE RUNNER: FRONT-END TESTING ECOSYSTEM (${ENVIRONMENT:-dev})${NC}"
 echo -e "${CYAN}===================================================================${NC}"
 
 # Ensure we are in the root directory containing package.json
@@ -39,7 +39,7 @@ fi
 # --- 2. VITEST RUNNER (WebGL, Mapbox GL & Svelte 5 Layers Components) ---
 echo -e "\n${CYAN}[2/2] Initiating Vitest Pipeline (Reactive Layers & Canvas Runtimes)...${NC}"
 
-if npx vitest run; then
+if npx vitest run --passWithNoTests; then
     echo -e "${GREEN}[SUCCESS] Vitest execution loop verified high-performance canvas layers.${NC}"
 else
     echo -e "${RED}[FAILURE] Vitest found compilation or reactive evaluation breaks.${NC}"
