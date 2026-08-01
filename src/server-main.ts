@@ -1,5 +1,6 @@
 /**
- * PTDT sovereign bootstrap server — zero-key government path.
+ * PTDT sovereign bootstrap — zero-key government path.
+ * Live: USGS dual gauge, NRCS SDA, OpenFEMA claims.
  * Assemble will NOT overwrite when USGS_NWIS_LIVE is present.
  */
 import { registerAIRoutes } from "./src/server-ai";
@@ -14,6 +15,7 @@ import { OpenMITimeHandler } from "./src/services/compliance";
 import { registerGisRoutes } from "./src/server-gis-routes";
 import { registerHecRasRoutes } from "./src/server-hec-ras";
 import { registerMultiHazardRoutes } from "./src/server-multi-hazard";
+import { registerFederalProxyRoutes } from "./src/server-federal";
 import { BONEBANK_SITE } from "./src/lib/siteConstants";
 
 dotenv.config();
@@ -23,7 +25,7 @@ function getGenAI() {
   if (!genAIClient) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      console.warn("GEMINI_API_KEY not set — AI chat offline (core GIS/twin still works).");
+      console.warn("GEMINI_API_KEY not set — AI offline (core twin works).");
       return null;
     }
     try {
@@ -76,11 +78,9 @@ async function fetchUsgsIv(site: string): Promise<{ stage: number; cfs: number; 
 async function startServer() {
   const app = express();
   const PORT = Number(process.env.PORT) || 3000;
-  const timeHandler = new OpenMITimeHandler();
-  void timeHandler;
+  void new OpenMITimeHandler();
 
   app.use(express.json());
-
   app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
     console.error(err.stack);
     res.status(500).json({ error: "Internal Server Error", message: err.message });
@@ -90,11 +90,11 @@ async function startServer() {
     res.json({
       status: "ok",
       node: "13101_BONEBANK_RD",
-      owner: BONEBANK_SITE.owner,
       firm_panel: BONEBANK_SITE.firm_panel,
       gauges: [BONEBANK_SITE.usgs_gauge, BONEBANK_SITE.usgs_gauge_ohio],
       free_for_government: true,
       keys_required: false,
+      live_apis: ["USGS_NWIS", "NRCS_SDA", "OPENFEMA_CLAIMS"],
       hec_ras_mesh: "STUB",
       multi_hazard: "STUB",
     });
@@ -103,6 +103,7 @@ async function startServer() {
   registerGisRoutes(app);
   registerHecRasRoutes(app);
   registerMultiHazardRoutes(app);
+  registerFederalProxyRoutes(app);
 
   app.post("/api/v1/twin/simulate", (req, res) => {
     const stage_ft = Number(req.body?.usgs_stage_ft ?? BONEBANK_SITE.lag_ft_navd88 + 4);
@@ -120,7 +121,6 @@ async function startServer() {
     const hash = crypto.createHash("sha256").update(`${ts}|${ok}|${rise}`).digest("hex");
     res.json({
       status: "success",
-      node: "13101_BONEBANK_RD",
       timestamp: ts,
       metrics: { water_depth_m: depth_ft * 0.3048, velocity_ms: velocity },
       compensatory_storage: {
@@ -132,8 +132,8 @@ async function startServer() {
       governance: {
         decision: ok ? "APPROVED_CERTIFIED_NO_RISE" : "REJECTED_STATUTORY_VIOLATION",
         cryptographic_hash: hash,
-        firm_panel: BONEBANK_SITE.firm_panel,
         statute: "IC 14-28-1 / 312 IAC 10",
+        note: "Illustrative Archimedes run — not a PE-sealed No-Rise",
       },
     });
   });
@@ -195,25 +195,19 @@ async function startServer() {
     return res.json({ success: true, source: "LOCAL_OFFLINE_SEED", data: seed });
   });
 
-  app.get("/api/fema-flood-zones", (_req, res) =>
-    res.json({ type: "FeatureCollection", features: [] })
-  );
-  app.get("/api/dnr-floodplain", (_req, res) =>
-    res.json({ type: "FeatureCollection", features: [] })
-  );
-
   app.get("/api/regulatory/loma-package", (_req, res) => {
     res.json({
       path: "Pure LOMA Natural High Ground",
       address: BONEBANK_SITE.name,
       community_number: BONEBANK_SITE.fema_community_number,
       firm_panel: BONEBANK_SITE.firm_panel,
+      firm_panel_note: "Verify on FEMA MSC — source packages also cite 18129C0225D",
       bfe_ft_navd88: BONEBANK_SITE.bfe_ft_navd88,
       lag_ft_navd88: BONEBANK_SITE.lag_ft_navd88,
       ffe_ft_navd88: BONEBANK_SITE.ffe_ft_navd88,
       clearance_ft: BONEBANK_SITE.clearance_ft,
       vertical_datum: "NAVD88",
-      legal_disclaimer: "Not legal advice. PE seal required for filings (IC 25-31-1).",
+      legal_disclaimer: "Not legal advice. PE seal required (IC 25-31-1).",
     });
   });
 
@@ -255,7 +249,7 @@ async function startServer() {
   });
 
   httpServer.listen(PORT, "0.0.0.0", () => {
-    console.log(`[PTDT] :${PORT} zero-key · gauges dual · hazards STUB · HEC-RAS STUB`);
+    console.log(`[PTDT] :${PORT} LIVE USGS+NRCS+OpenFEMA | HEC-RAS STUB | zero-key`);
   });
 }
 
