@@ -1,57 +1,38 @@
 import React from "react";
 
-export const DEPTH_SCALE = [
-  { label: "> 6.0 ft",  color: "#003bff", description: "Severe Inundation / Channel Velocity" },
-  { label: "4.0 - 6.0", color: "#0090ff", description: "Moderate Overbank Flooding" },
-  { label: "2.0 - 4.0", color: "#00d4ff", description: "Minor Low-Elevation Spill" },
-  { label: "0.5 - 2.0", color: "#00ffb7", description: "Shallow Structural Saturation" },
-  { label: "0 - 0.5",   color: "#7fffd4", description: "Surface Film / Marginal Water" },
-  { label: "DRY",       color: "#1a2430", description: "Baseline Elevation / Safe Structure" },
+/**
+ * Flood depth legend aligned to mock HUD style.
+ * Values are illustrative water-depth bins (ft) for MapLibre/mesh overlays —
+ * not a substitute for sealed HEC-RAS 2D results until a mesh is attached.
+ */
+const BINS: { label: string; color: string }[] = [
+  { label: "> 6.0", color: "#1e3a8a" },
+  { label: "4.0 – 6.0", color: "#1d4ed8" },
+  { label: "2.0 – 4.0", color: "#3b82f6" },
+  { label: "0.5 – 2.0", color: "#93c5fd" },
+  { label: "0 – 0.5", color: "#dbeafe" },
+  { label: "DRY", color: "#0f172a" },
 ];
 
-export function getColorForDepth(depth: number) {
-  if (depth <= 0) return "#1a2430";
-  if (depth > 0 && depth <= 0.5) return "#7fffd4";
-  if (depth > 0.5 && depth <= 2.0) return "#00ffb7";
-  if (depth > 2.0 && depth <= 4.0) return "#00d4ff";
-  if (depth > 4.0 && depth <= 6.0) return "#0090ff";
-  return "#003bff";
-}
-
-export function DepthLegend() {
+export const DepthLegend: React.FC<{ title?: string }> = ({ title = "WATER DEPTH (FT)" }) => {
   return (
-    <div className="bg-[#000a14]/80 backdrop-blur-md border border-[#00D4FF]/20 rounded-md p-4 w-[260px] text-white font-mono h-full flex flex-col justify-center">
-      <div className="text-[11px] text-[#7a8c99] font-bold tracking-[1px] mb-3">
-        LEGEND
+    <div className="bg-slate-950/90 backdrop-blur-xl border border-slate-800 rounded-sm p-3 min-w-[140px] shadow-2xl pointer-events-auto">
+      <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 border-b border-slate-800 pb-1">
+        {title}
       </div>
-      <div className="text-xs text-[#a0aec0] mb-2.5">
-        WATER DEPTH (FT)
-      </div>
-      
-      <div className="flex flex-col gap-1.5">
-        {DEPTH_SCALE.map((step, idx) => (
-          <div key={idx} className="flex items-center gap-3">
-            <div 
-              style={{
-                width: "18px",
-                height: "18px",
-                background: step.color,
-                border: step.label === "DRY" ? "1px solid rgba(255,255,255,0.15)" : "none",
-                borderRadius: "2px"
-              }} 
-            />
-            <span 
-              className="text-xs"
-              style={{ 
-                color: step.label === "DRY" ? "#7a8c99" : "#fff",
-                fontWeight: step.label.includes(">") ? "bold" : "normal"
-              }}
-            >
-              {step.label}
-            </span>
+      <div className="space-y-1.5">
+        {BINS.map((b) => (
+          <div key={b.label} className="flex items-center gap-2">
+            <div className="w-4 h-3 rounded-sm border border-slate-700" style={{ backgroundColor: b.color }} />
+            <span className="text-[10px] font-mono text-slate-300">{b.label}</span>
           </div>
         ))}
       </div>
+      <p className="text-[8px] text-slate-600 font-mono mt-2 leading-tight">
+        Overlay bins for UI. HEC-RAS mesh = STUB until sealed run attached.
+      </p>
     </div>
   );
-}
+};
+
+export default DepthLegend;
