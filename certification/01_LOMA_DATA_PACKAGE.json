@@ -1,0 +1,50 @@
+{
+  "package_type": "FEMA_LOMA_NATURAL_HIGH_GROUND",
+  "status": "DATA_READY_UNSIGNED",
+  "property": {
+    "address": "13101 Bonebank Road",
+    "city": "Mount Vernon",
+    "state": "IN",
+    "zip": "47620",
+    "county": "Posey",
+    "section": "35",
+    "township": "T7S",
+    "range": "R14W",
+    "owner": "TUCKER",
+    "acreage": 2.0
+  },
+  "fema": {
+    "community_number": "180194",
+    "community_name": "Posey County & Unincorporated Areas",
+    "firm_panel": "18129C0215D",
+    "application_type": "LOMA",
+    "path": "Natural High Ground (MT-EZ / Online LOMC)"
+  },
+  "elevations_navd88_ft": {
+    "bfe": 375.0,
+    "lag": 377.2,
+    "ffe": 382.5,
+    "clearance_lag_minus_bfe": 2.2,
+    "datum": "NAVD88",
+    "reject_ngvd29": true
+  },
+  "gauges": {
+    "primary": "03378500",
+    "primary_name": "Wabash River at New Harmony, IN",
+    "secondary": "03322000",
+    "secondary_name": "Ohio River at John T. Myers L&D",
+    "nws_lid_myers": "UNWK2"
+  },
+  "required_attachments": [
+    "Official deed and tax plat (Posey County)",
+    "Certified topographic / LiDAR work map (PE or surveyor as required)",
+    "PE transmittal letter (sealed)",
+    "USGS gauge metadata export",
+    "This JSON as data appendix"
+  ],
+  "portal": "https://hazards.fema.gov/femaportal/onlinelomc/signin",
+  "notes": [
+    "LAG > BFE supports natural-ground LOMA path only if no fill under structure.",
+    "Elevations must be confirmed by PE/survey before submission."
+  ]
+}
