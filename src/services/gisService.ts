@@ -84,11 +84,11 @@ export async function fetchBuildings(bbox: BBox): Promise<GeoJSONFeatureCollecti
 export async function fetchIndianaHistoricSites(bbox: BBox): Promise<GeoJSONFeatureCollection> {
   if (!isValidBBox(bbox)) return EMPTY_FC;
   const params = new URLSearchParams({ bbox: bbox.join(",") });
-  return fetchGeoJson(`/api/gis/historic-sites?${params}`, "HistoricSites");
+  return fetchGeoJson(`/api/historic-sites?${params}`, "HistoricSites");
 }
 
 export async function fetchDnrFloodplain(bbox: BBox): Promise<GeoJSONFeatureCollection> {
   if (!isValidBBox(bbox)) return EMPTY_FC;
   const params = new URLSearchParams({ bbox: bbox.join(",") });
-  return fetchGeoJson(`/api/gis/dnr-floodplain?${params}`, "DNRFloodplain");
+  return fetchGeoJson(`/api/dnr-floodplain?${params}`, "DNRFloodplain");
 }
