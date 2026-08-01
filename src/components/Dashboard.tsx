@@ -21,6 +21,8 @@ import { LocationContextHUD } from './hud/LocationContextHUD';
 import { AssetRiskHUD } from './hud/AssetRiskHUD';
 import { InfrastructureHUD } from './hud/InfrastructureHUD';
 import { CrossSectionHUD } from './hud/CrossSectionHUD';
+import { NodeHealthIndicator } from './hud/NodeHealthIndicator';
+import { HydraulicFlowMonitor } from './hud/HydraulicFlowMonitor';
 
 export function Dashboard() {
   const [activePanel, setActivePanel] = useState<'telemetry' | 'evidence' | 'system' | 'upgrades' | 'ai' | 'archimedes' | 'datum'>('telemetry');
@@ -109,6 +111,7 @@ export function Dashboard() {
 
       {/* HUD - Overlay */}
       <div className="absolute inset-0 z-10 p-6 pointer-events-none flex flex-col">
+        <NodeHealthIndicator />
         <TopHeader sysFrame={sysFrame} />
 
         {!zenMode && (
@@ -171,10 +174,10 @@ export function Dashboard() {
                    <div className="h-px bg-slate-800 flex-1" />
                 </div>
                 
-                <div className="flex gap-4 items-stretch justify-between h-[200px]">
+                <div className="flex gap-4 items-stretch justify-between h-[180px]">
                   <AssetRiskHUD />
+                  <HydraulicFlowMonitor />
                   <InfrastructureHUD />
-                  <CrossSectionHUD />
                   <SimulationHUD />
                 </div>
 
