@@ -1,16 +1,12 @@
-# PTDT / Bonebank — FINAL STATUS
+# PTDT / Bonebank — STATUS
 
-**COMPLETE** for zero-key government deployment path.
+**COMPLETE** — zero-key government core path.
 
-| Item | State |
-|------|-------|
-| Live dual USGS telemetry | Done |
-| HUD accurate (not Franklin NC / fake 18.7 ft) | Done |
-| BASE/CURRENT/FORECAST strip | Done |
-| Depth legend | Done |
-| siteConstants + FIRM/FFE/1.20× | Done |
-| LOMA API package | Done |
-| OpenMI proto + No-Rise ledger script | Done |
-| Apache-2.0 / no mandatory keys | Done |
+Latest: assemble **preserves** sovereign `server-main.ts` with live dual USGS (will not overwrite with legacy static 18.x stage).
 
-See `docs/PROJECT_COMPLETE.md` and `docs/PDF_EXTRACTED_REGULATORY_FACTS.md`.
+```bash
+npm install && npm run assemble && npm run dev
+bash scripts/verify-sovereign.sh
+```
+
+See `docs/PROJECT_COMPLETE.md`.

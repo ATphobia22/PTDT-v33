@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 /**
- * Restores full legacy server routes into src/server-main.ts
- * Priority:
- *   1) git show of last-known-good commit (b61d7c8) + GIS wire patch
- *   2) raw.githubusercontent.com fetch of that commit (no local history needed)
- *   3) zlib+base64 parts under scripts/server-main-b64/ (optional)
- *   4) leave existing full file if already recovered
+ * Restores full legacy server routes into src/server-main.ts when needed.
+ *
+ * NEVER overwrite a sovereign bootstrap that already has live dual USGS
+ * (USGS_NWIS_LIVE / fetchUsgsIv / 03322000) — that is the production zero-key path.
+ *
+ * Priority when recovery is needed:
+ *   1) git show of last-known-good commit (b61d7c8) + GIS + dual-USGS wire
+ *   2) raw.githubusercontent.com fetch of that commit
+ *   3) zlib+base64 parts under scripts/server-main-b64/
  */
 import fs from "fs";
 import path from "path";
@@ -20,12 +23,21 @@ const force = process.argv.includes("--force");
 const GOOD = "b61d7c819ed9a09fee74dd1cd157225d4aaad38e";
 const RAW_URL = `https://raw.githubusercontent.com/ATphobia22/Tri-State-Family-Engineering-System-/${GOOD}/server.ts`;
 
+function isSovereignLiveUsgs(src) {
+  return (
+    src.includes("USGS_NWIS_LIVE") ||
+    src.includes("fetchUsgsIv") ||
+    (src.includes("03322000") && src.includes("03378500") && src.includes("/api/usgs-telemetry"))
+  );
+}
+
 function normalizeImports(src) {
   return src
     .replaceAll('from "./src/server-ai"', 'from "./server-ai"')
     .replaceAll('from "./src/schemas/ptdt"', 'from "./schemas/ptdt"')
     .replaceAll('from "./src/services/compliance"', 'from "./services/compliance"')
     .replaceAll('from "./src/server-gis-routes"', 'from "./server-gis-routes"')
+    .replaceAll('from "./src/lib/siteConstants"', 'from "./lib/siteConstants"')
     .replaceAll('from "./src/', 'from "./');
 }
 
@@ -59,14 +71,21 @@ function wireGis(src) {
         "  registerAIRoutes(app, getGenAI);",
         "  // NCAT + IndianaMap parcels/BAFM + buildings + site (zero-key)\n  registerGisRoutes(app);\n\n  registerAIRoutes(app, getGenAI);"
       );
-    } else if (src.includes("const app = express()")) {
-      src = src.replace(
-        "const app = express();",
-        "const app = express();\n  // GIS routes registered after json middleware below"
-      );
     }
   }
 
+  return src;
+}
+
+/** Inject dual-gauge live USGS handler note if legacy still has static 18.x fallback only */
+function wireDualUsgsNote(src) {
+  if (isSovereignLiveUsgs(src)) return src;
+  if (src.includes("LOCAL_HIGH_FIDELITY_FALLBACK") || src.includes("water_level_stage_ft: 18")) {
+    console.warn(
+      "[assemble] WARNING: recovered legacy still has static USGS fallback. " +
+        "Prefer committed sovereign server-main.ts with USGS_NWIS_LIVE (do not --force overwrite)."
+    );
+  }
   return src;
 }
 
@@ -79,7 +98,7 @@ function tryGitShow() {
     });
     if (raw && raw.length > 20000 && raw.includes("startServer")) {
       console.log("[assemble] recovered via git show", GOOD);
-      return wireGis(raw);
+      return wireDualUsgsNote(wireGis(raw));
     }
   } catch (e) {
     console.warn("[assemble] git show failed:", e.message || e);
@@ -96,7 +115,7 @@ async function tryRawFetch() {
     const raw = await res.text();
     if (raw && raw.length > 20000 && raw.includes("startServer")) {
       console.log("[assemble] recovered via raw.githubusercontent.com");
-      return wireGis(raw);
+      return wireDualUsgsNote(wireGis(raw));
     }
   } catch (e) {
     console.warn("[assemble] raw fetch failed:", e.message || e);
@@ -123,7 +142,7 @@ function tryZlibParts() {
     const inflated = zlib.inflateSync(Buffer.from(b64, "base64")).toString("utf8");
     if (inflated.length > 20000) {
       console.log("[assemble] recovered via zlib parts");
-      return wireGis(inflated);
+      return wireDualUsgsNote(wireGis(inflated));
     }
   } catch (e) {
     console.warn("[assemble] zlib parts failed:", e.message || e);
@@ -132,10 +151,20 @@ function tryZlibParts() {
 }
 
 async function main() {
-  if (fs.existsSync(out) && !force) {
+  if (fs.existsSync(out)) {
     const body = fs.readFileSync(out, "utf8");
     const sz = body.length;
+
+    // Sovereign live dual-USGS path wins over legacy recovery — even with --force
+    if (isSovereignLiveUsgs(body)) {
+      console.log(
+        "[assemble] keeping sovereign server-main.ts (live dual USGS, " + sz + " bytes)"
+      );
+      process.exit(0);
+    }
+
     if (
+      !force &&
       sz > 20000 &&
       body.includes("registerGisRoutes") &&
       body.includes("/api/archimedes/generate")
@@ -149,6 +178,10 @@ async function main() {
     tryGitShow() || (await tryRawFetch()) || tryZlibParts();
 
   if (!recovered) {
+    if (fs.existsSync(out) && isSovereignLiveUsgs(fs.readFileSync(out, "utf8"))) {
+      console.log("[assemble] recovery failed but sovereign file present — OK");
+      process.exit(0);
+    }
     console.error(
       "[assemble] could not recover legacy server.ts — need git history, network, or zlib parts for " +
         GOOD
