@@ -1,21 +1,42 @@
 # Legacy server.ts route recovery
 
-Full pre-wire `server.ts` (TurboVec, Archimedes PDF package, FEMA/DNR, twin simulate, NWS, layers, policy, SDE partition, ISO compliance, etc.) is restored via:
+## What was recovered
+
+The full pre-wire Express server (TurboVec, Archimedes PDF package, FEMA/DNR offline, twin simulate, NWS, layers, policy, SDE partition, ISO 23247, chat offline mode, WebSocket telemetry, etc.) lives in git history at:
+
+**commit** `b61d7c819ed9a09fee74dd1cd157225d4aaad38e` path `server.ts`
+
+## How recovery works
 
 ```bash
-npm run assemble   # writes src/server-main.ts from scripts/server-main-b64/*
+npm run assemble   # or: node scripts/assemble-server-main.mjs --force
 npm run dev        # predev runs assemble automatically
 ```
 
-`registerGisRoutes(app)` is included (NCAT, parcels, BAFM, buildings, site).
+`scripts/assemble-server-main.mjs` will:
 
-Checksum (sha256 of assembled TS): `45d613f6405d671012c1f5961d94ac9b0e20c2c5644c5d90a219375521b2e1f0`
+1. `git show b61d7c8:server.ts`
+2. Patch in `registerGisRoutes(app)` (zero-key NCAT / parcels / BAFM / buildings / site)
+3. Rewrite imports for `src/server-main.ts`
+4. Write `src/server-main.ts`
 
-Routes restored include:
-- GET /api/usgs-telemetry, /api/fema-flood-zones, /api/dnr-floodplain, /api/nws-alerts
-- GET /api/layers, /api/historic-sites, /api/pdfs, /api/pdf-search, /api/scenario/:id
-- GET /api/transform-elevation, /api/turbovec/backup, /api/v23/iso-compliance
-- POST /api/v1/twin/simulate, /api/archimedes/generate, /api/turbovec/compress
-- POST /api/chat, /api/analyze-pdf, /api/policy/validate, /api/sde/partition
-- POST /api/v23/telemetry, /api/layers/toggle
-- Plus /api/gis/* from registerGisRoutes
+`server.ts` at repo root is a thin bootstrap that runs assemble then `import "./src/server-main.ts"`.
+
+## Routes included after assemble
+
+- GET `/api/usgs-telemetry`, `/api/fema-flood-zones`, `/api/dnr-floodplain`, `/api/nws-alerts`
+- GET `/api/layers`, `/api/historic-sites`, `/api/pdfs`, `/api/pdf-search`, `/api/scenario/:id`
+- GET `/api/transform-elevation`, `/api/turbovec/backup`, `/api/v23/iso-compliance`
+- POST `/api/v1/twin/simulate`, `/api/archimedes/generate`, `/api/turbovec/compress`
+- POST `/api/chat`, `/api/analyze-pdf`, `/api/policy/validate`, `/api/sde/partition`
+- POST `/api/v23/telemetry`, `/api/layers/toggle`
+- Plus `/api/gis/*` from `registerGisRoutes`
+
+## Manual one-liner (if assemble fails)
+
+```bash
+git show b61d7c819ed9a09fee74dd1cd157225d4aaad38e:server.ts > /tmp/legacy-server.ts
+node scripts/assemble-server-main.mjs --force
+```
+
+Requires a full clone (not a shallow clone missing that commit).
