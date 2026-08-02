@@ -1,7 +1,7 @@
 {
   "name": "tri-state-family-engineering-system",
   "private": true,
-  "version": "0.33.0",
+  "version": "0.33.1",
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
@@ -9,7 +9,10 @@
     "start": "node dist/server.cjs",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
-    "smoke": "bash scripts/smoke_node_apis.sh"
+    "smoke": "bash scripts/smoke_node_apis.sh",
+    "bootstrap": "bash scripts/bootstrap.sh",
+    "wire:map": "python3 scripts/apply_mapcomponent_bonebank_wire.py",
+    "verify": "npm run lint && npm run build"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
