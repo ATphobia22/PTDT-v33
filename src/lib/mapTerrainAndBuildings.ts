@@ -1,10 +1,6 @@
 /**
  * MapLibre terrain (Terrarium DEM) + building fill-extrusion helpers.
- *
- * Photoreal / 5cm LiDAR is NOT available zero-key. This uses:
- * - AWS Open Data Terrarium elevation tiles (SRTM/3DEP-class global DEM)
- * - Local /api/gis/buildings GeoJSON for site fill-extrusion
- * - OSM/OpenFreeMap vector buildings when the base style provides them
+ * Integrates with /api/terrain/* sovereign terrain module.
  */
 
 import type { Map as MaplibreMap } from "maplibre-gl";
@@ -44,7 +40,7 @@ export function ensureTerrariumTerrain(
         },
       });
     } catch {
-      /* style may not support hillshade yet */
+      /* */
     }
   }
 
@@ -59,7 +55,6 @@ export function clearTerrain(map: MaplibreMap): void {
   }
 }
 
-/** Load Bonebank local buildings and add fill-extrusion layer. */
 export async function addBonebankBuildingExtrusions(
   map: MaplibreMap,
   opts?: { heightMultiplier?: number; opacity?: number }
@@ -109,6 +104,31 @@ export async function addBonebankBuildingExtrusions(
   }
 
   return Array.isArray(fc.features) ? fc.features.length : 0;
+}
+
+/** Apply terrain + Bonebank buildings; optional EPQS fuse probe. */
+export async function integrateBonebankTerrainAndBuildings(
+  map: MaplibreMap
+): Promise<{ buildings: number; fuse?: unknown }> {
+  ensureTerrariumTerrain(map);
+  const buildings = await addBonebankBuildingExtrusions(map).catch(() => 0);
+  map.flyTo({
+    center: BONEBANK_SITE.center,
+    zoom: BONEBANK_SITE.zoom,
+    pitch: 60,
+    bearing: 28,
+    duration: 2000,
+  });
+  let fuse: unknown;
+  try {
+    const r = await fetch(
+      `/api/terrain/fuse?lat=${BONEBANK_SITE.lat}&lon=${BONEBANK_SITE.lon}`
+    );
+    if (r.ok) fuse = await r.json();
+  } catch {
+    /* */
+  }
+  return { buildings, fuse };
 }
 
 export function flyToBonebank(map: MaplibreMap): void {

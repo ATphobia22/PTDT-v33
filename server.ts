@@ -1,6 +1,7 @@
 import { registerAIRoutes } from "./src/server-ai";
 import { registerGisRoutes } from "./src/server-gis-routes";
 import { registerNldRoutes } from "./src/server-nld";
+import { registerTerrainRoutes } from "./src/server-terrain";
 import express, { Request, Response, NextFunction } from "express";
 import path from "path";
 import fs from "fs";
@@ -428,6 +429,7 @@ async function startServer() {
 
   registerNldRoutes(app);
   registerGisRoutes(app);
+  registerTerrainRoutes(app);
   registerAIRoutes(app, getGenAI);
 
   if (process.env.NODE_ENV !== "production") {
@@ -462,7 +464,7 @@ async function startServer() {
   });
 
   httpServer.listen(PORT, "0.0.0.0", () => {
-    console.log(`[Tri-State / Bonebank] listening on ${PORT} — USGS + NLD + GIS proxies active`);
+    console.log(`[Tri-State / Bonebank] listening on ${PORT} — USGS + NLD + GIS + Terrain proxies active`);
   });
 }
 
