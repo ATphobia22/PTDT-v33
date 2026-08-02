@@ -1,44 +1,86 @@
-# PTDT v32 Sovereign Hydrodynamic Pipeline
+# Tri-State Family Engineering System / PTDT
 
-This project implements a high-performance hydraulic modeling and regulatory package generation pipeline for Point Township Section 35.
+Sovereign **zero-key-first** digital twin stack for **13101 Bonebank Road**, Point Township, Posey County, Indiana (Section 35, T7S, R14W).
+
+Locked site anchors (NAVD88):
+
+| Constant | Value |
+|----------|-------|
+| BFE | **375.0 ft** |
+| LAG | **377.2 ft** |
+| Clearance | **+2.2 ft** |
+| Compensatory factor | **1.20×** |
+| USGS gauges | **03378500** (Wabash @ New Harmony), **03322000** (Ohio @ J.T. Myers) |
 
 ## Architecture
 
-- **Frontend/API Gateway**: React + Node.js (Vite/Express) running on port 3000.
-- **Archimedes Engine**: Python (FastAPI) running on port 8000, handling fluid mechanics and regulatory artifact generation (PDF/JSON/CSV).
+| Layer | Stack | Port |
+|-------|--------|------|
+| Twin UI + Express gateway | React, Vite, MapLibre, TypeScript | **3000** |
+| Optional Archimedes sidecar | FastAPI Manning + storage + unsigned PDF | **8000** |
 
-## Core Components
+Live / proxy routes (Node):
 
-### Archimedes Engine (`archimedes_engine.py`)
-The canonical source of truth for:
-- **Hydraulic Simulations**: Manning's formula based open-channel velocity calculations.
-- **Regulatory Compliance**: IDNR 312 IAC 10-5 compensatory storage enforcement (1.20x safety factor).
-- **Artifact Generation**: PE Transmittal letters, No-Rise Certifications, and FEMA BCA data packages.
+- `GET /api/usgs-telemetry` — dual-gauge NWIS
+- `GET /api/terrain/*` — EPQS fuse, Terrarium config, DEM encode helpers
+- `GET /api/gis/*` — site, buildings, BAFM, parcels, NCAT
+- `GET /api/nld/*` — USACE NLD FeatureServer proxy
+- `GET /api/reference-thresholds` — FoS / rise **reference only**
 
-### Dashboard UI
-A sophisticated real-time monitoring and control interface for managing the hydro pipeline and generating regulatory artifacts.
+**Honesty boundary:** Manning, storage math, and ReportLab PDFs are **illustrative / unsigned**. They are **not** PE-sealed No-Rise, LOMA, or grant BCR certifications.
 
-## Quick Start
+## Quick start (includes `git pull`)
 
-### Local Development (Python Engine)
 ```bash
-pip install -r requirements.txt
-python archimedes_engine.py
-```
+git clone https://github.com/ATphobia22/Tri-State-Family-Engineering-System-.git
+cd Tri-State-Family-Engineering-System-
 
-### Local Development (Node Frontend)
-```bash
+# Recommended: pull + install
+bash scripts/bootstrap.sh
+
+# Or one-shot pull + install + dev server
+bash scripts/dev_up.sh
+
+# Manual equivalent
+git pull --ff-only
 npm install
 npm run dev
 ```
 
-### Docker Deployment
+Open **http://localhost:3000**
+
+### Verify
+
+```bash
+npm run lint    # tsc --noEmit
+npm run build   # Vite + esbuild server
+# with server running:
+npm run smoke   # scripts/smoke_node_apis.sh
+```
+
+### Optional Archimedes sidecar
+
+```bash
+pip install -r services/requirements-archimedes.txt
+python services/archimedes_api.py
+# http://127.0.0.1:8000/api/v1/health
+```
+
+### Docker
+
 ```bash
 docker-compose up --build
 ```
 
-## CI/CD
-The project uses GitHub Actions for:
-- **Node.js**: Linting and building the frontend.
-- **Python**: Verifying the Archimedes engine core and regulatory dependencies.
-- **Databricks**: CD pipeline for DLT asset bundle deployment.
+Set secrets via environment (see `.env.example`). Do not commit real API keys or DB passwords.
+
+## Docs index
+
+- `docs/SOVEREIGN_TERRAIN_MODULE.md` — EPQS / Terrarium / MapLibre
+- `docs/V34_PASTE_AUDIT.md` — what was accepted vs rejected from V34 pastes
+- `docs/PHOTOREAL_3D_AND_TERRAIN_TILES.md` — DEM vs survey limits
+- `certification/` — unsigned checklists (CIF / NWP27 / 401 context)
+
+## License / use
+
+Intended to stay usable for government and municipal staff without paid map keys where possible (MapLibre, OpenFreeMap, USGS, public NLD).
