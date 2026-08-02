@@ -1,0 +1,16 @@
+--- a/src/components/MapComponent.tsx
++++ b/src/components/MapComponent.tsx
+@@ imports
++import { bootBonebankMapLayers, bonebankCamera } from '../lib/mapBoot';
++import { BONEBANK_SITE } from '../lib/siteConstants';
++import { ensureTerrariumTerrain } from '../lib/mapTerrainAndBuildings';
+@@ CAMERA_PRESETS[0]
+-    center: [-88.0051, 37.8459], zoom: 13.8, pitch: 62, bearing: 45
++    center: [-88.0007, 37.9035], zoom: 16, pitch: 58, bearing: 28
++    description: '13101 Bonebank Road — BFE 375.0 / LAG 377.2 NAVD88'
+@@ loadTerrain
+-      addSource terrain-dem terrarium...
+-      setTerrain exaggeration 1.5
++      ensureTerrariumTerrain(mapInstance, { exaggeration: 1.35 });
+@@ map.on('load')
++      void bootBonebankMapLayers(map, { fly: false }).then(...);
