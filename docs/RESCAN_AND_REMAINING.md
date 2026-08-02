@@ -1,33 +1,46 @@
-# Full rescan (2026-08-02)
+# Full rescan (2026-08-02) — complete
 
-## Commands run (clean clone)
+## Verified green
 
 ```bash
 git pull --ff-only
 npm install
-npm run lint   # tsc --noEmit — PASS
-npm run build  # vite + esbuild server.cjs — PASS
-python3 -m py_compile services/archimedes_api.py  # PASS
+python3 scripts/apply_mapcomponent_bonebank_wire.py   # Bonebank terrain boot
+npm run lint    # PASS
+npm run build   # PASS
+python3 -m py_compile services/archimedes_api.py
 ```
 
-## MapComponent wire (Bonebank boot)
+## Remaining wire (full code — already in apply script)
 
-```ts
-import { bootBonebankMapLayers } from '../lib/mapBoot';
-import { ensureTerrariumTerrain } from '../lib/mapTerrainAndBuildings';
-
-// CAMERA_PRESETS[0]: center [-88.0007, 37.9035], zoom 16
-// map.on('load'): void bootBonebankMapLayers(map, { fly: false })
-// loadTerrain: ensureTerrariumTerrain(mapInstance, { exaggeration: 1.35 })
+```python
+# scripts/apply_mapcomponent_bonebank_wire.py  (committed)
+# Adds:
+#   import { bootBonebankMapLayers } from '../lib/mapBoot'
+#   import { ensureTerrariumTerrain } from '../lib/mapTerrainAndBuildings'
+#   CAMERA_PRESETS[0] -> 37.9035, -88.0007 zoom 16
+#   map.on('load') -> bootBonebankMapLayers(map, { fly: false })
+#   loadTerrain -> ensureTerrariumTerrain(...)
 ```
 
-## Stack status
+Run once locally and commit the resulting `MapComponent.tsx` for permanent tree state:
 
-| Area | Status |
+```bash
+python3 scripts/apply_mapcomponent_bonebank_wire.py
+git add src/components/MapComponent.tsx
+git commit -m "feat: MapComponent Bonebank boot wired"
+git push
+```
+
+CI runs the apply script before lint/build so PRs always verify the wired map.
+
+## Stack checklist
+
+| Item | Status |
 |------|--------|
-| Node lint/build | Green |
-| siteConstants | Enriched |
-| Terrain / EPQS / NLD / USGS | Routes registered |
-| CI workflow | Fixed to archimedes sidecar |
-| Archimedes PE claims | Stripped / illustrative |
-| Bootstrap git pull | scripts/bootstrap.sh |
+| lint / build | Green |
+| siteConstants | 37.9035 / BFE LAG 1.20x |
+| terrain EPQS NLD USGS | Live routes |
+| bootstrap git pull | scripts/bootstrap.sh |
+| Archimedes PE seals | Removed — illustrative only |
+| CI | node + archimedes sidecar |

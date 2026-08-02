@@ -21,6 +21,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Apply MapComponent Bonebank wire
+        run: python3 scripts/apply_mapcomponent_bonebank_wire.py
+
       - name: Typecheck
         run: npm run lint
 
