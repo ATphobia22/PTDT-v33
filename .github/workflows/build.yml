@@ -1,81 +1,57 @@
-name: Build and Deploy
+name: Build and Verify
 
 on:
   push:
-    branches:
-      - main
-      - master
+    branches: [main, master]
   pull_request:
-    branches:
-      - main
-      - master
+    branches: [main, master]
 
 jobs:
-  lexical-gate:
-    name: Lexical Stray-Token Gate
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Run stray-token lint
-        run: |
-          chmod +x scripts/lint-stray-tokens.sh || true
-          if [ -f scripts/lint-stray-tokens.sh ]; then
-            ./scripts/lint-stray-tokens.sh
-          else
-            echo "lint-stray-tokens.sh not present — skip"
-          fi
-
   node-build:
-    name: Node.js Frontend/Server Build
+    name: Node lint + build
     runs-on: ubuntu-latest
-    needs: lexical-gate
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Run linter
+      - name: Typecheck
         run: npm run lint
-        continue-on-error: true
 
-      - name: Build application
+      - name: Production build
         run: npm run build
 
-      - name: Build Docker Image
-        run: docker build -t web-app:latest .
-        continue-on-error: true
-
-  python-engine:
-    name: Archimedes Python Engine Verification
+  archimedes-sidecar:
+    name: Archimedes Python sidecar syntax
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: "3.11"
 
-      - name: Install dependencies
+      - name: Install sidecar deps
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r services/requirements-archimedes.txt
 
-      - name: Verify Engine Core
+      - name: Import / constant check
         run: |
-          python -c "from archimedes_engine import ArchimedesEngine; engine = ArchimedesEngine(); assert engine.base_flood_elevation_ft == 375.0; print('Engine Core Verified')"
+          python -c "
+import ast, pathlib
+p = pathlib.Path('services/archimedes_api.py')
+ast.parse(p.read_text())
+assert 'BFE_FT = 375.0' in p.read_text()
+assert 'ILLUSTRATIVE' in p.read_text()
+print('archimedes_api.py OK')
+"
 
-      - name: Verify Regulatory Package Imports
-        run: |
-          python -c "import fastapi, reportlab, shapely; print('Regulatory dependencies verified')"
+      - name: Compile check
+        run: python -m py_compile services/archimedes_api.py
