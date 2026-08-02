@@ -1,10 +1,10 @@
 import type { HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
-interface SpinnerProps extends HTMLAttributes<HTMLDivElement> {
+type SpinnerProps = HTMLAttributes<HTMLDivElement> & {
   size?: "sm" | "md" | "lg" | "xl";
   variant?: "primary" | "secondary" | "muted";
-}
+};
 
 export function Spinner({
   className,
