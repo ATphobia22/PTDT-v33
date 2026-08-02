@@ -1,0 +1,40 @@
+name: Regulatory Package Distribution
+
+on:
+  workflow_run:
+    workflows: ["Databricks CD Pipeline"]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  distribute-package:
+    name: "Bundle, Sign & Distribute Evidence"
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Checkout Code Base
+        uses: actions/checkout@v4
+
+      - name: Compile and Compress Portal Deliverables
+        run: |
+          echo "[TAR ENGINE] Packaging final regulatory portal manifest assets..."
+          mkdir -p dist/
+          tar -czf dist/ptdt_evidence_package_latest.tar.gz 05_final_portal_package/
+
+      - name: Generate Cryptographic Verification Signature
+        id: checksum
+        run: |
+          cd dist/
+          sha256sum ptdt_evidence_package_latest.tar.gz > ptdt_evidence_package_latest.tar.gz.sha256
+          echo "SIG=$(cat ptdt_evidence_package_latest.tar.gz.sha256 | awk '{print $1}')" >> $GITHUB_OUTPUT
+
+      - name: Distribute Deliverables to Stakeholder Webhook Node
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.STAKEHOLDER_SYNC_TOKEN }}" \
+            -H "X-PTDT-Signature: ${{ steps.checksum.outputs.SIG }}" \
+            -F "file=@dist/ptdt_evidence_package_latest.tar.gz" \
+            -F "checksum=@dist/ptdt_evidence_package_latest.tar.gz.sha256" \
+            -F "metadata={\"timestamp\":\"$(date -u +'%Y-%m-%dT%H:%M:%SZ')\",\"node\":\"Sovereign-Main\"}" \
+            "${{ secrets.STAKEHOLDER_DISTRIBUTION_URL }}"

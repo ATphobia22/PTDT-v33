@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
-    "@google/genai": "^1.29.0",
+    "@google/genai": "^2.15.0",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
     "@tailwindcss/vite": "^4.1.14",
@@ -42,7 +42,7 @@
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
     "react-markdown": "^10.1.0",
-    "recharts": "^3.9.2",
+    "recharts": "^2.15.0",
     "tailwind-merge": "^3.6.0",
     "tailwindcss": "^4.3.3",
     "tailwindcss-animate": "^1.0.7",
@@ -53,6 +53,15 @@
     "ws": "^8.21.1"
   },
   "devDependencies": {
-    "@types/d3": "^7.4.3"
+    "@babel/core": "^8.0.1",
+    "@babel/preset-react": "^8.0.1",
+    "@babel/preset-typescript": "^8.0.1",
+    "@types/d3": "^7.4.3",
+    "@types/jest": "^30.0.0",
+    "@webgpu/types": "^0.1.71",
+    "glob": "^13.0.6",
+    "jest": "^30.4.2",
+    "jest-environment-jsdom": "^30.4.1",
+    "ts-jest": "^29.4.12"
   }
 }

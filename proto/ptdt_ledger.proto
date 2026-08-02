@@ -1,0 +1,60 @@
+syntax = "proto3";
+package ptdt.sovereign.v1;
+
+option go_package = "://github.com";
+option java_multiple_files = true;
+option java_package = "com.ptdt.sovereign.v1.ledger";
+
+// Service defining the OpenMI Ledger verification pipeline
+service OpenMILedgerService {
+// Cryptographically seals an asset submission package to prove regulatory compliance
+rpc SealLOMAEvidenceManifest(ManifestSubmissionRequest) returns (ManifestSealReceipt);
+
+// Audits existing ledger stamps against physical site constants
+rpc VerifyLedgerState(StateVerificationRequest) returns (StateVerificationResponse);
+}
+
+// Data envelope containing spatial and engineering facts
+message EngineeringSiteConstants {
+string state_parcel_id = 1; // Think GIS verified index (e.g. 65-19 prefix formats)
+string township_section = 2; // Section boundary footprint (e.g. S35, T7S, R14W)
+double base_flood_elevation = 3; // BFE value (e.g. 375.0 ft)
+double lowest_adjacent_grade = 4; // LAG value (e.g. 377.2 ft)
+double lowest_floor_elevation = 5; // FFE value (e.g. 382.5 ft)
+double compensatory_factor = 6; // IDNR requirement index multiplier (e.g. 1.20)
+string fema_community_id = 7; // Local community identification code (e.g. 180194)
+}
+
+// Payload request containing telemetry matrices and compiled evidence files
+message ManifestSubmissionRequest {
+string manifest_uuid = 1;
+string timestamp_utc = 2;
+EngineeringSiteConstants geographic_anchor = 3;
+bytes source_package_tar_gz = 4; // Compressed asset package contents
+string operator_signature = 5; // Digital engineering certificate token
+}
+
+// Receipt issued by the ledger network upon successful immutable commitment
+message ManifestSealReceipt {
+string manifest_uuid = 1;
+string blockchain_ledger_tx_id = 2; // Unique hash reference transaction
+string cryptographic_sha256_seal = 3;
+enum SealingStatus {
+STATUS_UNSPECIFIED = 0;
+STATUS_COMMITTED = 1;
+STATUS_PENDING_REGULATORY_REVIEW = 2;
+STATUS_REJECTED_BY_BIBLE_RULE = 3;
+}
+SealingStatus compliance_state = 4;
+string sealed_timestamp_utc = 5;
+}
+
+message StateVerificationRequest {
+string blockchain_ledger_tx_id = 1;
+}
+
+message StateVerificationResponse {
+bool is_tamper_free = 1;
+string transaction_block_height = 2;
+ManifestSubmissionRequest original_payload = 3;
+}

@@ -1,33 +1,45 @@
+# databricks.yml
 bundle:
-  name: atphobia22-hydro-pipeline
+  name: tri-state-engineering-pipelines
 
-artifacts:
-  default:
-    type: whl
-    path: ./dist/*.whl
+  variables:
+    environment:
+      description: Execution deployment workspace phase
+      default: development
 
-resources:
-  jobs:
-    hydro_pipeline_job:
-      name: "[PTDT-v32] Sovereign Hydrodynamic Pipeline"
-      tasks:
-        - task_key: run_pipeline
-          pipeline_task:
-            pipeline_id: ${resources.pipelines.hydro_pipeline.id}
-      
-  pipelines:
-    hydro_pipeline:
-      name: "Tri-State-DLT-v32"
-      target: prod
-      libraries:
-        - file:
-            path: ./src/pipeline_engine.py
-      configuration:
-        citadel.isolation.mode: "STRICT"
-        istio.sidecar.inject: "true"
-        grpc.telemetry.enabled: "true"
+  environments:
+    development:
+      ws:
+        host: ${bundle.secrets/DATABRICKS_HOST}
+      # Maps targeting inside your secure enclave pipeline configurations
+      artifacts_path: /Shared/PTDT/bundles/${bundle.name}/artifacts
 
-environments:
-  prod:
-    workspace:
-      host: https://adb-tri-state.azuredatabricks.net
+  resources:
+    pipelines:
+      flood_modeling_pipeline:
+        name: ptdt_flood_modeling_${var.environment}
+        target: ptdt_hydro_analytics
+        edition: advanced
+        channel: current
+        storage: /Shared/PTDT/pipeline_storage/${var.environment}
+
+        libraries:
+          - notebook:
+              path: ./src/pipelines/flood_inundation_mapping.py
+
+        configuration:
+          pipelines.ncat_datum: "NAVD88"
+          pipelines.base_flood_elevation: "375.0"
+          pipelines.lowest_adjacent_grade: "377.2"
+          pipelines.target_corridor: "13101 Bonebank Road Corridor"
+
+        clusters:
+          - label: default
+            num_workers: 2
+            spark_conf:
+              spark.databricks.delta.schema.autoMerge.enabled: "true"
+            node_type_id: i3.xlarge
+            driver_node_type_id: i3.xlarge
+
+        continuous: false
+        development: true

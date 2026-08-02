@@ -1,16 +1,4 @@
 node_modules
-dist
-.venv
-venv
-__pycache__
-*.pyc
+build
 .git
 .env
-ci_package_out
-05_final_portal_package
-*.db
-repos1.json
-repos2.json
-repos3.json
-repos4.json
-repos5.json
