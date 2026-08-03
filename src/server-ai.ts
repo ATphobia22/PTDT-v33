@@ -1,53 +1,35 @@
-import { Express, Request, Response } from "express";
+import { Express } from "express";
 
-export function registerAIRoutes(
-  app: Express,
-  getGenAI: () => any | null
-): void {
-  app.post("/api/ai/chat", async (req: Request, res: Response) => {
+export function registerAIRoutes(app: Express, getGenAI: () => any) {
+  app.post("/api/ai/chat", async (req, res) => {
     try {
-      const { message, context } = req.body ?? {};
+      const { message, context } = req.body;
       const ai = getGenAI();
-      if (!ai) {
-        return res.json({
-          reply:
-            "[OFFLINE] Gemini key not configured. USGS, NLD, terrain, and GIS routes remain available.",
-        });
-      }
       const response = await ai.models.generateContent({
-        model: "gemini-2.0-flash",
-        contents: `${context ? `Context: ${context}\n` : ""}User: ${message ?? ""}`,
+        model: "gemini-3.1-pro",
+        contents: `${context ? `Context: ${context}\n` : ''}User: ${message}`
       });
       res.json({ reply: response.text });
     } catch (e: any) {
-      res.status(500).json({ error: e?.message ?? String(e) });
+      res.status(500).json({ error: e.message });
     }
   });
 
-  app.post("/api/ai/image", async (req: Request, res: Response) => {
+  app.post("/api/ai/image", async (req, res) => {
     try {
-      const { prompt } = req.body ?? {};
+      const { prompt } = req.body;
       const ai = getGenAI();
-      if (!ai) {
-        return res.status(503).json({
-          error: "Image generation requires GEMINI_API_KEY",
-        });
-      }
       const response = await ai.models.generateImages({
         model: "imagen-3.0-generate-002",
-        prompt: prompt ?? "",
+        prompt: prompt,
         config: {
-          numberOfImages: 1,
-          outputMimeType: "image/jpeg",
-        },
+            numberOfImages: 1,
+            outputMimeType: "image/jpeg"
+        }
       });
-      const bytes = response?.generatedImages?.[0]?.image?.imageBytes;
-      if (!bytes) {
-        return res.status(502).json({ error: "No image bytes returned" });
-      }
-      res.json({ imageUrl: `data:image/jpeg;base64,${bytes}` });
+      res.json({ imageUrl: `data:image/jpeg;base64,${response.generatedImages[0].image.imageBytes}` });
     } catch (e: any) {
-      res.status(500).json({ error: e?.message ?? String(e) });
+      res.status(500).json({ error: e.message });
     }
   });
 }

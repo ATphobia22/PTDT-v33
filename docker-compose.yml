@@ -1,27 +1,22 @@
-# Optional local stack — set secrets via environment; do not commit real passwords.
-version: "3.8"
-
+version: '3.8'
 services:
-  ptdt-app:
+  web:
     build: .
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
-    restart: unless-stopped
+      - PORT=3000
+    depends_on:
+      - archimedes
 
-  # Optional ledger — only if you intentionally run PostGIS
-  # postgres:
-  #   image: postgis/postgis:16-3.4
-  #   environment:
-  #     POSTGRES_DB: ptdt_ledger
-  #     POSTGRES_USER: ptdt
-  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
-  #   ports:
-  #     - "5432:5432"
-  #   volumes:
-  #     - ptdt_pg_data:/var/lib/postgresql/data
-
-# volumes:
-#   ptdt_pg_data:
+  archimedes:
+    build:
+      context: .
+      dockerfile: environment/Dockerfile
+    ports:
+      - "8000:8000"
+    command: python3 archimedes_engine.py
+    volumes:
+      - .:/app
+    working_dir: /app

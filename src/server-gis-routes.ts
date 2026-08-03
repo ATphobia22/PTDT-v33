@@ -191,6 +191,41 @@ export function registerGisRoutes(app: Express): void {
     return res.json(EMPTY_FC);
   });
 
+  app.get("/api/gis/state-legislative-districts", async (req: Request, res: Response) => {
+    const bbox = parseBBox(req.query) ?? BONEBANK_SITE.bbox;
+    const [xmin, ymin, xmax, ymax] = bbox;
+    const geometry = JSON.stringify({
+      xmin,
+      ymin,
+      xmax,
+      ymax,
+      spatialReference: { wkid: 4326 },
+    });
+    const params = new URLSearchParams({
+      f: "geojson",
+      where: "1=1",
+      geometry,
+      geometryType: "esriGeometryEnvelope",
+      inSR: "4326",
+      outSR: "4326",
+      spatialRel: "esriSpatialRelIntersects",
+      outFields: "*",
+      returnGeometry: "true",
+    });
+
+    const url = `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Legislative/MapServer/0/query?${params}`;
+    try {
+      const r = await fetch(url);
+      if (r.ok) {
+        const data = await r.json();
+        if (data?.features) return res.json(data);
+      }
+    } catch (err) {
+      console.warn("[TIGERweb] remote failed", err);
+    }
+    return res.json(EMPTY_FC);
+  });
+
   app.get("/api/gis/site", (_req: Request, res: Response) => {
     res.json(BONEBANK_SITE);
   });

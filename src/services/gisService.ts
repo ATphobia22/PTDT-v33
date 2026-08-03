@@ -92,3 +92,15 @@ export async function fetchDnrFloodplain(bbox: BBox): Promise<GeoJSONFeatureColl
   const params = new URLSearchParams({ bbox: bbox.join(",") });
   return fetchGeoJson(`/api/dnr-floodplain?${params}`, "DNRFloodplain");
 }
+
+export async function fetchStateLegislativeDistricts(bbox: BBox): Promise<GeoJSONFeatureCollection> {
+  if (!isValidBBox(bbox)) return EMPTY_FC;
+  const [xmin, ymin, xmax, ymax] = bbox;
+  const params = new URLSearchParams({
+    xmin: String(xmin),
+    ymin: String(ymin),
+    xmax: String(xmax),
+    ymax: String(ymax),
+  });
+  return fetchGeoJson(`/api/gis/state-legislative-districts?${params}`, "LegislativeDistricts");
+}

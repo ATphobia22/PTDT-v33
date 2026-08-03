@@ -1,18 +1,14 @@
 {
-  "name": "tri-state-family-engineering-system",
+  "name": "react-example",
   "private": true,
-  "version": "0.33.1",
+  "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
     "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
     "start": "node dist/server.cjs",
     "clean": "rm -rf dist",
-    "lint": "tsc --noEmit",
-    "smoke": "bash scripts/smoke_node_apis.sh",
-    "bootstrap": "bash scripts/bootstrap.sh",
-    "wire:map": "python3 scripts/apply_mapcomponent_bonebank_wire.py",
-    "verify": "npm run lint && npm run build"
+    "lint": "tsc --noEmit"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
@@ -57,12 +53,15 @@
     "ws": "^8.21.1"
   },
   "devDependencies": {
+    "@babel/core": "^8.0.1",
+    "@babel/preset-react": "^8.0.1",
+    "@babel/preset-typescript": "^8.0.1",
     "@types/d3": "^7.4.3",
-    "@types/jest": "^29.5.14",
+    "@types/jest": "^30.0.0",
     "@webgpu/types": "^0.1.71",
-    "glob": "^11.0.0",
-    "jest": "^29.7.0",
-    "jest-environment-jsdom": "^29.7.0",
-    "ts-jest": "^29.2.5"
+    "glob": "^13.0.6",
+    "jest": "^30.4.2",
+    "jest-environment-jsdom": "^30.4.1",
+    "ts-jest": "^29.4.12"
   }
 }
