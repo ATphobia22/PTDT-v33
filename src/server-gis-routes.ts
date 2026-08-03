@@ -213,7 +213,7 @@ export function registerGisRoutes(app: Express): void {
       returnGeometry: "true",
     });
 
-    const url = `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Legislative/MapServer/0/query?${params}`;
+    const url = `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Legislative/MapServer/6/query?${params}`;
     try {
       const r = await fetch(url);
       if (r.ok) {

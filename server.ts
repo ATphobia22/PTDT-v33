@@ -903,20 +903,6 @@ Structure your response with clear headers and bullet points. End with "SYSTEM_S
     res.json({ id, data, color: id === '100yr' ? '#00AFFF' : id === '500yr' ? '#FF4444' : '#FFD400' });
   });
 
-  // Serve static assets or mount Vite dev server
-  if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), "dist");
-    app.use(express.static(distPath));
-    app.get("*", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
-    });
-  }
 
   // 10. PDF Documents Repository & Metadata
   const ptdtLibrary = [
@@ -1011,7 +997,7 @@ Structure your response with clear headers and bullet points. End with "SYSTEM_S
   });
 
   app.get("/api/pdf-search", (req, res) => {
-    const query = (req.query.q as string || "").toLowerCase();
+    const query = ((req.query.q as string) || "").toLowerCase();
     const results = [
       {
         pdfId: "doc_01_pe_loma",
@@ -1089,12 +1075,25 @@ Structure your response with clear headers and bullet points. End with "SYSTEM_S
 
     res.json(results);
   });
-
   
-
   registerGisRoutes(app);
   registerAIRoutes(app, getGenAI);
   registerGrantsRoutes(app);
+
+  // Serve static assets or mount Vite dev server
+  if (process.env.NODE_ENV !== "production") {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: "spa",
+    });
+    app.use(vite.middlewares);
+  } else {
+    const distPath = path.join(process.cwd(), "dist");
+    app.use(express.static(distPath));
+    app.get("*", (req, res) => {
+      res.sendFile(path.join(distPath, "index.html"));
+    });
+  }
 
   const httpServer = http.createServer(app);
   
