@@ -7,18 +7,27 @@ export interface StandardizedFeature {
   properties: any;
 }
 
-export class GeoSpatialDataStreamer {
-  private cache: Map<string, StandardizedFeature[]> = new Map();
+export interface RegionData {
+  features: StandardizedFeature[];
+  fema: any;
+  historic: any;
+  dnr: any;
+  legislative: any;
+}
 
-  async fetchRegionData(bbox: [number, number, number, number]): Promise<StandardizedFeature[]> {
+export class GeoSpatialDataStreamer {
+  private cache: Map<string, RegionData> = new Map();
+
+  async fetchRegionData(bbox: [number, number, number, number]): Promise<RegionData> {
     const cacheKey = bbox.map(v => v.toFixed(3)).join(',');
     if (this.cache.has(cacheKey)) return this.cache.get(cacheKey)!;
 
     try {
-      const [fema, historic, dnr] = await Promise.all([
+      const [fema, historic, dnr, legislative] = await Promise.all([
         gisService.fetchFemaFloodZones(bbox),
         gisService.fetchIndianaHistoricSites(bbox),
-        gisService.fetchDnrFloodplain(bbox)
+        gisService.fetchDnrFloodplain(bbox),
+        gisService.fetchStateLegislativeDistricts(bbox)
       ]);
 
       const features: StandardizedFeature[] = [];
@@ -50,17 +59,25 @@ export class GeoSpatialDataStreamer {
         }
       });
 
+      const regionData: RegionData = {
+        features,
+        fema,
+        historic,
+        dnr,
+        legislative
+      };
+
       // Limit cache size
       if (this.cache.size > 50) {
         const firstKey = this.cache.keys().next().value;
         if (firstKey) this.cache.delete(firstKey);
       }
 
-      this.cache.set(cacheKey, features);
-      return features;
+      this.cache.set(cacheKey, regionData);
+      return regionData;
     } catch (error) {
       console.error('Error streaming geospatial data:', error);
-      return [];
+      return { features: [], fema: null, historic: null, dnr: null, legislative: null };
     }
   }
 }

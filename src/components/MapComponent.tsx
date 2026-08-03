@@ -186,6 +186,7 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
   const [historicSites, setHistoricSites] = useState<any>(null);
   const [femaZones, setFemaZones] = useState<any>(null);
   const [dnrFloodplain, setDnrFloodplain] = useState<any>(null);
+  const [legislativeDistricts, setLegislativeDistricts] = useState<any>(null);
 
   const assetLoader = useRef(new PDT3DAssets());
   const threeLayerRef = useRef<any>(null);
@@ -635,13 +636,17 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
       fetchTimeout = setTimeout(async () => {
         try {
           const regionData = await dataStreamer.fetchRegionData(bbox);
-          if (placementManager.current && regionData.length > 0) {
-            regionData.forEach(feature => {
+          if (placementManager.current && regionData.features.length > 0) {
+            regionData.features.forEach(feature => {
               if (feature.type === 'historic') {
                 placementManager.current?.placeAsset('house', feature.coordinates as [number, number], 0, feature.id);
               }
             });
           }
+          if (regionData.historic) setHistoricSites(regionData.historic);
+          if (regionData.fema) setFemaZones(regionData.fema);
+          if (regionData.dnr) setDnrFloodplain(regionData.dnr);
+          if (regionData.legislative) setLegislativeDistricts(regionData.legislative);
         } catch (error) {
           console.error("Regional data stream error:", error);
         }
@@ -854,6 +859,7 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
     updateSource('historic-sites-source', historicSites);
     updateSource('fema-flood-source', femaZones);
     updateSource('dnr-flood-source', dnrFloodplain);
+    updateSource('legislative-districts-source', legislativeDistricts);
 
     // Ensure layers exist
     if (historicSites && !map.getLayer('historic-sites-layer')) {
@@ -896,7 +902,20 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
       });
     }
 
-  }, [historicSites, femaZones, dnrFloodplain, mapLoaded]);
+    if (legislativeDistricts && !map.getLayer('legislative-districts-layer')) {
+      map.addLayer({
+        id: 'legislative-districts-layer',
+        type: 'fill',
+        source: 'legislative-districts-source',
+        paint: {
+          'fill-color': '#f43f5e',
+          'fill-opacity': 0.1,
+          'fill-outline-color': '#e11d48'
+        }
+      });
+    }
+
+  }, [historicSites, femaZones, dnrFloodplain, legislativeDistricts, mapLoaded]);
 
   const handleZoomIn = () => {
     mapRef.current?.zoomIn({ duration: 300 });

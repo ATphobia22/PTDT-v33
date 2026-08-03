@@ -1,5 +1,6 @@
 import { registerAIRoutes } from "./src/server-ai";
 import { registerGisRoutes } from "./src/server-gis-routes";
+import { registerGrantsRoutes } from "./src/server-grants-routes";
 import express, { Request, Response, NextFunction } from "express";
 import path from "path";
 import fs from "fs";
@@ -1093,6 +1094,7 @@ Structure your response with clear headers and bullet points. End with "SYSTEM_S
 
   registerGisRoutes(app);
   registerAIRoutes(app, getGenAI);
+  registerGrantsRoutes(app);
 
   const httpServer = http.createServer(app);
   
