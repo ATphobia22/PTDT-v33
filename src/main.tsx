@@ -2,6 +2,7 @@ import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
+import '../public/css/agency-hud.css';
 import { ThemeProvider } from './context/ThemeContext';
 import { AudioSystemProvider } from './context/AudioContext';
 

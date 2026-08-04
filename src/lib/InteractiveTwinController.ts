@@ -4,7 +4,7 @@
  */
 import type { Map as MaplibreMap } from "maplibre-gl";
 import { BONEBANK_SITE } from "./siteConstants";
-import { bootBonebankMapLayers } from "./mapBoot";
+
 // Assuming these exist or will be created based on OCR
 // For now, I'll provide placeholders or implement them if I find them in OCR.
 

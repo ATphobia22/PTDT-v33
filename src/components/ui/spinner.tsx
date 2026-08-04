@@ -1,6 +1,7 @@
+import React from "react";
 import { cn } from "@/lib/utils";
 
-interface SpinnerProps extends React.HTMLAttributes<HTMLDivElement> {
+interface SpinnerProps extends React.HTMLAttributes<HTMLDivElement> { className?: string;
   size?: "sm" | "md" | "lg" | "xl";
   variant?: "primary" | "secondary" | "muted";
 }

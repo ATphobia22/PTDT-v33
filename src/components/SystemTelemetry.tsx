@@ -23,7 +23,7 @@ const RealtimeChart: React.FC<{ data: DataPoint[]; color: string; yLabel: string
     const innerHeight = height - margin.top - margin.bottom;
 
     const x = d3.scaleTime()
-      .domain(d3.extent(data, d => d.time) as [number, number])
+      .domain(d3.extent(data, d => (d as DataPoint).time) as [number, number])
       .range([0, innerWidth]);
 
     const y = d3.scaleLinear()
@@ -32,13 +32,13 @@ const RealtimeChart: React.FC<{ data: DataPoint[]; color: string; yLabel: string
 
     const line = d3.line<DataPoint>()
       .x(d => x(d.time))
-      .y(d => y(d.value))
+      .y(d => y((d as DataPoint).value))
       .curve(d3.curveMonotoneX);
 
     const area = d3.area<DataPoint>()
       .x(d => x(d.time))
       .y0(innerHeight)
-      .y1(d => y(d.value))
+      .y1(d => y((d as DataPoint).value))
       .curve(d3.curveMonotoneX);
 
     const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
