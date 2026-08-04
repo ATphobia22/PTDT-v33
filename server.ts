@@ -1076,6 +1076,34 @@ Structure your response with clear headers and bullet points. End with "SYSTEM_S
     res.json(results);
   });
   
+  const arcgisServices = [
+    { name: "bag_bathymetry", type: "ImageServer" },
+    { name: "bag_hillshades_subsets", type: "ImageServer" },
+    { name: "bathy_gap_analysis_machc", type: "MapServer" },
+    { name: "bathy_gap_analysis", type: "MapServer" },
+    { name: "caribe_ews_energy_plots", type: "MapServer" },
+    { name: "caribe_ews_scenarios", type: "MapServer" },
+    { name: "csb", type: "MapServer" },
+    { name: "EMAG2v3_Code", type: "ImageServer" },
+    { name: "EMAG2v3", type: "ImageServer" },
+    { name: "etopo1", type: "MapServer" },
+    { name: "graticule", type: "MapServer" },
+    { name: "Hypoxia", type: "MapServer" },
+    { name: "multibeam_datasets", type: "MapServer" },
+    { name: "multibeam_files", type: "MapServer" },
+    { name: "multibeam_footprints", type: "MapServer" },
+    { name: "multibeam_mosaic", type: "ImageServer" },
+    { name: "tsunami_energy", type: "MapServer" },
+    { name: "ttt_contours", type: "MapServer" },
+    { name: "wcsd_files", type: "MapServer" }
+  ];
+
+  app.get("/api/arcgis/services", (req, res) => {
+    const query = ((req.query.q as string) || "").toLowerCase();
+    const results = arcgisServices.filter(s => s.name.toLowerCase().includes(query));
+    res.json(results);
+  });
+
   registerGisRoutes(app);
   registerAIRoutes(app, getGenAI);
   registerGrantsRoutes(app);
