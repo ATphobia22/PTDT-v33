@@ -5,10 +5,15 @@ import { useTheme } from './context/ThemeContext';
 import { useAudioSystem } from './context/AudioContext';
 import { Power } from 'lucide-react';
 import { SovereignIntegrationWrapper } from './SovereignIntegrationWrapper';
+import { AffidavitViewport } from './components/AffidavitViewport';
 
 function App() {
   const { theme } = useTheme();
   const { isSystemOn, setSystemOn } = useAudioSystem();
+
+  if (window.location.pathname === '/affidavit') {
+    return <AffidavitViewport stage={2.82} flow={11200} fos={1.5} />;
+  }
 
   if (!isSystemOn) {
     return (

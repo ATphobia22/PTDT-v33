@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package sovereign.openmi;
+
+service SolverLink {
+  // Exchange hydrologic quantities at runtime
+  rpc GetValues (ExchangeItem) returns (ValueSet);
+  
+  // Advance simulation time step
+  rpc PerformTimeStep (TimeArguments) returns (Status);
+}
+
+message ExchangeItem {
+  string element_id = 1; // e.g., "CrossSection_180209"
+  string quantity = 2;   // e.g., "Discharge", "Velocity"
+}
+
+message ValueSet {
+  repeated double values = 1;
+  string unit = 2;       // e.g., "m3/s"
+  int64 timestamp = 3;
+}
+
+message TimeArguments {
+  int64 current_time = 1;
+  double time_step = 2;
+}
+
+message Status {
+  bool success = 1;
+  string message = 2;
+}

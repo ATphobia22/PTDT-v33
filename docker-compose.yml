@@ -1,22 +1,62 @@
 version: '3.8'
+
 services:
-  web:
-    build: .
+  # The Federal Engine wrapping HEC-RAS (Phase 1)
+  sovereign_federal_engine:
+    build: 
+      context: .
+      dockerfile: Dockerfile.engine
+    ports:
+      - "8000:8000"
+    environment:
+      - RAS_PROJECT_PATH=/data/Civil/TriRiver/PointTownship_2026.prj
+      - USGS_GAUGE_ID=03378500
+    volumes:
+      - ./data:/data
+    restart: unless-stopped
+
+  # The Supabase Realtime GIS Layer / Truth Database (Phase 2)
+  # Uses a PostGIS-enabled PostgreSQL image
+  sovereign_truth_db:
+    image: postgis/postgis:15-3.3
+    environment:
+      POSTGRES_USER: sovereign_admin
+      POSTGRES_PASSWORD: secure_sovereign_password
+      POSTGRES_DB: tri_river_basin
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./src/db/sovereign_schema.sql:/docker-entrypoint-initdb.d/sovereign_schema.sql
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # OpenMI Solver Extension Node (Phase 4)
+  openmi_solver_node:
+    build:
+      context: .
+      dockerfile: Dockerfile.solver
+    ports:
+      - "50051:50051"
+    environment:
+      - DB_HOST=sovereign_truth_db
+    depends_on:
+      - sovereign_truth_db
+    restart: unless-stopped
+
+  # The React 19 Client Dashboard / Affidavit Viewport (Phase 3)
+  dashboard_client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=production
-      - PORT=3000
+      - API_URL=http://sovereign_federal_engine:8000
+      - DB_URL=postgres://sovereign_admin:secure_sovereign_password@sovereign_truth_db:5432/tri_river_basin
     depends_on:
-      - archimedes
+      - sovereign_federal_engine
+      - sovereign_truth_db
+    restart: unless-stopped
 
-  archimedes:
-    build:
-      context: .
-      dockerfile: environment/Dockerfile
-    ports:
-      - "8000:8000"
-    command: python3 archimedes_engine.py
-    volumes:
-      - .:/app
-    working_dir: /app
+volumes:
+  pgdata:

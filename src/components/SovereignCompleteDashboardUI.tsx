@@ -111,6 +111,17 @@ export const SovereignCompleteDashboardUI: React.FC<UIProps> = ({
         </div>
       </div>
 
+      <div className="interactive-controls-row border-top-divider" style={{ paddingTop: '10px' }}>
+        <label className="row-annotation-lbl">DAUBERT-STANDARD VISUAL AFFIDAVIT RENDERER</label>
+        <button
+          className="ui-action-btn state-active"
+          onClick={() => window.open('/affidavit', '_blank')}
+          style={{ padding: '8px', fontSize: '10px', width: '100%', background: 'rgba(6, 182, 212, 0.2)', color: '#22d3ee', borderColor: '#0891b2' }}
+        >
+          INITIALIZE SOVEREIGN PROOF CHAIN (HEC-RAS OVERLAY)
+        </button>
+      </div>
+
       <div className="telemetry-terminal-container" style={{ marginTop: '12px' }}>
         <label className="terminal-lbl">ACTIVE PLATFORM REAL-TIME TELEMETRY ENGINE CHIPS</label>
         <div className="terminal-viewport-box">
