@@ -798,6 +798,65 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
         map.setLayoutProperty(TELEMETRY_LAYER_ID, 'visibility', 'none');
       }
     }
+
+    // Add Specific Interest Points from Images
+    if (!map.getSource('image-pois-source')) {
+      const imagePOIs = {
+        type: 'FeatureCollection',
+        features: [
+          { type: 'Feature', geometry: { type: 'Point', coordinates: [-88.020, 37.834] }, properties: { name: 'Home (13101 Bonebank Rd)', type: 'home' } },
+          { type: 'Feature', geometry: { type: 'Point', coordinates: [-87.986, 37.794] }, properties: { name: 'Uniontown Dam', type: 'dam' } },
+          { type: 'Feature', geometry: { type: 'Point', coordinates: [-87.982, 37.796] }, properties: { name: 'John T Myers Locks & Dam', type: 'dam' } },
+          { type: 'Feature', geometry: { type: 'Point', coordinates: [-87.900, 37.890] }, properties: { name: 'SABIC Innovative Plastics', type: 'industry' } },
+          { type: 'Feature', geometry: { type: 'Point', coordinates: [-87.920, 37.910] }, properties: { name: 'CF Industries', type: 'industry' } },
+          { type: 'Feature', geometry: { type: 'Point', coordinates: [-87.880, 37.920] }, properties: { name: 'BWX Technologies', type: 'industry' } },
+          { type: 'Feature', geometry: { type: 'Point', coordinates: [-88.010, 37.820] }, properties: { name: 'Point Township Church', type: 'church' } },
+        ]
+      };
+
+      map.addSource('image-pois-source', {
+        type: 'geojson',
+        data: imagePOIs as any
+      });
+
+      map.addLayer({
+        id: 'image-pois-layer',
+        type: 'symbol',
+        source: 'image-pois-source',
+        layout: {
+          'text-field': ['get', 'name'],
+          'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+          'text-size': 11,
+          'text-offset': [0, 1],
+          'text-anchor': 'top',
+        },
+        paint: {
+          'text-color': '#fcd34d',
+          'text-halo-color': '#0f172a',
+          'text-halo-width': 2
+        }
+      });
+      
+      // Add HTML markers for these POIs
+      imagePOIs.features.forEach(feature => {
+        const el = document.createElement('div');
+        el.className = 'w-3 h-3 rounded-full border-2 border-slate-900 shadow-[0_0_10px_rgba(0,0,0,0.5)]';
+        
+        if (feature.properties.type === 'home') {
+          el.classList.add('bg-blue-400');
+        } else if (feature.properties.type === 'dam') {
+          el.classList.add('bg-purple-400');
+        } else if (feature.properties.type === 'industry') {
+          el.classList.add('bg-slate-400');
+        } else {
+          el.classList.add('bg-amber-400');
+        }
+
+        new maplibregl.Marker({ element: el })
+          .setLngLat(feature.geometry.coordinates as [number, number])
+          .addTo(map);
+      });
+    }
   }, [externalLayers, mapLoaded, theme]);
 
   // Cinematic Isometric Camera Rig (360 Sweep)

@@ -23,6 +23,8 @@ import { InfrastructureHUD } from './hud/InfrastructureHUD';
 import { CrossSectionHUD } from './hud/CrossSectionHUD';
 import { NodeHealthIndicator } from './hud/NodeHealthIndicator';
 import { HydraulicFlowMonitor } from './hud/HydraulicFlowMonitor';
+import { FloodRiskHUD } from './hud/FloodRiskHUD';
+import { RegionalContextHUD } from './hud/RegionalContextHUD';
 import { CinematicFlyoverModal } from './CinematicFlyoverModal';
 import { DigitalTwinOptionsModal } from './DigitalTwinOptionsModal';
 
@@ -32,6 +34,7 @@ export function Dashboard() {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showCinematicModal, setShowCinematicModal] = useState(false);
   const [showDigitalTwinModal, setShowDigitalTwinModal] = useState(false);
+  const [showFloodRisk, setShowFloodRisk] = useState(false);
   const [zenMode, setZenMode] = useState(false);
   const [activeTool, setActiveTool] = useState<string | null>(null);
   const { isMuted, toggleMute, volume, setVolume, setSystemOn, currentSoundscape, setSoundscape } = useAudioSystem();
@@ -124,7 +127,7 @@ export function Dashboard() {
             <div className="flex-1 flex justify-between items-center mt-12 mb-6">
               {/* Left Sidebar */}
               <div className="flex flex-col gap-4 items-start self-start mt-10">
-                <FloodStageHUD />
+                {showFloodRisk ? <FloodRiskHUD /> : <FloodStageHUD />}
                 <LocationContextHUD />
                 <CameraHUD />
               </div>
@@ -134,12 +137,14 @@ export function Dashboard() {
 
               {/* Right Sidebar */}
               <div className="flex flex-col gap-4 items-end self-start mt-10">
+                <RegionalContextHUD />
                 <LayerHUD />
                 <LegendHUD />
                 
                 {/* Floating Tool Bar */}
                 <div className="flex flex-col gap-2 pointer-events-auto">
                   {[
+                    { id: "floodRisk", icon: Activity, label: "Toggle Flood Risk Panel" },
                     { id: "cinematic", icon: Maximize2, label: "Cinematic Flyover" },
                     { id: "digitalTwin", icon: Globe, label: "Digital Twin Analysis" },
                     { id: "select", icon: MousePointer2, label: "Select Feature" },
@@ -152,10 +157,11 @@ export function Dashboard() {
                       onClick={() => {
                         if (tool.id === "cinematic") setShowCinematicModal(true);
                         else if (tool.id === "digitalTwin") setShowDigitalTwinModal(true);
+                        else if (tool.id === "floodRisk") setShowFloodRisk(!showFloodRisk);
                         else setActiveTool(activeTool === tool.id ? null : tool.id);
                       }}
                       className={`p-2.5 backdrop-blur-md border rounded-sm shadow-2xl transition-all cursor-pointer ${
-                        activeTool === tool.id 
+                        (activeTool === tool.id || (tool.id === 'floodRisk' && showFloodRisk))
                           ? "bg-emerald-500 border-emerald-400 text-slate-950" 
                           : "bg-slate-950/80 border-slate-800 text-slate-400 hover:text-emerald-400 hover:border-emerald-500/50"
                       }`}>
