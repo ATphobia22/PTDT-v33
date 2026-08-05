@@ -24,14 +24,9 @@ export function RealityStream() {
       <TilesRenderer
         ref={tilesRef}
         url={POSEY_COUNTY_TILES}
-        onLoad={(tileset: any) => {
-          // Center the world on New Harmony / Point Township
-          const box = new THREE.Box3();
-          tileset.root.getBoundingBox(box);
-          tileset.group.position.copy(box.getCenter(new THREE.Vector3()).multiplyScalar(-1));
-          
+        onLoadModel={({ scene }: any) => {
           // Hybrid Shader Injection (Wetness Overlay for Floods)
-          tileset.model.traverse((child: any) => {
+          scene.traverse((child: any) => {
             if (child.isMesh) {
               child.material.onBeforeCompile = (shader: any) => {
                 shader.uniforms.uFloodStage = { value: 14.2 };
@@ -59,6 +54,18 @@ export function RealityStream() {
               };
             }
           });
+        }}
+        onLoadRootTileset={() => {
+          if (tilesRef.current) {
+            try {
+              const box = new THREE.Box3();
+              if (tilesRef.current.getBoundingBox(box)) {
+                tilesRef.current.group.position.copy(box.getCenter(new THREE.Vector3()).multiplyScalar(-1));
+              }
+            } catch (e) {
+              // Ignore if it fails
+            }
+          }
         }}
       />
     </group>

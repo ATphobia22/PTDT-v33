@@ -3,7 +3,7 @@ import { BlendFunction } from 'postprocessing';
 
 export function CinematicPost() {
   return (
-    <EffectComposer disableNormalPass={false} multisampling={0}>
+    <EffectComposer multisampling={0}>
       {/* 1. Antialiasing (Crisp Edges) */}
       <SMAA />
 
