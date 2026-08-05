@@ -23,11 +23,15 @@ import { InfrastructureHUD } from './hud/InfrastructureHUD';
 import { CrossSectionHUD } from './hud/CrossSectionHUD';
 import { NodeHealthIndicator } from './hud/NodeHealthIndicator';
 import { HydraulicFlowMonitor } from './hud/HydraulicFlowMonitor';
+import { CinematicFlyoverModal } from './CinematicFlyoverModal';
+import { DigitalTwinOptionsModal } from './DigitalTwinOptionsModal';
 
 export function Dashboard() {
   const [activePanel, setActivePanel] = useState<'telemetry' | 'evidence' | 'system' | 'upgrades' | 'ai' | 'archimedes' | 'datum'>('telemetry');
   const { theme, setTheme, toggleTheme } = useTheme();
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showCinematicModal, setShowCinematicModal] = useState(false);
+  const [showDigitalTwinModal, setShowDigitalTwinModal] = useState(false);
   const [zenMode, setZenMode] = useState(false);
   const [activeTool, setActiveTool] = useState<string | null>(null);
   const { isMuted, toggleMute, volume, setVolume, setSystemOn, currentSoundscape, setSoundscape } = useAudioSystem();
@@ -136,15 +140,20 @@ export function Dashboard() {
                 {/* Floating Tool Bar */}
                 <div className="flex flex-col gap-2 pointer-events-auto">
                   {[
+                    { id: "cinematic", icon: Maximize2, label: "Cinematic Flyover" },
+                    { id: "digitalTwin", icon: Globe, label: "Digital Twin Analysis" },
                     { id: "select", icon: MousePointer2, label: "Select Feature" },
                     { id: "measure", icon: Ruler, label: "Measure Distance/Area" },
                     { id: "export", icon: Download, label: "Export Spatial Data" },
-                    { id: "fullscreen", icon: Maximize2, label: "Toggle Fullscreen" }
                   ].map((tool) => (
                     <button 
                       key={tool.id} 
                       title={tool.label} 
-                      onClick={() => setActiveTool(activeTool === tool.id ? null : tool.id)}
+                      onClick={() => {
+                        if (tool.id === "cinematic") setShowCinematicModal(true);
+                        else if (tool.id === "digitalTwin") setShowDigitalTwinModal(true);
+                        else setActiveTool(activeTool === tool.id ? null : tool.id);
+                      }}
                       className={`p-2.5 backdrop-blur-md border rounded-sm shadow-2xl transition-all cursor-pointer ${
                         activeTool === tool.id 
                           ? "bg-emerald-500 border-emerald-400 text-slate-950" 
@@ -178,6 +187,7 @@ export function Dashboard() {
                   <AssetRiskHUD />
                   <HydraulicFlowMonitor />
                   <InfrastructureHUD />
+                  <CrossSectionHUD />
                   <SimulationHUD />
                 </div>
 
@@ -491,6 +501,13 @@ export function Dashboard() {
         </div>
       )}
 
+      {showCinematicModal && (
+        <CinematicFlyoverModal onClose={() => setShowCinematicModal(false)} onPlay={() => console.log('Playing flyover...')} />
+      )}
+      
+      {showDigitalTwinModal && (
+        <DigitalTwinOptionsModal onClose={() => setShowDigitalTwinModal(false)} />
+      )}
       
     </div>
   );

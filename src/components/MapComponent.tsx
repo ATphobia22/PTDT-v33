@@ -1007,9 +1007,18 @@ export function MapComponent({ layers: externalLayers, layerOpacities }: MapComp
   };
 
   return (
-    <div className="relative flex w-full h-full min-h-[500px] overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-900 text-white">
+    <div className={`relative flex w-full h-full min-h-[500px] overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-900 text-white ${theme === 'blueprint' ? 'blueprint-mode' : ''}`}>
       {/* Map Container */}
       <div ref={mapContainer} className="absolute inset-0 w-full h-full" id="maplibre-3d-canvas" />
+      
+      {/* Blueprint Mode Overlay */}
+      {theme === 'blueprint' && (
+        <div className="absolute inset-0 z-[1] pointer-events-none">
+          <div className="absolute inset-0 bg-blue-500/5 mix-blend-overlay" />
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(0,212,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(0,212,255,0.05)_1px,transparent_1px)] bg-[size:40px_40px] opacity-30" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,10,30,0.8)_100%)]" />
+        </div>
+      )}
 
       {/* Scientific Proof Overlay */}
       {showProof && <ScientificProofOverlay onClose={() => setShowProof(false)} />}
