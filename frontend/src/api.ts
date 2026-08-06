@@ -31,3 +31,14 @@ export async function generatePackage(body?: Record<string, number>) {
   });
   return res.json();
 }
+
+export async function postRasResults(cells: any[]) {
+  const batchSize = 5000;
+  for (let i = 0; i < cells.length; i += batchSize) {
+    await fetch(`${BASE}/api/engineering/ras-results`, {
+      method: 'POST',
+      body: JSON.stringify(cells.slice(i, i + batchSize)),
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+}
