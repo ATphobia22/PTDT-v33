@@ -15,11 +15,7 @@ export interface TerrainRenderer {
   dispose: () => void;
 }
 
-/**
- * WebGPU-first renderer selection. If WebGPU, adapter creation, shader load,
- * or texture upload fails, callers can continue with the existing Three.js
- * cinematic scene without changing their camera or DEM source.
- */
+/** WebGPU-first renderer selection with zero-proprietary fallback to Three.js. */
 export async function createTerrainRenderer(options: {
   canvas: HTMLCanvasElement;
   heightBitmap: ImageBitmap;
@@ -34,31 +30,21 @@ export async function createTerrainRenderer(options: {
   try {
     const handles = await createPhotorealTerrainPass(options.canvas, options.heightBitmap);
     if (!handles) {
-      options.fallbackDispose?.();
-      return {
-        mode: 'threejs',
-        handles: null,
-        render: options.fallbackRender,
-        dispose: () => options.fallbackDispose?.(),
-      };
+      return { mode: 'threejs', handles: null, render: options.fallbackRender, dispose: () => options.fallbackDispose?.() };
     }
 
     const render = (timeSeconds: number) => {
       const camera = options.camera;
       camera.updateMatrixWorld(true);
       camera.updateProjectionMatrix();
-
       const view = camera.matrixWorldInverse.clone();
       const projection = camera.projectionMatrix.clone();
       const viewProj = projection.multiply(view);
       const invViewProj = viewProj.clone().invert();
-
-      const viewProjArray = new Float32Array(16);
-      const invViewProjArray = new Float32Array(16);
-      viewProjArray.set(viewProj.elements);
-      invViewProjArray.set(invViewProj.elements);
-
+      const viewProjArray = new Float32Array(viewProj.elements);
+      const invViewProjArray = new Float32Array(invViewProj.elements);
       const p = camera.position;
+
       writeTerrainUniforms(handles.device, handles.uniformBuffer, {
         viewProj: viewProjArray,
         invViewProj: invViewProjArray,
@@ -85,14 +71,8 @@ export async function createTerrainRenderer(options: {
       },
     };
   } catch (error) {
-    console.warn('[PTDT] WebGPU terrain initialization failed — Three.js fallback:', error);
-    options.fallbackDispose?.();
-    return {
-      mode: 'threejs',
-      handles: null,
-      render: options.fallbackRender,
-      dispose: () => options.fallbackDispose?.(),
-    };
+    console.warn('[PTDT] WebGPU terrain initialization failed — continuing with Three.js:', error);
+    return { mode: 'threejs', handles: null, render: options.fallbackRender, dispose: () => options.fallbackDispose?.() };
   }
 }
 
