@@ -55,23 +55,24 @@ export async function createTriCountyTerrainExperience(options: {
     threeComposer.render(timeSeconds);
   };
 
-  let renderer: TerrainRenderer | null = await createTerrainRenderer({
+  let terrainRenderer: TerrainRenderer | null = await createTerrainRenderer({
     canvas: options.canvas,
     heightBitmap: heightPreview,
     camera: options.camera,
     fallbackRender,
     fallbackDispose: disposeFallback,
   });
+  const activeMode = terrainRenderer.mode;
 
-  if (renderer.mode === 'webgpu') disposeFallback();
+  if (activeMode === 'webgpu') disposeFallback();
 
   return {
-    mode: renderer.mode,
-    render: (timeSeconds) => renderer?.render(timeSeconds),
+    mode: activeMode,
+    render: (timeSeconds) => terrainRenderer?.render(timeSeconds),
     dispose: () => {
-      renderer?.dispose();
-      renderer = null;
-      if (renderer?.mode !== 'webgpu') disposeFallback();
+      terrainRenderer?.dispose();
+      terrainRenderer = null;
+      if (activeMode === 'threejs') disposeFallback();
       heightPreview.close();
       heightTexture.dispose();
       threeComposer.dispose();
