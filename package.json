@@ -3,12 +3,16 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "main": "electron/main.cjs",
   "scripts": {
     "dev": "tsx server.ts",
     "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
     "start": "node dist/server.cjs",
     "clean": "rm -rf dist",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "electron:dev": "electron .",
+    "electron:portable": "npm run build && electron-builder --config electron-builder.json --win portable",
+    "build:tri-county": "node scripts/build-tri-county.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
@@ -50,7 +54,7 @@
     "react-markdown": "^10.1.0",
     "recharts": "^2.15.0",
     "suncalc": "^2.0.1",
-    "tailwind-merge": "^3.6.0",
+    "tailwind-merge": "^3.6.1",
     "tailwindcss": "^4.3.3",
     "tailwindcss-animate": "^1.0.7",
     "three": "^0.185.1",
@@ -64,8 +68,10 @@
     "@babel/preset-react": "^8.0.1",
     "@babel/preset-typescript": "^8.0.1",
     "@types/d3": "^7.4.3",
-    "@types/jest": "^30.0.0",
+    "@types/jest": "^30.0.2",
     "@webgpu/types": "^0.1.71",
+    "electron": "^37.0.0",
+    "electron-builder": "^26.0.0",
     "glob": "^13.0.6",
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",
