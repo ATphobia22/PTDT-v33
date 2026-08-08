@@ -1,0 +1,18 @@
+{
+  "appId": "org.ptdt.tricounty.engineering",
+  "productName": "Tri-State River Valley Engineering System",
+  "directories": { "output": "release" },
+  "files": [
+    "dist/**/*",
+    "electron/**/*",
+    "public/**/*",
+    "package.json"
+  ],
+  "win": {
+    "target": [{ "target": "portable", "arch": ["x64"] }],
+    "artifactName": "Tri-State-River-Valley-Engineering-System-${version}-${arch}.${ext}"
+  },
+  "portable": {
+    "requestExecutionLevel": "asInvoker"
+  }
+}
