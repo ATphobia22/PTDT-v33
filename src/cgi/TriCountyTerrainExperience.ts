@@ -20,8 +20,6 @@ export async function createTriCountyTerrainExperience(options: {
 }): Promise<TriCountyTerrainExperience> {
   const heightPreview = await loadHeightPreview(options.heightPreviewUrl);
   const threeComposer = createCinematicComposer(options.renderer, options.scene, options.camera);
-
-  // Three.js fallback scene is created first so the application never flashes to an empty viewport.
   const heightTexture = await loadHeightTexture(options.heightPreviewUrl);
   const terrain = createDemTerrain(heightTexture, {
     size: options.terrainSize ?? 10000,
@@ -42,8 +40,15 @@ export async function createTriCountyTerrainExperience(options: {
     }),
   );
   water.rotation.x = -Math.PI / 2;
-  water.position.y = 0;
   options.scene.add(water);
+
+  const disposeFallback = () => {
+    options.scene.remove(terrain, water);
+    terrain.geometry.dispose();
+    (terrain.material as THREE.Material).dispose();
+    water.geometry.dispose();
+    (water.material as THREE.Material).dispose();
+  };
 
   const fallbackRender = (timeSeconds: number) => {
     water.position.y = Math.sin(timeSeconds * 0.45) * 0.08;
@@ -55,14 +60,10 @@ export async function createTriCountyTerrainExperience(options: {
     heightBitmap: heightPreview,
     camera: options.camera,
     fallbackRender,
-    fallbackDispose: () => {
-      options.scene.remove(terrain, water);
-      terrain.geometry.dispose();
-      (terrain.material as THREE.Material).dispose();
-      water.geometry.dispose();
-      (water.material as THREE.Material).dispose();
-    },
+    fallbackDispose: disposeFallback,
   });
+
+  if (renderer.mode === 'webgpu') disposeFallback();
 
   return {
     mode: renderer.mode,
@@ -70,6 +71,7 @@ export async function createTriCountyTerrainExperience(options: {
     dispose: () => {
       renderer?.dispose();
       renderer = null;
+      if (renderer?.mode !== 'webgpu') disposeFallback();
       heightPreview.close();
       heightTexture.dispose();
       threeComposer.dispose();
