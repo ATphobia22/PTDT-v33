@@ -1,0 +1,69 @@
+{
+  "type": "FeatureCollection",
+  "name": "bonebank_buildings",
+  "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "BONEBANK-RES-001",
+        "name": "13101 Bonebank Road Residence",
+        "height_m": 7.2,
+        "levels": 2,
+        "type": "residential",
+        "lag_ft_navd88": 377.2,
+        "floor_ft_navd88": 378.45
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-88.00105, 37.90370],
+          [-88.00055, 37.90370],
+          [-88.00055, 37.90330],
+          [-88.00105, 37.90330],
+          [-88.00105, 37.90370]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "BONEBANK-BARN-001",
+        "name": "Outbuilding / Barn",
+        "height_m": 5.5,
+        "levels": 1,
+        "type": "agricultural"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-88.00040, 37.90390],
+          [-88.00010, 37.90390],
+          [-88.00010, 37.90365],
+          [-88.00040, 37.90365],
+          [-88.00040, 37.90390]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "BONEBANK-SHED-001",
+        "name": "Equipment Shed",
+        "height_m": 3.8,
+        "levels": 1,
+        "type": "accessory"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-88.00140, 37.90350],
+          [-88.00120, 37.90350],
+          [-88.00120, 37.90335],
+          [-88.00140, 37.90335],
+          [-88.00140, 37.90350]
+        ]]
+      }
+    }
+  ]
+}
