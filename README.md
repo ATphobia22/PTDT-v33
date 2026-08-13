@@ -14,9 +14,10 @@ Vertical datum: **NAVD88**. Horizontal CRS: **EPSG:2966** (Indiana East).
 |---|---|---|
 | BFE | 375.0 ft NAVD88 | Base flood elevation |
 | LAG | 377.2 ft NAVD88 | Lowest adjacent grade |
-| Berm crest | 379.8 ft | +4.8 ft freeboard vector |
+| FFE | 382.5 ft NAVD88 | First floor elevation |
+| Berm crest (design) | 379.8 ft | +4.8 ft freeboard vector vs BFE |
 | Compensatory storage | 1.20× | Volume factor |
-| BCR (BCA export) | 1.41 | Benefit–cost ratio |
+| BCR (BCA export) | 1.41 (eng) / 2.45 (legal PDF) | **PE FEMA Toolkit only** seals final |
 | LOMA clearance | +2.2 ft | LAG − BFE (natural high ground) |
 
 **Operations:** J.T. Myers **stage** triggers (dock 54.93 → house 58.45–58.75 ft) are gage-datum — see `data/property_flood_triggers.json`.
@@ -93,6 +94,9 @@ CI: `.github/workflows/sovereign-ci.yml`
 
 | Topic | Path |
 |---|---|
+| Precision lock & inconsistencies | `docs/ptdt-v33/PRECISION_LOCK_AND_INCONSISTENCIES.md` |
+| Material Truth package | `docs/ptdt-v33/MATERIAL_TRUTH_PACKAGE.md` |
+| Grant stack & BRIC | `docs/ptdt-v33/GRANT_STACK_AND_BRIC.md` |
 | Engineering invariants | `docs/ptdt-v33/ENGINEERING_INVARIANTS.md` |
 | Daubert & solver authority | `docs/ptdt-v33/DAUBERT_AND_SOLVER_AUTHORITY.md` |
 | USGS HEC-RAS model inventory | `docs/ptdt-v33/USGS_HEC_RAS_MODEL_INVENTORY.md` |
@@ -103,10 +107,8 @@ CI: `.github/workflows/sovereign-ci.yml`
 | Caborn-Welborn archaeology | `docs/ptdt-v33/CABORN_WELBORN_ARCHAEOLOGY.md` |
 | Posey / Indiana mapping sources | `docs/ptdt-v33/POSEY_INDIANA_MAPPING_SOURCES.md` |
 | OSM / Overture → Unity buildings | `docs/ptdt-v33/OSM_OVERTURE_UNITY_BUILDINGS.md` |
-| USGS FIM (overview) | `docs/ptdt-v33/USGS_FLOOD_INUNDATION_MAPPING.md` |
 | Berm placement & historical flood | `docs/ptdt-v33/BERM_PLACEMENT_AND_HISTORICAL_FLOOD.md` |
 | Tri-State agency data verification | `docs/ptdt-v33/TRI_STATE_AGENCY_DATA_VERIFICATION.md` |
-| WebGPU dispatch | `docs/ptdt-v33/WEBGPU_DISPATCH.md` |
 | MapLibre + deck.gl | `docs/ptdt-v33/MAPLIBRE_DECKGL_INTEGRATION.md` |
 | Authority matrix | `docs/ptdt-v33/CANONICAL_AUTHORITY_MATRIX.md` |
 
