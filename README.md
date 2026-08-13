@@ -118,7 +118,9 @@ Host: `frontend/src/viz/turbovecGpu.ts` · Shader: `frontend/src/shaders/turbove
 | Engineering invariants | `docs/ptdt-v33/ENGINEERING_INVARIANTS.md` |
 | MapLibre + deck.gl | `docs/ptdt-v33/MAPLIBRE_DECKGL_INTEGRATION.md` |
 | WGSL coalesced access | `docs/ptdt-v33/WGSL_COALESCED_ACCESS.md` |
+| storageBarrier semantics | `docs/ptdt-v33/STORAGE_BARRIER_SEMANTICS.md` |
 | Workgroup barriers | `docs/ptdt-v33/WGSL_WORKGROUP_BARRIERS.md` |
+| WebGPU bind groups | `docs/ptdt-v33/WEBGPU_BIND_GROUPS.md` |
 | WebGPU compute limits | `docs/ptdt-v33/WEBGPU_COMPUTE_LIMITS.md` |
 | Occupancy / bind groups | `docs/ptdt-v33/WEBGPU_OCCUPANCY_AND_BINDGROUPS.md` |
 | Timestamps / alignment | `docs/ptdt-v33/WEBGPU_TIMESTAMPS_ALIGNMENT_BENCHMARKS.md` |
@@ -126,6 +128,7 @@ Host: `frontend/src/viz/turbovecGpu.ts` · Shader: `frontend/src/shaders/turbove
 | GDAL COG install | `docs/ptdt-v33/GDAL_COG_INSTALL.md` |
 | Indiana GIS | `docs/ptdt-v33/INDIANA_GIS_INTEGRATION.md` |
 | Authority matrix | `docs/ptdt-v33/CANONICAL_AUTHORITY_MATRIX.md` |
+| Berm placement & historical flood | `docs/ptdt-v33/BERM_PLACEMENT_AND_HISTORICAL_FLOOD.md` |
 | Tri-State agency data verification | `docs/ptdt-v33/TRI_STATE_AGENCY_DATA_VERIFICATION.md` |
 
 ---
