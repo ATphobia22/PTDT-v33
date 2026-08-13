@@ -94,6 +94,10 @@ CI: `.github/workflows/sovereign-ci.yml`
 | Topic | Path |
 |---|---|
 | Engineering invariants | `docs/ptdt-v33/ENGINEERING_INVARIANTS.md` |
+| Daubert & solver authority | `docs/ptdt-v33/DAUBERT_AND_SOLVER_AUTHORITY.md` |
+| USGS HEC-RAS model inventory | `docs/ptdt-v33/USGS_HEC_RAS_MODEL_INVENTORY.md` |
+| IDNR flood zones / BAFL | `docs/ptdt-v33/IDNR_FLOOD_ZONES_BAFL.md` |
+| OSM building materials / textures | `docs/ptdt-v33/OSM_BUILDING_MATERIALS_TEXTURES.md` |
 | Tucker family flood heritage | `docs/ptdt-v33/TUCKER_FAMILY_FLOOD_HERITAGE.md` |
 | USGS FIM New Harmony (SIR 2016-5119) | `docs/ptdt-v33/USGS_FIM_NEW_HARMONY_SIR2016-5119.md` |
 | Caborn-Welborn archaeology | `docs/ptdt-v33/CABORN_WELBORN_ARCHAEOLOGY.md` |
@@ -103,12 +107,7 @@ CI: `.github/workflows/sovereign-ci.yml`
 | Berm placement & historical flood | `docs/ptdt-v33/BERM_PLACEMENT_AND_HISTORICAL_FLOOD.md` |
 | Tri-State agency data verification | `docs/ptdt-v33/TRI_STATE_AGENCY_DATA_VERIFICATION.md` |
 | WebGPU dispatch | `docs/ptdt-v33/WEBGPU_DISPATCH.md` |
-| storageBarrier semantics | `docs/ptdt-v33/STORAGE_BARRIER_SEMANTICS.md` |
-| Workgroup barriers | `docs/ptdt-v33/WGSL_WORKGROUP_BARRIERS.md` |
-| WebGPU bind groups | `docs/ptdt-v33/WEBGPU_BIND_GROUPS.md` |
-| WebGPU compute limits | `docs/ptdt-v33/WEBGPU_COMPUTE_LIMITS.md` |
 | MapLibre + deck.gl | `docs/ptdt-v33/MAPLIBRE_DECKGL_INTEGRATION.md` |
-| Indiana GIS | `docs/ptdt-v33/INDIANA_GIS_INTEGRATION.md` |
 | Authority matrix | `docs/ptdt-v33/CANONICAL_AUTHORITY_MATRIX.md` |
 
 **Runtime triggers:** `data/property_flood_triggers.json`
