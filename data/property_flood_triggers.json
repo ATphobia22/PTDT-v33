@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "site": "13101 Bonebank Road, Point Township, Posey County, IN",
+  "gage": {
+    "name": "Ohio River at J.T. Myers Lock and Dam",
+    "usgs_id": "03322420",
+    "ahps_id": "UNWK2",
+    "role": "primary_local_stage_ft_above_gage_datum",
+    "note": "Navigational lock/dam — not flood-control storage. Stage is NOT NAVD88 BFE."
+  },
+  "triggers_myers_stage_ft": [
+    {"stage_ft": 54.93, "level": "ALERT", "location": "Dock bank full"},
+    {"stage_ft": 55.55, "level": "WARNING", "location": "Swain Bridge Ohio side begins flowing"},
+    {"stage_ft": 55.85, "level": "WARNING", "location": "Water at top of bridge"},
+    {"stage_ft": 56.25, "level": "WARNING", "location": "Water over top of bridge"},
+    {"stage_ft": 56.75, "level": "DANGER", "location": "Road past bridge floods"},
+    {"stage_ft": 57.25, "level": "DANGER", "location": "Near Bobby house; pole barn -3 ft"},
+    {"stage_ft": 57.85, "level": "DANGER", "location": "Barn; ~5 ft from house"},
+    {"stage_ft": 58.15, "level": "CRITICAL", "location": "Property center"},
+    {"stage_ft": 58.45, "level": "CRITICAL", "location": "House floor (low)"},
+    {"stage_ft": 58.75, "level": "CRITICAL", "location": "House floor (high)"}
+  ],
+  "navd88_material_truth": {
+    "bfe_ft": 375.0,
+    "lag_ft": 377.2,
+    "ffe_ft": 382.5,
+    "clearance_ft": 2.2
+  },
+  "historical_peaks_family": {
+    "2018-03-03": {"stage_ft": 52.61, "note": "Below dock bank-full; road passable to yard/church"}
+  },
+  "source": "Tucker Family Flood History and Heritage workbook, compiled 2026"
+}

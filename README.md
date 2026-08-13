@@ -17,13 +17,16 @@ Vertical datum: **NAVD88**. Horizontal CRS: **EPSG:2966** (Indiana East).
 | Berm crest | 379.8 ft | +4.8 ft freeboard vector |
 | Compensatory storage | 1.20× | Volume factor |
 | BCR (BCA export) | 1.41 | Benefit–cost ratio |
+| LOMA clearance | +2.2 ft | LAG − BFE (natural high ground) |
+
+**Operations:** J.T. Myers **stage** triggers (dock 54.93 → house 58.45–58.75 ft) are gage-datum — see `data/property_flood_triggers.json`.
 
 ---
 
 ## Architecture (presentation vs authority)
 
 ```
-USGS / NOAA / DEM / HEC-RAS / MODFLOW
+USGS / NOAA / DEM / HEC-RAS / MODFLOW / Tucker heritage
               │
               ▼
      PTDT Authoritative State  (NAVD88 · EPSG:2966)
@@ -65,10 +68,9 @@ cd frontend && npm install && npm run dev
 
 ```bash
 docker compose up --build
-# API health: GET http://localhost:8000/api/v1/health
 ```
 
-CI: `.github/workflows/sovereign-ci.yml` (datum asserts, TestClient, Docker build).
+CI: `.github/workflows/sovereign-ci.yml`
 
 ---
 
@@ -87,49 +89,25 @@ CI: `.github/workflows/sovereign-ci.yml` (datum asserts, TestClient, Docker buil
 
 ---
 
-## Frontend stack (OSS only)
-
-| Package | Use |
-|---|---|
-| `maplibre-gl` | Base map, DEM hillshade, COG tiles |
-| `@deck.gl/mapbox` + `@deck.gl/layers` | Interleaved building extrusions |
-| WebGPU + `turbovecCompute.wgsl` | Coalesced band math |
-| `playcanvas` / `three` | Photoreal / splat paths |
-| `3d-tiles-renderer` | Local mesh tiles |
-
-**MapLibre performance knobs** (see `MapLibreDeckHybrid.tsx`):
-
-| Knob | Default | Effect |
-|---|---|---|
-| `maxTileCacheSize` | 250 | DEM + imagery tile retention |
-| `hillshadeMinZoom` | 11 | Cull hillshade below zoom |
-| `extrusionMinZoom` | 13 | Cull deck extrusions below zoom |
-| `frameBudgetMs` | 16 | `render` event budget callback |
-
-**TurboVec:** workgroup **16×16** (256); AoS `vec4` loads; optional `timestamp-query`.  
-Host: `frontend/src/viz/turbovecGpu.ts` · Shader: `frontend/src/shaders/turbovecCompute.wgsl`
-
----
-
 ## Documentation index
 
 | Topic | Path |
 |---|---|
 | Engineering invariants | `docs/ptdt-v33/ENGINEERING_INVARIANTS.md` |
-| MapLibre + deck.gl | `docs/ptdt-v33/MAPLIBRE_DECKGL_INTEGRATION.md` |
-| WGSL coalesced access | `docs/ptdt-v33/WGSL_COALESCED_ACCESS.md` |
+| Tucker family flood heritage | `docs/ptdt-v33/TUCKER_FAMILY_FLOOD_HERITAGE.md` |
+| USGS FIM | `docs/ptdt-v33/USGS_FLOOD_INUNDATION_MAPPING.md` |
+| Berm placement & historical flood | `docs/ptdt-v33/BERM_PLACEMENT_AND_HISTORICAL_FLOOD.md` |
+| Tri-State agency data verification | `docs/ptdt-v33/TRI_STATE_AGENCY_DATA_VERIFICATION.md` |
+| WebGPU dispatch | `docs/ptdt-v33/WEBGPU_DISPATCH.md` |
 | storageBarrier semantics | `docs/ptdt-v33/STORAGE_BARRIER_SEMANTICS.md` |
 | Workgroup barriers | `docs/ptdt-v33/WGSL_WORKGROUP_BARRIERS.md` |
 | WebGPU bind groups | `docs/ptdt-v33/WEBGPU_BIND_GROUPS.md` |
 | WebGPU compute limits | `docs/ptdt-v33/WEBGPU_COMPUTE_LIMITS.md` |
-| Occupancy / bind groups | `docs/ptdt-v33/WEBGPU_OCCUPANCY_AND_BINDGROUPS.md` |
-| Timestamps / alignment | `docs/ptdt-v33/WEBGPU_TIMESTAMPS_ALIGNMENT_BENCHMARKS.md` |
-| Box3D Unity bridge | `docs/ptdt-v33/BOX3D_UNITY_BRIDGE.md` |
-| GDAL COG install | `docs/ptdt-v33/GDAL_COG_INSTALL.md` |
+| MapLibre + deck.gl | `docs/ptdt-v33/MAPLIBRE_DECKGL_INTEGRATION.md` |
 | Indiana GIS | `docs/ptdt-v33/INDIANA_GIS_INTEGRATION.md` |
 | Authority matrix | `docs/ptdt-v33/CANONICAL_AUTHORITY_MATRIX.md` |
-| Berm placement & historical flood | `docs/ptdt-v33/BERM_PLACEMENT_AND_HISTORICAL_FLOOD.md` |
-| Tri-State agency data verification | `docs/ptdt-v33/TRI_STATE_AGENCY_DATA_VERIFICATION.md` |
+
+**Runtime triggers:** `data/property_flood_triggers.json`
 
 ---
 
