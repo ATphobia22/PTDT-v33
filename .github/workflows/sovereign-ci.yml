@@ -1,0 +1,50 @@
+name: PTDT Sovereign CI
+
+on:
+  push:
+    branches: [main, "feature/**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  invariants-and-api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest httpx
+
+      - name: Datum + spatial unit checks
+        run: |
+          python - <<'PY'
+          from backend.hydraulic.vertical_datum import DatumToken, ElevationSample, VerticalDatumEnforcer
+          from backend.spatial.normalization import ProjectedPoint, SpatialNormalizationEngine
+          from backend.core.v34_sovereign_constants import DATUM, CRS, BFE_NAVD88_FT
+
+          assert DATUM == "NAVD88"
+          assert CRS == "EPSG:2966"
+          e = VerticalDatumEnforcer()
+          c = e.to_navd88(ElevationSample(375.0, DatumToken.NAVD88, "test"))
+          assert c.status == "VALID" and abs(c.value_navd88_ft - 375.0) < 1e-9
+          s = SpatialNormalizationEngine()
+          local = s.project_to_local(ProjectedPoint(s.origin_e + 10, s.origin_n + 20, BFE_NAVD88_FT))
+          assert abs(local.x_m - 10) < 1e-9 and abs(local.y_m - 20) < 1e-9
+          print("invariants OK")
+          PY
+
+      - name: Import FastAPI app
+        run: |
+          python -c "from backend.main import app; print(app.title)"
+
+      - name: Docker build (optional)
+        if: github.event_name == 'push'
+        run: docker build -t ptdt-api:ci .
