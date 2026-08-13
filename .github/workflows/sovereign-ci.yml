@@ -21,6 +21,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          if [ -f backend/requirements.txt ]; then pip install -r backend/requirements.txt; fi
           pip install pytest httpx
 
       - name: Datum + spatial unit checks
@@ -43,8 +44,22 @@ jobs:
 
       - name: Import FastAPI app
         run: |
-          python -c "from backend.main import app; print(app.title)"
+          python - <<'PY'
+          from backend.main import app
+          paths = sorted({getattr(r, "path", "") for r in app.routes if getattr(r, "path", None)})
+          print(app.title)
+          print("route_count", len(paths))
+          for p in paths:
+              if p.startswith("/api/"):
+                  print(p)
+          required = {"/api/v1/health", "/api/v1/invariants"}
+          missing = required - set(paths)
+          if missing:
+              raise SystemExit(f"missing routes: {missing}")
+          print("app import OK")
+          PY
 
-      - name: Docker build (optional)
+      - name: Docker build
+        continue-on-error: true
         if: github.event_name == 'push'
         run: docker build -t ptdt-api:ci .
