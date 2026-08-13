@@ -10,10 +10,10 @@
 | Layer | Finding |
 |---|---|
 | Native | Global / Sequential optimization of **flow–roughness factors** vs observed stages |
-| External | `factor' = factor \u00d7 (1 + gain\u00b7tanh(\u0394peak))`, clamp [0.5, 2.0]; **re-run RAS** after each update |
-| Gate | RMSE \u2264 **0.25 ft** \u2192 OK |
-| Seed | Channel 0.035 / overbank **0.045**; zones 5k\u201380k cfs |
-| Soft-fail | Missing `rascmd` \u2192 SKIPPED |
+| External | `factor' = factor × (1 + gain·tanh(Δpeak))`, clamp [0.5, 2.0]; **re-run RAS** after each update |
+| Gate | RMSE ≤ **0.25 ft** → OK |
+| Seed | Channel 0.035 / overbank **0.045**; zones 5k–80k cfs |
+| Soft-fail | Missing `rascmd` → SKIPPED |
 
 Code: `backend/services/hecras_roughness_calibration.py`
 
@@ -28,7 +28,7 @@ Code: `backend/services/hecras_roughness_calibration.py`
 | Substantial damage acquisition | Waiver path when eligible |
 | Pre-calculated benefits | Only for FEMA-listed project types |
 
-**BCR \u2265 1.0** required. Sealed BCR = Toolkit or accepted streamlined artifact + SHA-256. Dual **1.41 / 2.45** until sealed.
+**BCR ≥ 1.0** required. Sealed BCR = Toolkit or accepted streamlined artifact + SHA-256. Dual **1.41 / 2.45** until sealed.
 
 ---
 
@@ -40,7 +40,7 @@ Code: `backend/services/hecras_roughness_calibration.py`
 | Ohio River | 58 XS; NFHL lettered example **K @ 372.2 ft** |
 | Site BFE | Still **375.0** Material Truth (not replaced by single XS) |
 | USGS 24K | Mount Carmel / New Harmony / Mount Vernon / Caborn quads indexed |
-| Indiana elevation REST | `di-ingov.img.arcgis.com` \u2026 `Indiana_2016_2020_Elevation` |
+| Indiana elevation REST | `di-ingov.img.arcgis.com` … `Indiana_2016_2020_Elevation` |
 | INDOTWISE 5.1 | CAD/WMS/WFS for plan production |
 | WRHCC 2004 | Heritage corridor policy narrative |
 
@@ -53,8 +53,8 @@ Code: `backend/services/hecras_roughness_calibration.py`
 | BFE / LAG / FFE | **375.0 / 377.2 / 382.5** ft NAVD88 |
 | LOMA clearance | **+2.2 ft** |
 | FIM | Presentation only |
-| Storage | **1.20\u00d7** |
-| \u00a7204 | Navigation nexus; in-kind unbooked |
+| Storage | **1.20×** |
+| §204 | Navigation nexus; in-kind unbooked |
 
 ---
 
@@ -74,3 +74,9 @@ Code: `backend/services/hecras_roughness_calibration.py`
 - `INDIANA_GIS_ASSETS_INGESTED.md`  
 - `FEMA_BCA_TOOLKIT_FLOOD_BENEFITS.md`  
 - `HEC_RAS_ROUGHNESS_AUTOMATION.md`  
+
+---
+
+## Commit status
+
+Updates for heuristics, BCA streamlined paths, Indiana GIS ingest, and this refined summary are on branch `main` via GitHub connector.

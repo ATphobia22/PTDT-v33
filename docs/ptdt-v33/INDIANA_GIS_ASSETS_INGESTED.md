@@ -6,6 +6,7 @@
 |---|---|---|
 | IDNR effective flood XS | `data/flood_xs/FLOOD_XS_EFFECTIVE_DNR.csv` | **908** rows · **all NAVD88** · DFIRM **18129C** |
 | USGS 24K quads | `data/geo/24K_USGS_Quadrangle_Boundaries.csv` | Mount Carmel, New Harmony, Mount Vernon, Caborn, … |
+| Ohio River XS summary | `data/flood_xs/ohio_river_xs_navd88_summary.json` | 58 Ohio XS subset for context |
 
 ## Flood XS summary (Posey panel 18129C)
 
