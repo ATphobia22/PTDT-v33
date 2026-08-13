@@ -8,16 +8,27 @@ using UnityEngine;
 namespace PTDT.Box3D
 {
     /// <summary>
-    /// Connects to the PTDT Python WebSocket broadcaster and feeds seal-verified
-    /// JSON envelopes into PTDTBox3DStateSynchronizer (main-thread apply).
+    /// Resilient WebSocket client for seal-verified PTDT physics envelopes.
+    /// Network receive runs off the main thread; ApplyJsonState is main-thread only.
     /// </summary>
     [RequireComponent(typeof(PTDTBox3DStateSynchronizer))]
     [DisallowMultipleComponent]
     public sealed class PTDTBox3DWebSocketClient : MonoBehaviour
     {
+        public enum ConnectionState
+        {
+            Disconnected = 0,
+            Connecting = 1,
+            Connected = 2,
+            Reconnecting = 3,
+        }
+
         [SerializeField] private string webSocketUrl = "ws://127.0.0.1:8080";
         [SerializeField] private bool autoConnect = true;
         [SerializeField] private int receiveBufferBytes = 64 * 1024;
+        [SerializeField] private float initialReconnectSeconds = 1.0f;
+        [SerializeField] private float maxReconnectSeconds = 30.0f;
+        [SerializeField] private bool sendSequenceAcks = true;
 
         private PTDTBox3DStateSynchronizer synchronizer;
         private ClientWebSocket webSocket;
@@ -27,6 +38,11 @@ namespace PTDT.Box3D
         private bool hasNewPayload;
         private readonly object payloadLock = new object();
 
+        private ConnectionState state = ConnectionState.Disconnected;
+        private float reconnectSeconds;
+
+        public ConnectionState State => state;
+
         private void Awake()
         {
             synchronizer = GetComponent<PTDTBox3DStateSynchronizer>();
@@ -34,12 +50,17 @@ namespace PTDT.Box3D
                 throw new InvalidOperationException("PTDTBox3DWebSocketClient requires PTDTBox3DStateSynchronizer.");
             if (receiveBufferBytes < 4096)
                 throw new InvalidOperationException("Receive buffer must be at least 4KB.");
+            if (!float.IsFinite(initialReconnectSeconds) || initialReconnectSeconds <= 0.0f)
+                throw new InvalidOperationException("initialReconnectSeconds must be finite and > 0.");
+            if (!float.IsFinite(maxReconnectSeconds) || maxReconnectSeconds < initialReconnectSeconds)
+                throw new InvalidOperationException("maxReconnectSeconds must be >= initialReconnectSeconds.");
+            reconnectSeconds = initialReconnectSeconds;
         }
 
         private void Start()
         {
             if (autoConnect)
-                _ = ConnectAndListenAsync();
+                _ = ConnectLoopAsync();
         }
 
         private void Update()
@@ -51,69 +72,116 @@ namespace PTDT.Box3D
                 jsonToApply = latestJsonPayload;
                 hasNewPayload = false;
             }
-            if (!string.IsNullOrEmpty(jsonToApply))
-                synchronizer.ApplyJsonState(jsonToApply);
+            if (string.IsNullOrEmpty(jsonToApply)) return;
+            synchronizer.ApplyJsonState(jsonToApply);
         }
 
         private void OnDestroy()
         {
             cancellationTokenSource?.Cancel();
-            webSocket?.Dispose();
+            DisposeSocket();
         }
 
-        private async Task ConnectAndListenAsync()
+        public void Connect()
         {
-            cancellationTokenSource = new CancellationTokenSource();
-            while (!cancellationTokenSource.IsCancellationRequested)
+            if (cancellationTokenSource == null || cancellationTokenSource.IsCancellationRequested)
             {
+                cancellationTokenSource = new CancellationTokenSource();
+                _ = ConnectLoopAsync();
+            }
+        }
+
+        public void Disconnect()
+        {
+            cancellationTokenSource?.Cancel();
+            DisposeSocket();
+            state = ConnectionState.Disconnected;
+        }
+
+        private async Task ConnectLoopAsync()
+        {
+            if (cancellationTokenSource == null)
+                cancellationTokenSource = new CancellationTokenSource();
+            var token = cancellationTokenSource.Token;
+            while (!token.IsCancellationRequested)
+            {
+                state = state == ConnectionState.Disconnected
+                    ? ConnectionState.Connecting
+                    : ConnectionState.Reconnecting;
                 webSocket = new ClientWebSocket();
                 try
                 {
-                    Debug.Log($"[PTDT] Connecting Box3D physics stream {webSocketUrl}");
-                    await webSocket.ConnectAsync(new Uri(webSocketUrl), cancellationTokenSource.Token);
+                    Debug.Log($"[PTDT] Connecting physics stream {webSocketUrl} ({state})");
+                    await webSocket.ConnectAsync(new Uri(webSocketUrl), token);
+                    state = ConnectionState.Connected;
+                    reconnectSeconds = initialReconnectSeconds;
                     Debug.Log("[PTDT] Physics stream connected.");
                     synchronizer.ResetSequence();
-                    await ReceiveLoopAsync(webSocket, cancellationTokenSource.Token);
+                    await ReceiveLoopAsync(webSocket, token);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
                 }
                 catch (Exception e)
                 {
-                    Debug.LogWarning($"[PTDT] WebSocket failed: {e.Message}. Retry in 3s.");
+                    Debug.LogWarning($"[PTDT] WebSocket failed: {e.Message}. Retry in {reconnectSeconds:0.0}s.");
                 }
                 finally
                 {
-                    webSocket?.Dispose();
+                    DisposeSocket();
+                    if (state != ConnectionState.Disconnected)
+                        state = ConnectionState.Reconnecting;
                 }
-
                 try
                 {
-                    await Task.Delay(3000, cancellationTokenSource.Token);
+                    await Task.Delay(TimeSpan.FromSeconds(reconnectSeconds), token);
                 }
-                catch (TaskCanceledException)
+                catch (OperationCanceledException)
                 {
-                    return;
+                    break;
                 }
+                reconnectSeconds = Math.Min(reconnectSeconds * 2.0f, maxReconnectSeconds);
             }
+            state = ConnectionState.Disconnected;
         }
 
         private async Task ReceiveLoopAsync(ClientWebSocket ws, CancellationToken token)
         {
             var buffer = new byte[receiveBufferBytes];
+            var messageBuffer = new StringBuilder(receiveBufferBytes);
             while (ws.State == WebSocketState.Open && !token.IsCancellationRequested)
             {
-                var result = await ws.ReceiveAsync(new ArraySegment<byte>(buffer), token);
-                if (result.MessageType == WebSocketMessageType.Close)
+                messageBuffer.Clear();
+                WebSocketReceiveResult result;
+                do
                 {
-                    await ws.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, token);
-                    return;
+                    result = await ws.ReceiveAsync(new ArraySegment<byte>(buffer), token);
+                    if (result.MessageType == WebSocketMessageType.Close)
+                    {
+                        await ws.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, token);
+                        return;
+                    }
+                    if (result.MessageType != WebSocketMessageType.Text)
+                        continue;
+                    messageBuffer.Append(Encoding.UTF8.GetString(buffer, 0, result.Count));
                 }
+                while (!result.EndOfMessage);
 
-                string json = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                string json = messageBuffer.ToString();
+                if (string.IsNullOrEmpty(json)) continue;
                 lock (payloadLock)
                 {
                     latestJsonPayload = json;
                     hasNewPayload = true;
                 }
             }
+        }
+
+        private void DisposeSocket()
+        {
+            try { webSocket?.Dispose(); } catch (Exception) { }
+            webSocket = null;
         }
     }
 }
