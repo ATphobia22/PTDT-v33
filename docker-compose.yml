@@ -1,26 +1,20 @@
 services:
-  postgres:
-    image: postgis/postgis:16-3.4
-    container_name: ptdt_postgis
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
     environment:
-      POSTGRES_USER: ptdt
-      POSTGRES_PASSWORD: ptdt
-      POSTGRES_DB: ptdt
-    ports:
-      - "8087:5432"
+      - PTDT_DATUM=NAVD88
+      - PTDT_CRS=EPSG:2966
+      - PTDT_FAIL_CLOSED=1
     volumes:
-      - ./volumes/postgresql_data:/var/lib/postgresql/data
-      - ./volumes/postgresql_init.d:/docker-entrypoint-initdb.d
+      - ./data:/app/data:ro
+      - ./render_output:/app/render_output
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ptdt"]
-      interval: 5s
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
       timeout: 5s
-      retries: 10
-
-  qgis:
-    image: kartoza/qgis-server:latest
-    container_name: ptdt_qgis
-    ports:
-      - "8085:80"
-    depends_on:
-      - postgres
+      retries: 3
+    restart: unless-stopped
