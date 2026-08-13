@@ -1,0 +1,8 @@
+{
+  "panel": "18129C",
+  "datum": "NAVD88",
+  "count": 58,
+  "note": "Subset of FLOOD_XS_EFFECTIVE_DNR.csv \u2014 context only; site BFE remains 375.0",
+  "site_bfe_ft_navd88": 375.0,
+  "example_nfhl_lettered": {"xs_ltr": "K", "wsel_reg": 372.2}
+}
