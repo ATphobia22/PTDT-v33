@@ -87,7 +87,6 @@ def suggest_factor_update(
     Native RAS optimizer supersedes this when available inside the engine.
     """
     delta = computed_peak_ft - observed_peak_ft
-    # Higher n → higher WS in backwater-dominated reaches (sign convention)
     new_f = current_factor * (1.0 + gain * math.tanh(delta))
     return max(min_factor, min(max_factor, new_f))
 
@@ -116,10 +115,7 @@ def export_plan_json(plan: CalibrationPlan, path: str | Path) -> Path:
 
 
 def run_calibration_iteration(plan: CalibrationPlan) -> dict:
-    """
-    One outer iteration: soft-fail RAS compute + return status envelope.
-    Does not invent hydrographs — caller supplies computed stages for scoring.
-    """
+    """One outer iteration: soft-fail RAS compute + status envelope."""
     ras: RasCmdResult = run_rascmd_compute(plan.project_path, silent=True)
     return {
         "ras": asdict(ras),

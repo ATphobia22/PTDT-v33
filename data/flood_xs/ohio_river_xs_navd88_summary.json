@@ -2,7 +2,15 @@
   "panel": "18129C",
   "datum": "NAVD88",
   "count": 58,
-  "note": "Subset of FLOOD_XS_EFFECTIVE_DNR.csv \u2014 context only; site BFE remains 375.0",
   "site_bfe_ft_navd88": 375.0,
-  "example_nfhl_lettered": {"xs_ltr": "K", "wsel_reg": 372.2}
+  "site_lag_ft_navd88": 377.2,
+  "note": "Context only — do not overwrite Material Truth BFE with single XS WSEL",
+  "wsel_min": 370.2,
+  "wsel_max": 393.1264,
+  "example_nfhl_lettered": {"xs_ltr": "K", "wsel_reg": 372.2},
+  "nfhl_lettered_examples": [
+    {"xs_ltr": "K", "wsel_reg": 372.2, "v_datum": "NAVD88", "source": "NFHL"},
+    {"xs_ltr": "J", "wsel_reg": 371.9, "v_datum": "NAVD88", "source": "18129C_STUDY3"},
+    {"xs_ltr": "C", "wsel_reg": 370.2, "v_datum": "NAVD88", "source": "18129C_STUDY3"}
+  ]
 }
