@@ -49,7 +49,7 @@ Host helpers: `UNIFORM_OFFSET_ALIGNMENT_DEFAULT = 256`, `assertBufferOffsetAlign
 ## Validation checklist (CI / boot)
 
 | Check | Action on failure |
-|---|---|
+|---|---|---|
 | `navigator.gpu` missing | CPU fallback |
 | `requestAdapter()` null | CPU fallback |
 | Workgroup 16×16 vs `maxComputeInvocationsPerWorkgroup` | Cap WG or fail closed |
@@ -71,3 +71,21 @@ if (WORKGROUP * WORKGROUP > maxInv) {
 - `frontend/src/shaders/turbovecCompute.wgsl`
 - `docs/ptdt-v33/WGSL_WORKGROUP_BARRIERS.md`
 - `docs/ptdt-v33/WEBGPU_TIMESTAMPS_ALIGNMENT_BENCHMARKS.md`
+
+---
+
+## Texture + storage interaction (limits angle)
+
+| Item | Typical constraint | Example check |
+|---|---|---|
+| Storage texture formats | Subset of formats (e.g. `rgba8unorm`, `r32float`) | `texture_storage_2d<rgba8unorm, write>` |
+| `maxStorageTexturesPerShaderStage` | Device limit (often ≥ 4) | Count `@binding` storage textures |
+| `textureBarrier()` vs limits | No extra limit; still intra-workgroup only | See `WGSL_WORKGROUP_BARRIERS.md` |
+| Max texture 2D size | `maxTextureDimension2D` (often 8192) | `width/height ≤ limit` before dispatch |
+
+```ts
+const maxDim = device.limits.maxTextureDimension2D;
+if (width > maxDim || height > maxDim) {
+  throw new Error(`Texture ${width}x${height} exceeds maxTextureDimension2D=${maxDim}`);
+}
+```
