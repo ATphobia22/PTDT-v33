@@ -1,0 +1,57 @@
+name: Cinematic Runtime Validation
+
+on:
+  push:
+    branches:
+      - main
+      - feature/cinematic-runtime-core-fixes
+      - "feature/**"
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validate-python-contracts:
+    name: Verify Python Physics Envelope
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pydantic pytest
+          pip install redis websockets || true
+
+      - name: Test Box3D Contract Sealing + Diff
+        run: |
+          python -c "from engine.cinematic_runtime.box3d_contract import Box3DPhysicsState, seal_state, verify_state_seal; s=seal_state(1,'ci'); assert verify_state_seal(s); print('Contract syntax OK')"
+          python -m pytest tests/test_box3d_contract.py -q
+
+  validate-unity-bridge:
+    name: Unity Box3D Bridge Compilation
+    runs-on: ubuntu-latest
+    if: ${{ secrets.UNITY_LICENSE != '' }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Build Unity Cinematic Client
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          targetPlatform: StandaloneWindows64
+          unityVersion: 6000.0.0f1
+          projectPath: .
+          buildMethod: UnityEditor.SyncVS.SyncSolution
