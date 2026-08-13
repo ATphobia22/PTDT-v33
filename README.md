@@ -126,6 +126,7 @@ Host: `frontend/src/viz/turbovecGpu.ts` · Shader: `frontend/src/shaders/turbove
 | GDAL COG install | `docs/ptdt-v33/GDAL_COG_INSTALL.md` |
 | Indiana GIS | `docs/ptdt-v33/INDIANA_GIS_INTEGRATION.md` |
 | Authority matrix | `docs/ptdt-v33/CANONICAL_AUTHORITY_MATRIX.md` |
+| Tri-State agency data verification | `docs/ptdt-v33/TRI_STATE_AGENCY_DATA_VERIFICATION.md` |
 
 ---
 

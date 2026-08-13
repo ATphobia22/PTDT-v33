@@ -65,6 +65,16 @@ if (WORKGROUP * WORKGROUP > maxInv) {
 
 ---
 
+## Barrier-related limits (reminder)
+
+| Item | Constraint | Example |
+|---|---|---|
+| Barrier scope | Workgroup only | No device-wide `memoryBarrier` in WGSL |
+| Shared memory size | `maxComputeWorkgroupStorageSize` (≥16 KiB base) | `var<workgroup> tile: array<f32, 256>` ≈ 1 KiB |
+| Invocations at barrier | Uniform CF; ≤ max invocations | 16×16 = 256 |
+
+See `WGSL_WORKGROUP_BARRIERS.md` for divergence rules.
+
 ## Related
 
 - `frontend/src/viz/turbovecGpu.ts`
