@@ -1,80 +1,76 @@
-# Key findings summary — refined (roughness automation · BCA · FIA)
+# Key findings summary — refined (calibration heuristics · BCA streamlined · GIS)
 
 **Date:** 2026-08-13  
-**System:** PTDT-v33 · 13101 Bonebank Road, Point Township, IN  
-**Use:** Engineering appendix / grant package
+**System:** PTDT-v33 · 13101 Bonebank Road, Point Township, Posey County, IN  
 
 ---
 
-## A. Roughness calibration (automated + native)
+## 1. HEC-RAS automated calibration heuristics
 
-| Item | Finding |
+| Layer | Finding |
 |---|---|
-| Dominant parameter | Manning **n** |
-| Native RAS | Unsteady **Automated Roughness Calibration** (Global / Sequential) adjusts **flow–roughness factors** to observed stages |
-| 2D | **Calibration Regions** + optional outflow-based factors (RAS ≥ 6.6) |
-| PTDT code | `hecras_roughness_calibration.py` orchestrates plan export, soft-fail compute, RMSE scoring, factor suggestions |
-| Seed | Floodplain **n = 0.045** (0.030–0.050 sensitivity) |
-| Anchor gage | **03378500** (+ 2013 HWMs); Myers stages ops-only |
+| Native | Global / Sequential optimization of **flow–roughness factors** vs observed stages |
+| External | `factor' = factor \u00d7 (1 + gain\u00b7tanh(\u0394peak))`, clamp [0.5, 2.0]; **re-run RAS** after each update |
+| Gate | RMSE \u2264 **0.25 ft** \u2192 OK |
+| Seed | Channel 0.035 / overbank **0.045**; zones 5k\u201380k cfs |
+| Soft-fail | Missing `rascmd` \u2192 SKIPPED |
 
-**Rule:** Uncalibrated n excluded from sealed No-Rise exhibits.
+Code: `backend/services/hecras_roughness_calibration.py`
 
 ---
 
-## B. FEMA BCA Toolkit — flood benefits
+## 2. FEMA BCA streamlined paths
 
-| Item | Finding |
+| Path | Use |
 |---|---|
-| Sealed BCR source | **Toolkit output only** (BCR ≥ 1.0 = cost-effective) |
-| Paths | Full BCA or streamlined (< $1M / waiver / pre-calculated benefits) |
-| Flood benefits | Avoided structure/content (DDF×values), displacement, other Toolkit categories over project life |
-| Site elevations | BFE **375.0** · LAG **377.2** · FFE **382.5** NAVD88 · **+2.2 ft** clearance |
-| Dual constants | Eng **1.41** / Legal PDF **2.45** → `UNVERIFIED_DUAL` until Toolkit SHA sealed |
+| Full Toolkit | Preferred for BRIC structure/hydraulic story |
+| Cost < **$1M** | Streamlined documentation may apply |
+| Substantial damage acquisition | Waiver path when eligible |
+| Pre-calculated benefits | Only for FEMA-listed project types |
 
-**Rule:** HEC-FIA damages ≠ BCA Toolkit BCR.
+**BCR \u2265 1.0** required. Sealed BCR = Toolkit or accepted streamlined artifact + SHA-256. Dual **1.41 / 2.45** until sealed.
 
 ---
 
-## C. HEC-FIA (manuals searched)
+## 3. GIS / flood XS accuracy (files searched)
 
-| Manual | URL |
+| Asset | Finding |
 |---|---|
-| Purpose (v3.4) | https://www.hec.usace.army.mil/confluence/fiadocs/fiaum/v3.4/introduction/purpose |
-| Tech Ref | https://www.hec.usace.army.mil/confluence/fiadocs/fiatechref/latest |
-
-**Direct damage:** $D_i = d_i(\mathrm{depth},\mathrm{occupancy}) \times v_i$; depth ≈ max depth − foundation height; depth×velocity threshold can force 100% loss.
-
-**Estimates:** structure/content/car, ag, life loss, indirect, critical infrastructure, flood damages reduced.
-
-**Role in PTDT:** single-event consequence narrative — not LOMA, not sealed BCR.
+| `FLOOD_XS_EFFECTIVE_DNR.csv` | **908** XS, **NAVD88**, panel **18129C** |
+| Ohio River | 58 XS; NFHL lettered example **K @ 372.2 ft** |
+| Site BFE | Still **375.0** Material Truth (not replaced by single XS) |
+| USGS 24K | Mount Carmel / New Harmony / Mount Vernon / Caborn quads indexed |
+| Indiana elevation REST | `di-ingov.img.arcgis.com` \u2026 `Indiana_2016_2020_Elevation` |
+| INDOTWISE 5.1 | CAD/WMS/WFS for plan production |
+| WRHCC 2004 | Heritage corridor policy narrative |
 
 ---
 
-## D. Cross-cut Material Truth
+## 4. Material Truth (unchanged)
 
 | Quantity | Value |
 |---|---|
-| Datum | NAVD88 |
-| LOMA | Pure natural high ground |
+| BFE / LAG / FFE | **375.0 / 377.2 / 382.5** ft NAVD88 |
+| LOMA clearance | **+2.2 ft** |
 | FIM | Presentation only |
-| Storage | 1.20× compensatory |
-| §204 | Navigation nexus; in-kind unbooked |
+| Storage | **1.20\u00d7** |
+| \u00a7204 | Navigation nexus; in-kind unbooked |
 
 ---
 
-## E. Next actions
+## 5. Next actions
 
-1. Licensed RAS + `RASCMD` → real automated roughness runs  
-2. PE FEMA BCA Toolkit → seal BCR  
-3. Optional HEC-FIA 3.4 on sealed depth grids + structure inventory  
-4. BAFL Posey + FIM grids into `data/`  
+1. RAS licensed + native auto-cal on 03378500 stages  
+2. PE BCA Toolkit (or documented streamlined eligibility)  
+3. Keep flood XS as context; site No-Rise from sealed RAS  
+4. Local COG DEM over REST for runtime hillshade  
 
 ---
 
 ## Doc index
 
-- `HEC_RAS_ROUGHNESS_AUTOMATION.md`
-- `FEMA_BCA_TOOLKIT_FLOOD_BENEFITS.md`
-- `HEC_FIA_MANUALS_INDEX.md`
-- `HEC_RAS_ROUGHNESS_CALIBRATION.md`
-- `BCR_SOURCE_CONFLICT.md`
+- `HEC_RAS_CALIBRATION_HEURISTICS.md`  
+- `FEMA_BCA_STREAMLINED_PATHS.md`  
+- `INDIANA_GIS_ASSETS_INGESTED.md`  
+- `FEMA_BCA_TOOLKIT_FLOOD_BENEFITS.md`  
+- `HEC_RAS_ROUGHNESS_AUTOMATION.md`  
