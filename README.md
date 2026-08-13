@@ -32,7 +32,7 @@ USGS / NOAA / DEM / HEC-RAS / MODFLOW / Tucker heritage
      PTDT Authoritative State  (NAVD88 · EPSG:2966)
               │
          Redis Streams (optional)
-       ┌──────┴──────┐
+       ┌──────┬──────┐
        ▼             ▼
   WebGPU Runtime   Unity Runtime
   TurboVec WGSL      Box3D 0.8.1 (derived only)
@@ -95,7 +95,11 @@ CI: `.github/workflows/sovereign-ci.yml`
 |---|---|
 | Engineering invariants | `docs/ptdt-v33/ENGINEERING_INVARIANTS.md` |
 | Tucker family flood heritage | `docs/ptdt-v33/TUCKER_FAMILY_FLOOD_HERITAGE.md` |
-| USGS FIM | `docs/ptdt-v33/USGS_FLOOD_INUNDATION_MAPPING.md` |
+| USGS FIM New Harmony (SIR 2016-5119) | `docs/ptdt-v33/USGS_FIM_NEW_HARMONY_SIR2016-5119.md` |
+| Caborn-Welborn archaeology | `docs/ptdt-v33/CABORN_WELBORN_ARCHAEOLOGY.md` |
+| Posey / Indiana mapping sources | `docs/ptdt-v33/POSEY_INDIANA_MAPPING_SOURCES.md` |
+| OSM / Overture → Unity buildings | `docs/ptdt-v33/OSM_OVERTURE_UNITY_BUILDINGS.md` |
+| USGS FIM (overview) | `docs/ptdt-v33/USGS_FLOOD_INUNDATION_MAPPING.md` |
 | Berm placement & historical flood | `docs/ptdt-v33/BERM_PLACEMENT_AND_HISTORICAL_FLOOD.md` |
 | Tri-State agency data verification | `docs/ptdt-v33/TRI_STATE_AGENCY_DATA_VERIFICATION.md` |
 | WebGPU dispatch | `docs/ptdt-v33/WEBGPU_DISPATCH.md` |
