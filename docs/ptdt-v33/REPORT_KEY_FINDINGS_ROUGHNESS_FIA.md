@@ -1,80 +1,80 @@
-# Key findings summary — roughness calibration & HEC-FIA (report)
+# Key findings summary — refined (roughness automation · BCA · FIA)
 
 **Date:** 2026-08-13  
-**System:** PTDT-v33 / Point Township (13101 Bonebank Rd)  
-**Audience:** Engineering + grant package appendix
+**System:** PTDT-v33 · 13101 Bonebank Road, Point Township, IN  
+**Use:** Engineering appendix / grant package
 
 ---
 
-## 1. HEC-RAS roughness calibration
+## A. Roughness calibration (automated + native)
 
-### Finding
-Manning **n** is the dominant adjustable hydraulic parameter; calibrated n from observed stages outperforms table-only estimates for regulatory work.
-
-### Practice locked for PTDT
-1. Geometry before n  
-2. Channel n at bankfull, then overbank on large events  
-3. Downstream → upstream progression  
-4. Unsteady refinement with optional **flow–roughness factors**  
-5. 2D: land-cover base + **Calibration Regions** (+ region outflow factors in RAS ≥ 6.6)  
-6. Built-in **Automated Roughness Calibration** available for unsteady 1D (Global / Sequential) when observed stage series exist  
-
-### Site anchors
-- Seed floodplain **n = 0.045** (document 0.030–0.050 sensitivity)  
-- Calibrate toward USGS **03378500** rating + 2013 HWMs (SIR 2016-5119 ranges)  
-- Myers **03322420** stages remain **ops only** (not NAVD88 BFE)  
-
-### Authority
-Uncalibrated n must not enter sealed No-Rise / LOMA hydro exhibits. Headless `rascmd` soft-fails **SKIPPED** if licensed RAS is absent.
-
----
-
-## 2. USGS / USACE HEC-FIA tools
-
-### Finding
-**HEC-FIA** is USACE HEC’s **Flood Impact Analysis** tool for **single-event consequences** (structure/content/car, agriculture, simplified life loss, critical infrastructure, flood damages reduced). Current public line **3.4.x**.
-
-### Inputs
-HEC-RAS (or other) depth/arrival/duration grids and/or DSS hydrographs + structure/ag inventories (NSI-capable).
-
-### Explicit non-roles
-- Not a 2D/1D hydraulic engine  
-- Not a replacement for **FEMA BCA Toolkit** sealed BCR  
-- Not LOMA elevation evidence  
-
-### PTDT use
-Optional consequence layer on sealed RAS scenarios for grant narrative and emergency/impact reporting; keep **BCR_STATUS** dual until PE Toolkit seals 1.41 vs 2.45 conflict.
-
----
-
-## 3. Cross-cutting PTDT facts (for report body)
-
-| Item | Value |
+| Item | Finding |
 |---|---|
-| BFE / LAG / FFE | 375.0 / 377.2 / 382.5 ft **NAVD88** |
-| LOMA path | Pure natural high ground (**+2.2 ft**) |
-| FIM grids | **Presentation only** (SIR 2016-5119) |
-| BCR | Eng **1.41** vs Legal PDF **2.45** → Toolkit seals |
-| §204 | CAP beneficial use — navigation nexus required; in-kind unbooked |
-| Compensatory storage | **1.20×** cut ≥ fill |
+| Dominant parameter | Manning **n** |
+| Native RAS | Unsteady **Automated Roughness Calibration** (Global / Sequential) adjusts **flow–roughness factors** to observed stages |
+| 2D | **Calibration Regions** + optional outflow-based factors (RAS ≥ 6.6) |
+| PTDT code | `hecras_roughness_calibration.py` orchestrates plan export, soft-fail compute, RMSE scoring, factor suggestions |
+| Seed | Floodplain **n = 0.045** (0.030–0.050 sensitivity) |
+| Anchor gage | **03378500** (+ 2013 HWMs); Myers stages ops-only |
+
+**Rule:** Uncalibrated n excluded from sealed No-Rise exhibits.
 
 ---
 
-## 4. Recommended next technical steps
+## B. FEMA BCA Toolkit — flood benefits
 
-1. Install licensed HEC-RAS; wire `RASCMD` for real plan compute  
-2. Build 2D Calibration Regions over Bonebank / confluence domain  
-3. Download BAFL Posey + FIM depth grids to `data/geo/bafl_posey/` and `data/flood_xs/usgs_fim_new_harmony/`  
-4. Optional: stand up HEC-FIA 3.4 with NSI + RAS depth grid for scenario damages  
-5. Run FEMA BCA Toolkit under PE for sealed BCR  
+| Item | Finding |
+|---|---|
+| Sealed BCR source | **Toolkit output only** (BCR ≥ 1.0 = cost-effective) |
+| Paths | Full BCA or streamlined (< $1M / waiver / pre-calculated benefits) |
+| Flood benefits | Avoided structure/content (DDF×values), displacement, other Toolkit categories over project life |
+| Site elevations | BFE **375.0** · LAG **377.2** · FFE **382.5** NAVD88 · **+2.2 ft** clearance |
+| Dual constants | Eng **1.41** / Legal PDF **2.45** → `UNVERIFIED_DUAL` until Toolkit SHA sealed |
+
+**Rule:** HEC-FIA damages ≠ BCA Toolkit BCR.
 
 ---
 
-## References (primary)
+## C. HEC-FIA (manuals searched)
 
-- HEC-RAS User’s Manual — Automated Calibration of Manning’s n (unsteady)  
-- HEC-RAS 2D — Flow Roughness Factor Curves in Calibration Regions  
-- HEC-FIA User’s Manual / Features — https://www.hec.usace.army.mil/software/hec-fia/  
-- USGS SIR 2016-5119 New Harmony FIM  
+| Manual | URL |
+|---|---|
+| Purpose (v3.4) | https://www.hec.usace.army.mil/confluence/fiadocs/fiaum/v3.4/introduction/purpose |
+| Tech Ref | https://www.hec.usace.army.mil/confluence/fiadocs/fiatechref/latest |
 
-Internal: `HEC_RAS_CALIBRATION.md`, `HEC_RAS_2D_CALIBRATION_REGIONS.md`, `HEC_FIA_SCOPE.md`, `BCR_SOURCE_CONFLICT.md`
+**Direct damage:** $D_i = d_i(\mathrm{depth},\mathrm{occupancy}) \times v_i$; depth ≈ max depth − foundation height; depth×velocity threshold can force 100% loss.
+
+**Estimates:** structure/content/car, ag, life loss, indirect, critical infrastructure, flood damages reduced.
+
+**Role in PTDT:** single-event consequence narrative — not LOMA, not sealed BCR.
+
+---
+
+## D. Cross-cut Material Truth
+
+| Quantity | Value |
+|---|---|
+| Datum | NAVD88 |
+| LOMA | Pure natural high ground |
+| FIM | Presentation only |
+| Storage | 1.20× compensatory |
+| §204 | Navigation nexus; in-kind unbooked |
+
+---
+
+## E. Next actions
+
+1. Licensed RAS + `RASCMD` → real automated roughness runs  
+2. PE FEMA BCA Toolkit → seal BCR  
+3. Optional HEC-FIA 3.4 on sealed depth grids + structure inventory  
+4. BAFL Posey + FIM grids into `data/`  
+
+---
+
+## Doc index
+
+- `HEC_RAS_ROUGHNESS_AUTOMATION.md`
+- `FEMA_BCA_TOOLKIT_FLOOD_BENEFITS.md`
+- `HEC_FIA_MANUALS_INDEX.md`
+- `HEC_RAS_ROUGHNESS_CALIBRATION.md`
+- `BCR_SOURCE_CONFLICT.md`
