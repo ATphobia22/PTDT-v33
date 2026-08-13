@@ -1,7 +1,7 @@
 /**
  * MapLibre GL JS + deck.gl hybrid viewport.
  * Authority: presentation-only. Never writes HydroLayer or freeboard.
- * DEM/ortho served as COG (OptimizeRasters / gdal_translate -of COG).
+ * Perf: tile cache, zoom culling, render budget, COG tile paths.
  */
 import React, { useEffect, useRef, useCallback } from 'react';
 import maplibregl, { Map } from 'maplibre-gl';
@@ -16,31 +16,55 @@ export interface HybridMapProps {
   twinState: TwinStateName;
   layerVisibility: Record<string, boolean>;
   onMapReady?: (map: Map) => void;
+  /** Max tiles retained for DEM+imagery (MapLibre internal cache). Default 250. */
+  maxTileCacheSize?: number;
+  /** Min zoom to show hillshade. Default 11. */
+  hillshadeMinZoom?: number;
+  /** Min zoom to show building extrusion. Default 13. */
+  extrusionMinZoom?: number;
+  /** Target frame budget ms (desktop). Default 16. */
+  frameBudgetMs?: number;
+  /** Called when consecutive frames exceed budget. */
+  onFrameBudgetExceeded?: (ms: number) => void;
 }
 
 const BUILDINGS_GEOJSON = '/geo/bonebank_buildings.geojson';
+/** Prefer worker parse: MapLibre loads GeoJSON URL async; deck uses same URL. */
+const RAS_EXTENT_URL = '/api/v1/ras/extent?authority=presentation';
 
 export function MapLibreDeckHybrid({
   stageFt,
   twinState,
   layerVisibility,
   onMapReady,
+  maxTileCacheSize = 250,
+  hillshadeMinZoom = 11,
+  extrusionMinZoom = 13,
+  frameBudgetMs = 16,
+  onFrameBudgetExceeded,
 }: HybridMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Map | null>(null);
   const overlayRef = useRef<MapboxOverlay | null>(null);
+  const lastRenderT = useRef<number>(0);
+  const zoomRef = useRef<number>(BONEBANK_SITE.zoom);
 
   const buildDeckLayers = useCallback(() => {
     const layers = [];
+    const showExtrusion =
+      layerVisibility.extrudedBuildings !== false &&
+      zoomRef.current >= extrusionMinZoom;
 
-    if (layerVisibility.extrudedBuildings !== false) {
+    if (showExtrusion) {
       layers.push(
         new GeoJsonLayer({
           id: 'buildings-extrusion',
           data: BUILDINGS_GEOJSON,
           extruded: true,
           wireframe: false,
-          getElevation: (f: any) => f.properties?.height_m ?? 7.2,
+          pickable: false,
+          getElevation: (f: { properties?: { height_m?: number } }) =>
+            f.properties?.height_m ?? 7.2,
           getFillColor:
             twinState === 'CRITICAL_INUNDATION'
               ? [239, 68, 68, 220]
@@ -51,9 +75,8 @@ export function MapLibreDeckHybrid({
         })
       );
     }
-
     return layers;
-  }, [twinState, layerVisibility]);
+  }, [twinState, layerVisibility, extrusionMinZoom]);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -83,6 +106,7 @@ export function MapLibreDeckHybrid({
             type: 'raster',
             tiles: ['/tiles/flood100/{z}/{x}/{y}.webp'],
             tileSize: 256,
+            maxzoom: 16,
           },
         },
         layers: [
@@ -98,9 +122,17 @@ export function MapLibreDeckHybrid({
             paint: { 'raster-opacity': 0.85 },
           },
           {
+            id: 'flood-depth-raster',
+            type: 'raster',
+            source: 'floodDepth',
+            paint: { 'raster-opacity': 0.45 },
+            minzoom: 10,
+          },
+          {
             id: 'terrain-hillshade',
             type: 'hillshade',
             source: 'dem',
+            minzoom: hillshadeMinZoom,
             paint: {
               'hillshade-exaggeration': 0.55,
               'hillshade-shadow-color': '#020617',
@@ -117,7 +149,16 @@ export function MapLibreDeckHybrid({
       maxPitch: 85,
       antialias: true,
       attributionControl: true,
-    });
+      maxTileCacheSize,
+    } as maplibregl.MapOptions & { maxTileCacheSize?: number });
+
+    try {
+      (map as unknown as { setMaxTileCacheSize?: (n: number) => void }).setMaxTileCacheSize?.(
+        maxTileCacheSize
+      );
+    } catch {
+      /* older maplibre */
+    }
 
     map.addControl(
       new maplibregl.NavigationControl({ visualizePitch: true }),
@@ -129,14 +170,14 @@ export function MapLibreDeckHybrid({
       interleaved: true,
       layers: buildDeckLayers(),
     });
-    map.addControl(overlay as any);
+    map.addControl(overlay as unknown as maplibregl.IControl);
     overlayRef.current = overlay;
 
     map.on('load', () => {
       if (layerVisibility.flood100Yr !== false) {
         map.addSource('ras-flood', {
           type: 'geojson',
-          data: '/api/v1/ras/extent?authority=presentation',
+          data: RAS_EXTENT_URL,
         });
         map.addLayer({
           id: 'ras-flood-fill',
@@ -160,6 +201,30 @@ export function MapLibreDeckHybrid({
       onMapReady?.(map);
     });
 
+    map.on('zoom', () => {
+      const z = map.getZoom();
+      zoomRef.current = z;
+      if (map.getLayer('terrain-hillshade')) {
+        map.setLayoutProperty(
+          'terrain-hillshade',
+          'visibility',
+          z >= hillshadeMinZoom ? 'visible' : 'none'
+        );
+      }
+      overlayRef.current?.setProps({ layers: buildDeckLayers() });
+    });
+
+    map.on('render', () => {
+      const now = performance.now();
+      if (lastRenderT.current > 0) {
+        const dt = now - lastRenderT.current;
+        if (dt > frameBudgetMs) {
+          onFrameBudgetExceeded?.(dt);
+        }
+      }
+      lastRenderT.current = now;
+    });
+
     mapRef.current = map;
 
     return () => {
@@ -167,6 +232,7 @@ export function MapLibreDeckHybrid({
       map.remove();
       mapRef.current = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -177,7 +243,11 @@ export function MapLibreDeckHybrid({
     const map = mapRef.current;
     if (!map || !map.isStyleLoaded()) return;
     if (map.getLayer('ras-flood-fill')) {
-      map.setPaintProperty('ras-flood-fill', 'fill-opacity', Math.min(0.75, 0.4 + stageFt * 0.01));
+      map.setPaintProperty(
+        'ras-flood-fill',
+        'fill-opacity',
+        Math.min(0.75, 0.4 + stageFt * 0.01)
+      );
     }
   }, [stageFt]);
 
@@ -188,6 +258,7 @@ export function MapLibreDeckHybrid({
       data-authority="presentation-only"
       data-datum="NAVD88"
       data-services={JSON.stringify(INDIANA_GIS_SERVICES)}
+      data-tile-cache={maxTileCacheSize}
     />
   );
 }
