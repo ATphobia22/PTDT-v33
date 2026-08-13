@@ -1,24 +1,19 @@
-// textureLoad-only cell index map (r32uint). No sampler on integer texture.
-// Clamp UV→texel; OOB textureLoad is implementation-defined.
-
+// Optimized UV→texel: clamp + floor + min(w-1), u32 coords for textureLoad
 struct Uniforms {
     view_proj: mat4x4<f32>,
     light_dir: vec3<f32>,
     _pad0: f32,
 };
-
 struct PlateParams {
     map_width: u32,
     map_height: u32,
     cell_count: u32,
     nodata_id: u32,
 };
-
 struct VertexInput {
     @location(0) position: vec3<f32>,
     @location(1) uv: vec2<f32>,
 };
-
 struct VertexOutput {
     @builtin(position) clip_position: vec4<f32>,
     @location(0) world_pos: vec3<f32>,
@@ -32,14 +27,14 @@ struct VertexOutput {
 @group(0) @binding(4) var<storage, read> wse_array: array<f32>;
 @group(0) @binding(5) var<uniform> plate: PlateParams;
 
-fn uv_to_texel(uv: vec2<f32>, width: u32, height: u32) -> vec2<i32> {
+fn uv_to_texel_u32(uv: vec2<f32>, width: u32, height: u32) -> vec2<u32> {
     let u = clamp(uv.x, 0.0, 1.0);
     let v = clamp(uv.y, 0.0, 1.0);
-    let max_x = i32(width) - 1;
-    let max_y = i32(height) - 1;
-    let x = min(i32(floor(u * f32(width))), max_x);
-    let y = min(i32(floor(v * f32(height))), max_y);
-    return vec2<i32>(max(x, 0), max(y, 0));
+    let wm = max(width, 1u);
+    let hm = max(height, 1u);
+    let x = min(u32(floor(u * f32(wm))), wm - 1u);
+    let y = min(u32(floor(v * f32(hm))), hm - 1u);
+    return vec2<u32>(x, y);
 }
 
 @vertex
@@ -66,7 +61,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
         return vec4<f32>(terrain_color, 1.0);
     }
 
-    let px = uv_to_texel(in.uv, plate.map_width, plate.map_height);
+    let px = uv_to_texel_u32(in.uv, plate.map_width, plate.map_height);
     let cell_id = textureLoad(cell_index_map, px, 0).r;
 
     if (cell_id == plate.nodata_id || cell_id >= plate.cell_count) {
@@ -78,13 +73,13 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 
     if (wse_elev > -9000.0 && wse_elev > dem_elev) {
         let depth = wse_elev - dem_elev;
-        let shallow = vec3<f32>(0.2, 0.6, 0.8);
-        let deep = vec3<f32>(0.05, 0.2, 0.4);
-        let t = clamp(depth / 5.0, 0.0, 1.0);
-        let water = mix(shallow, deep, t);
+        let water = mix(
+            vec3<f32>(0.2, 0.6, 0.8),
+            vec3<f32>(0.05, 0.2, 0.4),
+            clamp(depth * 0.2, 0.0, 1.0)
+        );
         let alpha = clamp(depth * 0.5, 0.4, 0.9);
         return vec4<f32>(mix(terrain_color, water, alpha), 1.0);
     }
-
     return vec4<f32>(terrain_color, 1.0);
 }
