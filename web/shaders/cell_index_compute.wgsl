@@ -1,11 +1,12 @@
-// PTDT-v33: HEC-RAS unstructured cell index + WSE depth bake
-// r32float DEM / r32uint cell map require textureLoad (unfilterable)
-// WSE authority: HEC-RAS only; soft-fail if missing
+// cell_index_compute.wgsl
+// Rule 1: HEC-RAS WSE is absolute truth; depth is derived presentation.
+// Rule 14: All vertical calculations represent NAVD88.
+// WebGPU: r32float/r32uint require textureLoad; storage arrays need var<storage, read>.
 
 struct Params {
-  map_size: vec2<u32>,
-  nodata_cell: u32,
-  nodata_wse_mm: i32,
+    map_size: vec2<u32>,
+    nodata_cell: u32,      // 0xFFFFFFFF
+    nodata_wse_mm: i32,    // -9999
 }
 
 @group(0) @binding(0) var dem_tex: texture_2d<f32>;
@@ -16,22 +17,25 @@ struct Params {
 
 @compute @workgroup_size(16, 16, 1)
 fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
-  if (gid.x >= params.map_size.x || gid.y >= params.map_size.y) {
-    return;
-  }
-  let coord = vec2<i32>(i32(gid.x), i32(gid.y));
-
-  // textureLoad: required for r32float (unfilterable-float) and r32uint
-  let dem = textureLoad(dem_tex, coord, 0).r;
-  let cell = textureLoad(cell_index_map, coord, 0).r;
-
-  var depth: f32 = 0.0;
-  if (cell != params.nodata_cell) {
-    let mm = wse_mm[cell];
-    if (mm > params.nodata_wse_mm) {
-      let wse = f32(mm) * 0.001;
-      depth = max(wse - dem, 0.0);
+    if (gid.x >= params.map_size.x || gid.y >= params.map_size.y) {
+        return;
     }
-  }
-  textureStore(depth_out, coord, vec4<f32>(depth, 0.0, 0.0, 1.0));
+
+    let coord = vec2<i32>(i32(gid.x), i32(gid.y));
+
+    // DEM elevation (Material Truth Z - NAVD88) — textureLoad only
+    let dem_val = textureLoad(dem_tex, coord, 0).r;
+    let cell_val = textureLoad(cell_index_map, coord, 0).r;
+
+    var depth: f32 = 0.0;
+
+    if (cell_val != params.nodata_cell) {
+        let mm = wse_mm[cell_val];
+        if (mm > params.nodata_wse_mm) {
+            let wse = f32(mm) * 0.001;
+            depth = max(wse - dem_val, 0.0);
+        }
+    }
+
+    textureStore(depth_out, coord, vec4<f32>(depth, 0.0, 0.0, 1.0));
 }
