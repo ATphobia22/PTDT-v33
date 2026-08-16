@@ -70,5 +70,22 @@ def compute_state_seal(state: Box3DPhysicsState) -> str:
     return sha256(canonical_physics_bytes(state)).hexdigest()
 
 
+def seal_state(
+    sequence: int,
+    pipeline_state_version: str,
+    bodies: list[PhysicsBodyState] | None = None,
+) -> Box3DPhysicsState:
+    """Construct a validated Box3D state and seal its canonical payload."""
+    candidate = Box3DPhysicsState(
+        sequence=sequence,
+        pipeline_state_version=pipeline_state_version,
+        state_cryptographic_seal="0" * 64,
+        bodies=bodies or [],
+    )
+    return candidate.model_copy(
+        update={"state_cryptographic_seal": compute_state_seal(candidate)}
+    )
+
+
 def verify_state_seal(state: Box3DPhysicsState) -> bool:
     return compute_state_seal(state) == state.state_cryptographic_seal
