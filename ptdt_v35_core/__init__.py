@@ -1,5 +1,6 @@
 """PTDT v35 corrected evidence, spatial, provenance, and scene-delivery core."""
 
+from .contracts import EvidenceArtifact, SpatialReferenceContract, TemporalStateContract
 from .evidence import EvidenceLedger, EvidenceNode
 from .hazard import RoadHazard, RouteCostInput, route_cost
 from .provenance import (
@@ -19,6 +20,7 @@ from .spatial_tile import SpatialTile
 
 __all__ = [
     "CameraObservation",
+    "EvidenceArtifact",
     "EvidenceLedger",
     "EvidenceNode",
     "GaussianSceneDescriptor",
@@ -27,8 +29,10 @@ __all__ = [
     "RoadHazard",
     "RouteCostInput",
     "SourceRecord",
+    "SpatialReferenceContract",
     "SpatialTile",
     "SpatialTransformBridge",
+    "TemporalStateContract",
     "TransformRecord",
     "canonical_sha256",
     "route_cost",
