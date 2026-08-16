@@ -10,6 +10,11 @@ WGS84_F = 1.0 / 298.257223563
 WGS84_E2 = WGS84_F * (2.0 - WGS84_F)
 
 
+def _require_finite(*values: float) -> None:
+    if not all(math.isfinite(value) for value in values):
+        raise ValueError("spatial coordinates must be finite")
+
+
 @dataclass(frozen=True, slots=True)
 class ECEF:
     x_m: float
@@ -29,6 +34,7 @@ class SpatialTransformBridge:
         self._epsg2966_to_wgs84 = Transformer.from_crs("EPSG:2966", "EPSG:4326", always_xy=True)
 
     def wgs84_ellipsoidal_to_ecef(self, lon_deg: float, lat_deg: float, h_m: float) -> ECEF:
+        _require_finite(lon_deg, lat_deg, h_m)
         if not (-180.0 <= lon_deg <= 180.0 and -90.0 <= lat_deg <= 90.0):
             raise ValueError("invalid WGS84 longitude/latitude")
         lon = math.radians(lon_deg)
@@ -43,18 +49,23 @@ class SpatialTransformBridge:
         )
 
     def epsg2966_to_wgs84(self, easting_ftus: float, northing_ftus: float) -> tuple[float, float]:
+        _require_finite(easting_ftus, northing_ftus)
         lon_deg, lat_deg = self._epsg2966_to_wgs84.transform(easting_ftus, northing_ftus)
         if not (-180.0 <= lon_deg <= 180.0 and -90.0 <= lat_deg <= 90.0):
             raise ValueError("EPSG:2966 transform returned invalid WGS84 coordinates")
         return float(lon_deg), float(lat_deg)
 
     def epsg2966_to_ecef(self, easting_ftus: float, northing_ftus: float, ellipsoidal_height_m: float) -> ECEF:
+        _require_finite(easting_ftus, northing_ftus, ellipsoidal_height_m)
         lon_deg, lat_deg = self.epsg2966_to_wgs84(easting_ftus, northing_ftus)
         return self.wgs84_ellipsoidal_to_ecef(lon_deg, lat_deg, ellipsoidal_height_m)
 
     def slippy_tile(self, lon_deg: float, lat_deg: float, zoom: int) -> tuple[int, int]:
+        _require_finite(lon_deg, lat_deg)
         if zoom < 0 or zoom > 30:
             raise ValueError("zoom must be in [0, 30]")
+        if not -180.0 <= lon_deg <= 180.0:
+            raise ValueError("longitude must be in [-180, 180]")
         lat = max(-85.05112878, min(85.05112878, lat_deg))
         n = 1 << zoom
         x = int((lon_deg + 180.0) / 360.0 * n)
