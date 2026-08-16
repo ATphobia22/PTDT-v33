@@ -3,13 +3,17 @@
  * Authority: presentation-only. Never writes HydroLayer or freeboard.
  * DEM/ortho served as COG (OptimizeRasters / gdal_translate -of COG).
  */
-import React, { useEffect, useRef, useCallback } from 'react';
-import maplibregl, { Map } from 'maplibre-gl';
+import React, { useCallback, useEffect, useRef } from 'react';
+import maplibregl, { type IControl, type Map } from 'maplibre-gl';
 import { MapboxOverlay } from '@deck.gl/mapbox';
 import { GeoJsonLayer } from '@deck.gl/layers';
 import type { TwinStateName } from '../core/TwinStateManager';
 import { BONEBANK_SITE, INDIANA_GIS_SERVICES } from '../constants/siteConstants';
 import 'maplibre-gl/dist/maplibre-gl.css';
+
+interface BuildingFeature {
+  properties?: { height_m?: number } | null;
+}
 
 export interface HybridMapProps {
   stageFt: number;
@@ -35,12 +39,12 @@ export function MapLibreDeckHybrid({
 
     if (layerVisibility.extrudedBuildings !== false) {
       layers.push(
-        new GeoJsonLayer({
+        new GeoJsonLayer<BuildingFeature>({
           id: 'buildings-extrusion',
           data: BUILDINGS_GEOJSON,
           extruded: true,
           wireframe: false,
-          getElevation: (f: any) => f.properties?.height_m ?? 7.2,
+          getElevation: (feature) => feature.properties?.height_m ?? 7.2,
           getFillColor:
             twinState === 'CRITICAL_INUNDATION'
               ? [239, 68, 68, 220]
@@ -48,7 +52,7 @@ export function MapLibreDeckHybrid({
           material: { ambient: 0.35, diffuse: 0.6, shininess: 32 },
           updateTriggers: { getFillColor: twinState },
           parameters: { depthTest: true },
-        })
+        }),
       );
     }
 
@@ -116,20 +120,14 @@ export function MapLibreDeckHybrid({
       bearing: -20,
       maxPitch: 85,
       antialias: true,
-      attributionControl: true,
+      attributionControl: { compact: true },
     });
 
-    map.addControl(
-      new maplibregl.NavigationControl({ visualizePitch: true }),
-      'top-right'
-    );
+    map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
     map.addControl(new maplibregl.ScaleControl({ unit: 'imperial' }), 'bottom-left');
 
-    const overlay = new MapboxOverlay({
-      interleaved: true,
-      layers: buildDeckLayers(),
-    });
-    map.addControl(overlay as any);
+    const overlay = new MapboxOverlay({ interleaved: true, layers: buildDeckLayers() });
+    map.addControl(overlay as unknown as IControl);
     overlayRef.current = overlay;
 
     map.on('load', () => {
@@ -167,6 +165,8 @@ export function MapLibreDeckHybrid({
       map.remove();
       mapRef.current = null;
     };
+    // The MapLibre/WebGL context is intentionally persistent; layer props update through the overlay effect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
