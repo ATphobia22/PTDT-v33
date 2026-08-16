@@ -11,9 +11,9 @@ import type { TwinStateName } from '../core/TwinStateManager';
 import { BONEBANK_SITE, INDIANA_GIS_SERVICES } from '../constants/siteConstants';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
-interface BuildingFeature {
-  properties?: { height_m?: number } | null;
-}
+type BuildingProperties = {
+  height_m?: number;
+};
 
 export interface HybridMapProps {
   stageFt: number;
@@ -39,7 +39,7 @@ export function MapLibreDeckHybrid({
 
     if (layerVisibility.extrudedBuildings !== false) {
       layers.push(
-        new GeoJsonLayer<BuildingFeature>({
+        new GeoJsonLayer<BuildingProperties>({
           id: 'buildings-extrusion',
           data: BUILDINGS_GEOJSON,
           extruded: true,
@@ -51,7 +51,6 @@ export function MapLibreDeckHybrid({
               : [56, 189, 248, 200],
           material: { ambient: 0.35, diffuse: 0.6, shininess: 32 },
           updateTriggers: { getFillColor: twinState },
-          parameters: { depthTest: true },
         }),
       );
     }
