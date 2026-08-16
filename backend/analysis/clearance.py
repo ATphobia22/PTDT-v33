@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
+from hashlib import sha256
 from typing import Any
 
 import rfc8785
-from hashlib import sha256
 
 
 @dataclass(frozen=True, slots=True)
@@ -25,11 +25,12 @@ class ClearanceManifest:
 
 
 class StructuralClearanceAnalyzer:
-    def __init__(self, *, bfe_navd88_ft: float, required_freeboard_ft: float = 2.2) -> None:
-        if required_freeboard_ft < 0:
-            raise ValueError("required_freeboard_ft must be non-negative")
+    def __init__(self, *, bfe_navd88_ft: float, required_freeboard_ft: float = 2.2, required_lag_clearance_ft: float = 2.2) -> None:
+        if required_freeboard_ft < 0 or required_lag_clearance_ft < 0:
+            raise ValueError("clearance thresholds must be non-negative")
         self.bfe_navd88_ft = float(bfe_navd88_ft)
         self.required_freeboard_ft = float(required_freeboard_ft)
+        self.required_lag_clearance_ft = float(required_lag_clearance_ft)
 
     def evaluate(self, building: dict[str, Any], current_wse_navd88_ft: float) -> dict[str, Any]:
         building_id = str(building.get("building_id", "UNKNOWN_NODE"))
@@ -39,12 +40,14 @@ class StructuralClearanceAnalyzer:
         wse = float(current_wse_navd88_ft)
         freeboard = ffe - wse
         lag_clearance = lag - self.bfe_navd88_ft
+        lag_policy_pass = lag_clearance >= self.required_lag_clearance_ft
+        floor_policy_pass = freeboard >= self.required_freeboard_ft
 
         if freeboard <= 0.0:
             status = "CRITICAL_FIRST_FLOOR_SUBMERSION"
         elif wse > lag:
             status = "HYDROSTATIC_FOUNDATION_STRESS"
-        elif freeboard < self.required_freeboard_ft:
+        elif not lag_policy_pass or not floor_policy_pass:
             status = "SUB_STANDARD_FREEBOARD_MARGIN"
         else:
             status = "SECURE_PASS_COMPLIANT"
@@ -65,6 +68,8 @@ class StructuralClearanceAnalyzer:
                 "execution_timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
                 "cryptographic_manifest_seal": manifest.seal(),
                 "authority_basis": "configured_project_policy",
+                "required_lag_clearance_ft": self.required_lag_clearance_ft,
+                "required_freeboard_ft": self.required_freeboard_ft,
             },
             "compliance_metrics": asdict(manifest),
         }
