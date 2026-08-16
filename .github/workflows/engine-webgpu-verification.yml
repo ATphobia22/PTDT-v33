@@ -71,6 +71,8 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
+      - name: Install SceneState dependency
+        run: python -m pip install rfc8785
       - name: Validate canonical engine contract
         run: |
           python - <<'PY'
