@@ -37,7 +37,7 @@ jobs:
   validate-unity-bridge:
     name: Unity Box3D Bridge Compilation
     runs-on: ubuntu-latest
-    if: ${{ secrets.UNITY_LICENSE != '' }}
+    if: ${{ vars.UNITY_CI_ENABLED == 'true' }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
