@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import json
 import math
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Any, Mapping
+from typing import Any
 
 from .provenance import ProvenanceManifest, canonical_sha256
 
@@ -53,17 +54,23 @@ class SpatialTile:
         }
 
     def canonical_bytes(self) -> bytes:
-        return json.dumps(self.to_mapping(), sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode("utf-8")
+        return json.dumps(
+            self.to_mapping(),
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+            allow_nan=False,
+        ).encode("utf-8")
 
     @property
     def content_sha256(self) -> str:
         return canonical_sha256(self.to_mapping())
 
     @classmethod
-    def from_mapping(cls, payload: Mapping[str, Any], provenance: ProvenanceManifest) -> "SpatialTile":
+    def from_mapping(cls, payload: Mapping[str, Any], provenance: ProvenanceManifest) -> SpatialTile:
         bounds = payload.get("bounds")
         if not isinstance(bounds, (list, tuple)):
-            raise ValueError("bounds must be a sequence")
+            raise TypeError("bounds must be a sequence")
         return cls(
             tile_id=str(payload["tile_id"]),
             version=int(payload.get("version", 1)),
