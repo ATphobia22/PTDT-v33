@@ -1,11 +1,6 @@
-"""PTDT Box3D physics state contract — schema-aligned with Unity envelope.
-
-Authority: derived physics/VFX only. Sealed states never overwrite hydraulic,
-elevation, regulatory, or provenance authority (Material Truth / NAVD88).
-"""
+"""PTDT Box3D physics state contract — schema-aligned with Unity envelope."""
 from __future__ import annotations
 
-import json
 from hashlib import sha256
 from typing import Final
 
@@ -33,23 +28,12 @@ class PhysicsBodyState(BaseModel):
     angular_z: float
 
     @field_validator(
-        "x",
-        "y",
-        "z",
-        "qx",
-        "qy",
-        "qz",
-        "qw",
-        "vx",
-        "vy",
-        "vz",
-        "angular_x",
-        "angular_y",
-        "angular_z",
+        "x", "y", "z", "qx", "qy", "qz", "qw",
+        "vx", "vy", "vz", "angular_x", "angular_y", "angular_z",
     )
     @classmethod
     def validate_finite(cls, value: float) -> float:
-        if not value == value:
+        if value != value:
             raise ValueError("Physics value must not be NaN.")
         if value in (float("inf"), float("-inf")):
             raise ValueError("Physics value must be finite.")
@@ -59,23 +43,11 @@ class PhysicsBodyState(BaseModel):
 class Box3DPhysicsState(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    schema_version: int = Field(
-        default=PHYSICS_SCHEMA_VERSION,
-        ge=1,
-    )
+    schema_version: int = Field(default=PHYSICS_SCHEMA_VERSION, ge=1)
     sequence: int = Field(ge=0)
-    pipeline_state_version: str = Field(
-        min_length=1,
-        max_length=256,
-    )
-    state_cryptographic_seal: str = Field(
-        min_length=64,
-        max_length=128,
-    )
-    bodies: list[PhysicsBodyState] = Field(
-        default_factory=list,
-        max_length=100_000,
-    )
+    pipeline_state_version: str = Field(min_length=1, max_length=256)
+    state_cryptographic_seal: str = Field(min_length=64, max_length=128)
+    bodies: list[PhysicsBodyState] = Field(default_factory=list, max_length=100_000)
 
     @field_validator("schema_version")
     @classmethod
@@ -86,41 +58,17 @@ class Box3DPhysicsState(BaseModel):
 
 
 def canonical_physics_bytes(state: Box3DPhysicsState) -> bytes:
-    """Serialize state for sealing; exclude seal field to avoid recursive hash."""
-    payload = state.model_dump(
-        mode="json",
-        exclude={"state_cryptographic_seal"},
-    )
+    import json
+
+    payload = state.model_dump(mode="json", exclude={"state_cryptographic_seal"})
     return json.dumps(
-        payload,
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
+        payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")
     ).encode("utf-8")
 
 
 def compute_state_seal(state: Box3DPhysicsState) -> str:
-    """SHA-256 hex digest of canonical JSON (seal field excluded)."""
     return sha256(canonical_physics_bytes(state)).hexdigest()
 
 
 def verify_state_seal(state: Box3DPhysicsState) -> bool:
-    """True iff state_cryptographic_seal matches recomputed digest."""
     return compute_state_seal(state) == state.state_cryptographic_seal
-
-
-def seal_state(
-    sequence: int,
-    pipeline_state_version: str,
-    bodies: list[PhysicsBodyState] | None = None,
-) -> Box3DPhysicsState:
-    """Build a fully sealed envelope from sequence + bodies."""
-    draft = Box3DPhysicsState(
-        schema_version=PHYSICS_SCHEMA_VERSION,
-        sequence=sequence,
-        pipeline_state_version=pipeline_state_version,
-        state_cryptographic_seal="0" * 64,
-        bodies=list(bodies or []),
-    )
-    seal = compute_state_seal(draft)
-    return draft.model_copy(update={"state_cryptographic_seal": seal})
