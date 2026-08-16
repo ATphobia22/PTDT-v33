@@ -3,3 +3,6 @@ grpcio-tools>=1.74,<2
 cryptography>=45,<47
 boto3>=1.40,<2
 watchdog>=6,<7
+h5py>=3.14,<4
+stim>=1.16,<2
+pymatching>=2.4,<3

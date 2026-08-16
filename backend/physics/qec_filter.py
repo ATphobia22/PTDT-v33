@@ -1,35 +1,19 @@
-"""
-PTDT v33 — Quantum Error Correction filter for telemetry integrity.
-Gracefully degrades when stim/pymatching are unavailable (air-gapped).
-"""
+"""Quantum error-correction filter for telemetry integrity."""
 
 from __future__ import annotations
 
-import logging
-from typing import Any, Dict
+from typing import Any
 
 import numpy as np
-
-logger = logging.getLogger("PTDT.QECFilter")
-
-HAS_STIM = False
-try:
-    import stim
-    import pymatching
-    HAS_STIM = True
-except ImportError:
-    logger.warning("stim/pymatching unavailable — QEC returns deterministic mock ORDER_LOCKED.")
+import pymatching
+import stim
 
 
-def decode_sensor_noise(distance: int = 9) -> Dict[str, Any]:
-    if not HAS_STIM:
-        return {
-            "qec_distance": distance,
-            "logical_error_rate_pct": 0.0,
-            "status": "ORDER_LOCKED",
-            "mode": "mock_airgapped",
-        }
-
+def decode_sensor_noise(distance: int = 9, shots: int = 1000) -> dict[str, Any]:
+    if distance < 3 or distance % 2 == 0:
+        raise ValueError("surface-code distance must be an odd integer >= 3")
+    if shots <= 0:
+        raise ValueError("shots must be positive")
     circuit = stim.Circuit.generated(
         "surface_code:unrotated_memory_z",
         distance=distance,
@@ -37,15 +21,15 @@ def decode_sensor_noise(distance: int = 9) -> Dict[str, Any]:
         after_clifford_depolarization=0.001,
     )
     sampler = circuit.compile_detector_sampler()
-    detector_samples, obs_samples = sampler.sample(shots=1000, separate_observables=True)
+    detector_samples, obs_samples = sampler.sample(shots=shots, separate_observables=True)
     matcher = pymatching.Matching.from_stim_circuit(circuit)
     predictions = matcher.decode_batch(detector_samples)
     errors = int(np.sum(predictions != obs_samples))
-    logical_error_rate = (errors / 1000) * 100.0
-
+    logical_error_rate = errors / shots * 100.0
     return {
         "qec_distance": distance,
         "logical_error_rate_pct": round(logical_error_rate, 5),
         "status": "ORDER_LOCKED" if logical_error_rate < 0.01 else "UNSTABLE",
-        "mode": "stim",
+        "mode": "stim_pymatching",
+        "shots": shots,
     }

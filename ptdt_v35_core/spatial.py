@@ -3,9 +3,12 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
+from pyproj import Transformer
+
 WGS84_A_M = 6378137.0
 WGS84_F = 1.0 / 298.257223563
 WGS84_E2 = WGS84_F * (2.0 - WGS84_F)
+
 
 @dataclass(frozen=True, slots=True)
 class ECEF:
@@ -13,14 +16,18 @@ class ECEF:
     y_m: float
     z_m: float
 
-class SpatialTransformBridge:
-    """WGS84 geodetic to EPSG:4978 plus Web-Mercator tiling.
 
-    EPSG:4978 requires ellipsoidal height. NAVD88 orthometric height
-    must first be converted with an authoritative geoid model; this
-    core therefore does not silently substitute NAVD88 for ellipsoidal
-    height.
+class SpatialTransformBridge:
+    """Authoritative horizontal projection bridge plus WGS84/ECEF conversion.
+
+    EPSG:2966 is a projected horizontal CRS in US survey feet. EPSG:4978 uses
+    WGS84 ellipsoidal height. NAVD88 orthometric height must be converted with
+    an authoritative geoid model before calling the ECEF method.
     """
+
+    def __init__(self) -> None:
+        self._epsg2966_to_wgs84 = Transformer.from_crs("EPSG:2966", "EPSG:4326", always_xy=True)
+
     def wgs84_ellipsoidal_to_ecef(self, lon_deg: float, lat_deg: float, h_m: float) -> ECEF:
         if not (-180.0 <= lon_deg <= 180.0 and -90.0 <= lat_deg <= 90.0):
             raise ValueError("invalid WGS84 longitude/latitude")
@@ -34,6 +41,16 @@ class SpatialTransformBridge:
             (n + h_m) * cos_lat * math.sin(lon),
             (n * (1.0 - WGS84_E2) + h_m) * sin_lat,
         )
+
+    def epsg2966_to_wgs84(self, easting_ftus: float, northing_ftus: float) -> tuple[float, float]:
+        lon_deg, lat_deg = self._epsg2966_to_wgs84.transform(easting_ftus, northing_ftus)
+        if not (-180.0 <= lon_deg <= 180.0 and -90.0 <= lat_deg <= 90.0):
+            raise ValueError("EPSG:2966 transform returned invalid WGS84 coordinates")
+        return float(lon_deg), float(lat_deg)
+
+    def epsg2966_to_ecef(self, easting_ftus: float, northing_ftus: float, ellipsoidal_height_m: float) -> ECEF:
+        lon_deg, lat_deg = self.epsg2966_to_wgs84(easting_ftus, northing_ftus)
+        return self.wgs84_ellipsoidal_to_ecef(lon_deg, lat_deg, ellipsoidal_height_m)
 
     def slippy_tile(self, lon_deg: float, lat_deg: float, zoom: int) -> tuple[int, int]:
         if zoom < 0 or zoom > 30:
