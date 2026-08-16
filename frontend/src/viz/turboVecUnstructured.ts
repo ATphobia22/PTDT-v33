@@ -1,6 +1,18 @@
 export const CELL_NODATA_ID = 0xffffffff;
 export const MAX_TEXTURE_DIM_FALLBACK = 8192;
 
+function copyUint32ForGpu(data: Uint32Array): Uint32Array<ArrayBuffer> {
+  const copy = new Uint32Array(new ArrayBuffer(data.byteLength));
+  copy.set(data);
+  return copy;
+}
+
+function copyFloat32ForGpu(data: Float32Array): Float32Array<ArrayBuffer> {
+  const copy = new Float32Array(new ArrayBuffer(data.byteLength));
+  copy.set(data);
+  return copy;
+}
+
 export class TurboVecHostError extends Error {
   constructor(
     message: string,
@@ -99,18 +111,19 @@ export class TurboVecUnstructuredManager {
     }
     const bytesPerRowUnpadded = width * 4;
     const bytesPerRow = Math.ceil(bytesPerRowUnpadded / 256) * 256;
+    const source = copyUint32ForGpu(data);
     try {
       if (bytesPerRow === bytesPerRowUnpadded) {
         this.device.queue.writeTexture(
           { texture: this.cellIndexTexture },
-          data,
+          source,
           { bytesPerRow, rowsPerImage: height },
           { width, height, depthOrArrayLayers: 1 },
         );
       } else {
-        const padded = new Uint32Array((bytesPerRow / 4) * height);
+        const padded = new Uint32Array(new ArrayBuffer((bytesPerRow / 4) * height * 4));
         for (let y = 0; y < height; y++) {
-          padded.set(data.subarray(y * width, (y + 1) * width), y * (bytesPerRow / 4));
+          padded.set(source.subarray(y * width, (y + 1) * width), y * (bytesPerRow / 4));
         }
         this.device.queue.writeTexture(
           { texture: this.cellIndexTexture },
@@ -164,7 +177,7 @@ export class TurboVecUnstructuredManager {
     if (len > this.maxCells) {
       throw new TurboVecHostError(`cell count ${len} > maxCells ${this.maxCells}`, "SIZE_LIMIT");
     }
-    const floatArray = new Float32Array(len);
+    const floatArray = new Float32Array(new ArrayBuffer(len * 4));
     for (let i = 0; i < len; i++) {
       const mm = Number(wse1dMm[i]);
       if (!Number.isFinite(mm) || mm === -9999) {
@@ -177,9 +190,7 @@ export class TurboVecUnstructuredManager {
       this.device.queue.writeBuffer(
         this.wseStorageBuffer,
         0,
-        floatArray.buffer as ArrayBuffer,
-        floatArray.byteOffset,
-        floatArray.byteLength,
+        copyFloat32ForGpu(floatArray).buffer,
       );
     } catch (e) {
       throw new TurboVecHostError(
@@ -192,7 +203,8 @@ export class TurboVecUnstructuredManager {
   }
 
   private writePlateParams(cellCount: number): void {
-    const u32 = new Uint32Array([
+    const u32 = new Uint32Array(new ArrayBuffer(16));
+    u32.set([
       this.mapWidth >>> 0,
       this.mapHeight >>> 0,
       cellCount >>> 0,
