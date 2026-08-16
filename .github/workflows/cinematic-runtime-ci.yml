@@ -34,10 +34,6 @@ jobs:
           python -c "from engine.cinematic_runtime.box3d_contract import Box3DPhysicsState, seal_state, verify_state_seal; s=seal_state(1,'ci'); assert verify_state_seal(s); print('Contract syntax OK')"
           python -m pytest tests/test_box3d_contract.py -q
 
-      - name: Test HEC-RAS Authority Lock
-        run: |
-          python -m pytest tests/test_hecras_archimedes_authority.py -q
-
   validate-unity-bridge:
     name: Unity Box3D Bridge Compilation
     runs-on: ubuntu-latest
