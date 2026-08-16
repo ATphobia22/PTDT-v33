@@ -1,0 +1,37 @@
+name: Branch Merge Audit
+on:
+  push:
+    branches: [integration/all-branches-2026-08-16]
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Audit mergeability
+        shell: bash
+        run: |
+          set -uo pipefail
+          branches=(
+            feature/cinematic-runtime-core-fixes
+            feature/hecras-depth-pipeline-host
+            feature/hecras-webgpu-cell-index-integration
+            feature/six-subsystem-authority-lock
+            fix/tristate-engine-refactor
+          )
+          git fetch --all --prune
+          for branch in "${branches[@]}"; do
+            echo "===== $branch ====="
+            git merge-base --is-ancestor HEAD "origin/$branch" && echo "already contained" && continue || true
+            if git merge --no-commit --no-ff "origin/$branch"; then
+              echo "MERGEABLE: $branch"
+              git merge --abort
+            else
+              echo "CONFLICT: $branch"
+              git diff --name-only --diff-filter=U || true
+              git merge --abort
+            fi
+          done
