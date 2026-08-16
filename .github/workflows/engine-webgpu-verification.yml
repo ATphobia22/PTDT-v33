@@ -1,0 +1,84 @@
+name: PTDT Engine/WebGPU Integration Verification
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  webgpu-shaders:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate WGSL syntax and reflection
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm init -y >/dev/null 2>&1
+          npm install --no-save wgsl_reflect@1.5.0 >/dev/null
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const { WgslReflect } = require('wgsl_reflect');
+          const roots = ['web', 'frontend', 'engine', 'adapters'];
+          const shaders = [];
+          function walk(dir) {
+            if (!fs.existsSync(dir)) return;
+            for (const entry of fs.readdirSync(dir, {withFileTypes:true})) {
+              const p = path.join(dir, entry.name);
+              if (entry.isDirectory()) walk(p);
+              else if (p.endsWith('.wgsl')) shaders.push(p);
+            }
+          }
+          roots.forEach(walk);
+          if (!shaders.length) throw new Error('No WGSL shaders found');
+          for (const file of shaders) {
+            const source = fs.readFileSync(file, 'utf8');
+            const reflect = new WgslReflect(source);
+            if (!reflect.entry) throw new Error(`WGSL reflection failed: ${file}`);
+          }
+          console.log(`Validated ${shaders.length} WGSL shader sources`);
+          NODE
+
+  python-core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install v35 core dependencies
+        run: python -m pip install -r ptdt_v35_core/requirements.txt pytest ruff
+      - name: Test v35 core
+        run: PYTHONPATH=. pytest -q tests/ptdt_v35_core
+      - name: Lint and compile adapters/core
+        run: |
+          python -m compileall -q ptdt_v35_core
+          ruff check ptdt_v35_core tests/ptdt_v35_core
+
+  engine-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate canonical engine contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('adapters/engine/core/EngineFrameContract.json')
+          c = json.loads(p.read_text())
+          assert c['schema'] == 'ptdt.engine.frame.v1'
+          assert c['coordinate_reference'] == 'EPSG:4978'
+          assert c['evidence'] == 'RFC8785-SHA256'
+          assert Path('adapters/engine/unity/PTDTEngineFrame.cs').exists()
+          assert Path('adapters/engine/unreal/PTDTEngineFrame.hpp').exists()
+          print('Unity/Unreal adapter contract OK')
+          PY
