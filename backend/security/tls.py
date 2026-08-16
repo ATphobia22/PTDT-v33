@@ -4,6 +4,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+import grpc
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -63,3 +64,29 @@ def provision_mtls_material(output_dir: str = "build/certs") -> dict[str, str]:
     issue("ptdt-v35-client", "client.key", "client.crt", ["ptdt-engineering-client"])
     LOGGER.info("mTLS development material provisioned in %s", root)
     return {name: str(root / name) for name in ("root_ca.crt", "server.key", "server.crt", "client.key", "client.crt")}
+
+
+def server_credentials(cert_dir: str) -> grpc.ServerCredentials:
+    root = Path(cert_dir)
+    return grpc.ssl_server_credentials(
+        [(root.joinpath("server.key").read_bytes(), root.joinpath("server.crt").read_bytes())],
+        root_certificates=root.joinpath("root_ca.crt").read_bytes(),
+        require_client_auth=True,
+    )
+
+
+def client_credentials(cert_dir: str) -> grpc.ChannelCredentials:
+    root = Path(cert_dir)
+    return grpc.ssl_channel_credentials(
+        root_certificates=root.joinpath("root_ca.crt").read_bytes(),
+        private_key=root.joinpath("client.key").read_bytes(),
+        certificate_chain=root.joinpath("client.crt").read_bytes(),
+    )
+
+
+def peer_identity(context: grpc.aio.ServicerContext) -> str:
+    identities = context.peer_identities() or ()
+    if not identities:
+        raise PermissionError("mTLS client certificate identity is missing")
+    identity = identities[0]
+    return identity.decode("utf-8") if isinstance(identity, bytes) else str(identity)

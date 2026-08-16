@@ -7,14 +7,18 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   webgpu-shaders:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
+          package-manager-cache: false
       - name: Validate WGSL syntax and reflection
         shell: bash
         run: |
@@ -42,14 +46,13 @@ jobs:
             const reflect = new WgslReflect(source);
             if (!reflect.entry) throw new Error(`WGSL reflection failed: ${file}`);
           }
-          console.log(`Validated ${shaders.length} WGSL shader sources`);
           NODE
 
   python-core:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Install v35 core dependencies
@@ -64,8 +67,8 @@ jobs:
   engine-contracts:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Validate canonical engine contract
@@ -80,5 +83,4 @@ jobs:
           assert c['evidence'] == 'RFC8785-SHA256'
           assert Path('adapters/engine/unity/PTDTEngineFrame.cs').exists()
           assert Path('adapters/engine/unreal/PTDTEngineFrame.hpp').exists()
-          print('Unity/Unreal adapter contract OK')
           PY
