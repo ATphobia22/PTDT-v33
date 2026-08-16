@@ -1,0 +1,83 @@
+syntax = "proto3";
+
+package ptdt.openmi.v32;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+// PTDT v32 OpenMI Interface Control Document
+// Defines the RPC interfaces for interoperable communication between physical solvers
+// (e.g., SWMM, HEC-RAS, MODFLOW) within the execution DAG.
+
+service SolverIntegration {
+  // Initializes the solver with its configuration and initial state
+  rpc Initialize(InitializeRequest) returns (InitializeResponse);
+
+  // Advances the solver forward by a specified time step
+  rpc PerformTimeStep(TimeStepRequest) returns (TimeStepResponse);
+
+  // Retrieves physical quantities from the solver at the current time
+  rpc GetValues(GetValuesRequest) returns (GetValuesResponse);
+
+  // Sets physical quantities in the solver (e.g., as boundary conditions)
+  rpc SetValues(SetValuesRequest) returns (SetValuesResponse);
+
+  // Signals the solver to finalize, flush outputs, and clean up resources
+  rpc Finish(FinishRequest) returns (FinishResponse);
+}
+
+message InitializeRequest {
+  string model_id = 1;
+  string config_uri = 2;
+  google.protobuf.Timestamp start_time = 3;
+}
+
+message InitializeResponse {
+  bool success = 1;
+  string status_message = 2;
+  string version = 3;
+}
+
+message TimeStepRequest {
+  string model_id = 1;
+  double dt_seconds = 2;
+}
+
+message TimeStepResponse {
+  bool success = 1;
+  google.protobuf.Timestamp current_time = 2;
+  double simulation_time_seconds = 3;
+}
+
+message GetValuesRequest {
+  string model_id = 1;
+  string quantity_id = 2; // e.g., "WaterLevel", "Discharge", "Head"
+  string element_set_id = 3;
+}
+
+message GetValuesResponse {
+  repeated double values = 1;
+  bool success = 2;
+  string status_message = 3;
+}
+
+message SetValuesRequest {
+  string model_id = 1;
+  string quantity_id = 2;
+  string element_set_id = 3;
+  repeated double values = 4;
+}
+
+message SetValuesResponse {
+  bool success = 1;
+  string status_message = 2;
+}
+
+message FinishRequest {
+  string model_id = 1;
+}
+
+message FinishResponse {
+  bool success = 1;
+  string output_uri = 2;
+}

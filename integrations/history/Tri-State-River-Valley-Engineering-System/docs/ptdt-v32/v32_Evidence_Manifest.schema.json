@@ -1,0 +1,90 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PTDT v32 Evidence Manifest",
+  "description": "Canonical schema for the PTDT v32 Evidence Manifest, providing cryptographic chain of custody for engineering and governance decisions.",
+  "type": "object",
+  "properties": {
+    "manifest_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this evidence manifest."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC 3161 compliant timestamp of manifest generation."
+    },
+    "provenance": {
+      "type": "object",
+      "description": "Provenance details tracking solver versions and their SBOMs.",
+      "properties": {
+        "solvers": {
+          "type": "array",
+          "description": "List of solvers and versions used in this execution.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string", "description": "Solver name (e.g., HEC-RAS, MODFLOW 6)." },
+              "version": { "type": "string", "description": "Exact version string." },
+              "container_hash": { "type": "string", "description": "SHA-256 hash of the solver container image." },
+              "sbom_ref": { "type": "string", "format": "uri", "description": "URI to the Syft-generated SBOM for this solver." }
+            },
+            "required": ["name", "version", "container_hash", "sbom_ref"]
+          }
+        },
+        "mesh_metadata": {
+          "type": "object",
+          "description": "Metadata regarding the computational mesh used.",
+          "properties": {
+            "resolution": { "type": "string" },
+            "projection": { "type": "string" },
+            "node_count": { "type": "integer" }
+          },
+          "required": ["resolution", "projection", "node_count"]
+        }
+      },
+      "required": ["solvers", "mesh_metadata"]
+    },
+    "execution_results": {
+      "type": "object",
+      "description": "Results and convergence metrics for the execution.",
+      "properties": {
+        "convergence": {
+          "type": "object",
+          "properties": {
+            "hydraulic_error": { "type": "number", "maximum": 0.01 },
+            "groundwater_error": { "type": "number", "maximum": 0.02 },
+            "fos_error": { "type": "number", "maximum": 0.05 }
+          },
+          "required": ["hydraulic_error", "groundwater_error", "fos_error"]
+        },
+        "uncertainty_bounds": {
+          "type": "object",
+          "description": "Confidence intervals/uncertainty fields derived from EnKF."
+        }
+      },
+      "required": ["convergence"]
+    },
+    "cryptographic_signatures": {
+      "type": "array",
+      "description": "Digital signatures ensuring immutability and non-repudiation.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "signer_identity": { "type": "string", "description": "Identity of the signing authority (e.g., OIDC subject, public key fingerprint)." },
+          "signature_type": { "type": "string", "enum": ["ECDSA", "Ed25519", "RSA"], "description": "Algorithm used for the signature." },
+          "jws": { "type": "string", "description": "Detached JSON Web Signature (JWS) string." },
+          "timestamp_authority_token": { "type": "string", "description": "RFC 3161 Time-Stamp Token (TST) provided by a trusted TSA." }
+        },
+        "required": ["signer_identity", "signature_type", "jws"]
+      }
+    }
+  },
+  "required": [
+    "manifest_id",
+    "timestamp",
+    "provenance",
+    "execution_results",
+    "cryptographic_signatures"
+  ]
+}

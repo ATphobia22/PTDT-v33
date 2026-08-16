@@ -1,0 +1,18 @@
+{
+  "engine":"Unreal Engine 5.4",
+  "geospatial":"Cesium for Unreal",
+  "world":"Tri-State River Valley",
+  "root":{"type":"CesiumGeoreference","name":"TRV_Georeference","children":[
+    {"type":"Cesium3DTileset","name":"Valley_Terrain","url":"${CESIUM_TERRAINSET_URL}","maximumScreenSpaceError":2},
+    {"type":"Cesium3DTileset","name":"Regional_Imagery","url":"${CESIUM_IMAGERYSET_URL}","maximumScreenSpaceError":4},
+    {"type":"Cesium3DTileset","name":"Infrastructure_3D","url":"${CESIUM_INFRASTRUCTURESET_URL}","maximumScreenSpaceError":3},
+    {"type":"Actor","name":"RiverHydrology","components":["WaterBodyRiver","FlowTelemetryMaterial","FloodStageController"]},
+    {"type":"Actor","name":"FloodRiskVolumes","components":["CurrentFlood","10Year","25Year","50Year","100Year","500Year"]},
+    {"type":"Actor","name":"CriticalInfrastructure","children":["Bridges","Levees","Dams","Roads","Rail","Utilities","Hospitals","EmergencyServices"]},
+    {"type":"Actor","name":"DigitalTwinTelemetry","components":["USGS","Weather","IoT","AssetHealth","AIForecast"]},
+    {"type":"Actor","name":"CinematicDirector","components":["RegionalEstablishing","RiverCorridor","InfrastructureReveal","ValleyFlythrough","TopDownTwin"]},
+    {"type":"PostProcessVolume","name":"TRV_CinematicGrade","settings":{"exposure":1.0,"bloom":0.35,"vignette":0.22,"filmGrain":0.06,"chromaticAberration":0.02}}
+  ]},
+  "levels":["TRV_Valley_Base","TRV_Hydrology","TRV_Infrastructure","TRV_Risk","TRV_Cinematic"],
+  "data_contract":{"telemetry":"/api/gis/telemetry","flood":"/api/gis/flood","assets":"/api/gis/assets.geojson"}
+}

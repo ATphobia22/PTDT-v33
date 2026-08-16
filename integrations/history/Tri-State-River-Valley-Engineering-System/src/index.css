@@ -1,0 +1,51 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import "tailwindcss";
+
+@variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+/* Custom glow animations and layouts for the Tri-State Cockpit */
+@layer utilities {
+  .glow-green {
+    box-shadow: 0 0 10px rgba(34, 197, 94, 0.4);
+  }
+  .glow-cyan {
+    box-shadow: 0 0 15px rgba(6, 182, 212, 0.5);
+  }
+  .glow-red {
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+  }
+  .text-glow {
+    text-shadow: 0 0 8px rgba(6, 182, 212, 0.6);
+  }
+  .text-glow-green {
+    text-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+  }
+}
+
+/* Blueprint Theme Overrides */
+.blueprint {
+  --color-slate-950: #021124;
+  --color-slate-900: #0a2540;
+  --color-slate-800: #12385c;
+  --color-slate-700: #1d4d77;
+  --color-slate-600: #2b6596;
+  --color-slate-500: #3f83b8;
+  --color-slate-400: #5ea4d6;
+  --color-slate-300: #89c5eb;
+  --color-slate-200: #b9e0f5;
+  --color-slate-100: #def0fa;
+  --color-slate-50:  #f0f8ff;
+  
+  --color-indigo-600: #0088cc;
+  --color-indigo-500: #00aaff;
+  --color-indigo-400: #33bbff;
+  
+  --color-emerald-500: #00ffcc;
+  --color-emerald-400: #33ffdd;
+}
