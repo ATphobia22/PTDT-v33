@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import math
+from dataclasses import dataclass
 from typing import Final
 
 SUPPORTED_LINEAR_UNITS: Final[frozenset[str]] = frozenset({"m", "ft", "ftUS"})
