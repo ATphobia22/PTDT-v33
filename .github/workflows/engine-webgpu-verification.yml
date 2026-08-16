@@ -21,10 +21,10 @@ jobs:
           set -euo pipefail
           npm init -y >/dev/null 2>&1
           npm install --no-save wgsl_reflect@1.5.0 >/dev/null
-          node <<'NODE'
-          const fs = require('fs');
-          const path = require('path');
-          const { WgslReflect } = require('wgsl_reflect');
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import path from 'node:path';
+          import { WgslReflect } from 'wgsl_reflect/wgsl_reflect.module.js';
           const roots = ['web', 'frontend', 'engine', 'adapters'];
           const shaders = [];
           function walk(dir) {
