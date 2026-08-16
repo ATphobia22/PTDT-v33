@@ -1,0 +1,59 @@
+name: verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  python-evidence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile Python sources
+        run: python -m compileall -q src
+      - name: Evidence graph smoke test
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          from src.evidence.evidence_graph import EvidenceGraph, ProvenanceRecord
+          from src.evidence.archimedes_authority import ArchimedesAuthority
+
+          observation = ProvenanceRecord.create(
+              source='USGS-NWIS',
+              source_record_id='03378500:00065:ci',
+              role='usgs-observation',
+              authority='USGS',
+              payload={'site_no': '03378500', 'parameter_code': '00065', 'value': 381.2},
+              units='ft',
+          )
+          assert observation.verify()
+
+          class Engine:
+              def calculate(self, value):
+                  return {'value': value * 2}
+
+          calculation = ArchimedesAuthority(Engine()).calculate(
+              input_record=observation,
+              operation='calculate',
+              value=3,
+          )
+
+          graph = EvidenceGraph()
+          graph.add_record(observation)
+          graph.add_record(calculation.outputs)
+          graph.link(
+              observation.provenance_id,
+              calculation.outputs.provenance_id,
+              'produces',
+              'independent Archimedes calculation',
+          )
+          selected = graph.selection(observation.provenance_id)
+          assert selected['read_only'] is True
+          assert selected['calculation_authority'] == 'archimedes'
+          assert calculation.outputs.parent_ids == (observation.provenance_id,)
+          print('Evidence graph smoke test: PASS')
+          PY
