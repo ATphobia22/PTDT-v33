@@ -15,16 +15,31 @@ public readonly struct EcefCoordinate
 }
 
 public sealed record EngineFrame(
+    string FrameId,
+    string AuthoritySnapshotId,
+    string TimestampUtc,
+    string Crs,
+    string VerticalDatum,
+    EcefCoordinate GeocentricAnchorEpsg4978,
+    string ContentHash,
+    string ValidationStatus,
     ulong TimestampEpochMs,
     uint TimestepIndex,
     float CalculatedWseNavd88Ft,
-    EcefCoordinate GeocentricAnchorEpsg4978,
-    string EvidenceHash,
     ReadOnlyMemory<byte> DepthFloat32);
 
 public interface IEngineFrameSink
 {
     void Publish(EngineFrame frame);
+}
+
+public static class SceneStateValidator
+{
+    public static bool IsValid(EngineFrame frame) =>
+        frame.Crs == "EPSG:2966" &&
+        frame.VerticalDatum == "NAVD88" &&
+        frame.ValidationStatus == "VALID" &&
+        EvidenceHashVerifier.IsSha256Hex(frame.ContentHash);
 }
 
 public static class EvidenceHashVerifier

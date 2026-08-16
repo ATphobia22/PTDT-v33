@@ -32,12 +32,15 @@ USGS / NOAA / DEM / HEC-RAS / MODFLOW / Tucker heritage
               ▼
      PTDT Authoritative State  (NAVD88 · EPSG:2966)
               │
-         Redis Streams (optional)
-       ┌──────┬──────┐
-       ▼             ▼
-  WebGPU Runtime   Unity Runtime
-  TurboVec WGSL      Box3D 0.8.1 (derived only)
-  MapLibre+deck      render-origin relative
+          Canonical SceneState
+       ┌──────┬──────┬──────────┐
+       ▼      ▼      ▼          ▼
+   MapLibre  WebGPU OpenUSD   Engine Adapters
+       │      │      │          │
+       └──────┴──────┴──────────┘
+                    │
+              gRPC/WebSocket
+               + local fixture
 ```
 
 | Layer | Role | Mutates hydro? |
@@ -46,6 +49,26 @@ USGS / NOAA / DEM / HEC-RAS / MODFLOW / Tucker heritage
 | MapLibre + deck.gl | Presentation map / extrusions | **No** |
 | TurboVec WebGPU | Band indices (NDVI/NDWI/EVI/SAVI) | **No** |
 | Box3D Unity | Derived physics / VFX | **No** |
+| Unity / Unreal adapters | Validated SceneState consumers | **No** |
+
+---
+
+## Keyless runtime defaults
+
+PTDT starts without commercial credentials. Core capabilities use:
+
+- **Maps:** MapLibre
+- **Raster:** COG/OGC
+- **Tiles:** PMTiles/self-hosted tile server
+- **Spatial:** PROJ/GDAL/PostGIS-compatible processing
+- **Object storage:** MinIO/S3-compatible
+- **Realtime:** gRPC/WebSocket
+- **Inference:** local llama.cpp-compatible runtime
+- **Scene interchange:** OpenUSD
+
+Optional hosted providers are adapters only. If credentials are absent, the provider registry retains the OSS implementation and the sovereign core remains operational.
+
+See `docs/integration/KEYLESS_PROVIDER_MATRIX.md` and `core/providers.py`.
 
 ---
 
@@ -71,7 +94,8 @@ cd frontend && npm install && npm run dev
 docker compose up --build
 ```
 
-CI: `.github/workflows/sovereign-ci.yml`
+CI: `.github/workflows/sovereign-ci.yml`  
+Security/SBOM: `.github/workflows/security-supply-chain.yml`
 
 ---
 
@@ -94,20 +118,16 @@ CI: `.github/workflows/sovereign-ci.yml`
 
 | Topic | Path |
 |---|---|
+| Keyless architecture | `docs/superpowers/specs/2026-08-16-keyless-open-source-ptdt-design.md` |
+| Keyless provider matrix | `docs/integration/KEYLESS_PROVIDER_MATRIX.md` |
+| Keyless implementation plan | `docs/superpowers/plans/2026-08-16-keyless-v35-all-suggestions.md` |
 | Precision lock & inconsistencies | `docs/ptdt-v33/PRECISION_LOCK_AND_INCONSISTENCIES.md` |
 | Material Truth package | `docs/ptdt-v33/MATERIAL_TRUTH_PACKAGE.md` |
-| Grant stack & BRIC | `docs/ptdt-v33/GRANT_STACK_AND_BRIC.md` |
 | Engineering invariants | `docs/ptdt-v33/ENGINEERING_INVARIANTS.md` |
 | Daubert & solver authority | `docs/ptdt-v33/DAUBERT_AND_SOLVER_AUTHORITY.md` |
 | USGS HEC-RAS model inventory | `docs/ptdt-v33/USGS_HEC_RAS_MODEL_INVENTORY.md` |
 | IDNR flood zones / BAFL | `docs/ptdt-v33/IDNR_FLOOD_ZONES_BAFL.md` |
-| OSM building materials / textures | `docs/ptdt-v33/OSM_BUILDING_MATERIALS_TEXTURES.md` |
-| Tucker family flood heritage | `docs/ptdt-v33/TUCKER_FAMILY_FLOOD_HERITAGE.md` |
-| USGS FIM New Harmony (SIR 2016-5119) | `docs/ptdt-v33/USGS_FIM_NEW_HARMONY_SIR2016-5119.md` |
-| Caborn-Welborn archaeology | `docs/ptdt-v33/CABORN_WELBORN_ARCHAEOLOGY.md` |
-| Posey / Indiana mapping sources | `docs/ptdt-v33/POSEY_INDIANA_MAPPING_SOURCES.md` |
 | OSM / Overture → Unity buildings | `docs/ptdt-v33/OSM_OVERTURE_UNITY_BUILDINGS.md` |
-| Berm placement & historical flood | `docs/ptdt-v33/BERM_PLACEMENT_AND_HISTORICAL_FLOOD.md` |
 | Tri-State agency data verification | `docs/ptdt-v33/TRI_STATE_AGENCY_DATA_VERIFICATION.md` |
 | MapLibre + deck.gl | `docs/ptdt-v33/MAPLIBRE_DECKGL_INTEGRATION.md` |
 | Authority matrix | `docs/ptdt-v33/CANONICAL_AUTHORITY_MATRIX.md` |

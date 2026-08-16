@@ -1,11 +1,32 @@
 from __future__ import annotations
 
+import copy
 import hashlib
+import math
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any
+from types import MappingProxyType
+from typing import Any, Mapping
 
 import rfc8785
+
+
+def _validate_finite(value: Any, path: str = "payload") -> None:
+    if isinstance(value, bool) or value is None or isinstance(value, str):
+        return
+    if isinstance(value, (int, float)):
+        if not math.isfinite(float(value)):
+            raise ValueError(f"non-finite numeric value at {path}")
+        return
+    if isinstance(value, Mapping):
+        for key, child in value.items():
+            _validate_finite(child, f"{path}.{key}")
+        return
+    if isinstance(value, (list, tuple)):
+        for index, child in enumerate(value):
+            _validate_finite(child, f"{path}[{index}]")
+        return
+    raise ValueError(f"unsupported evidence value at {path}: {type(value).__name__}")
 
 
 @dataclass(frozen=True, slots=True)
@@ -18,16 +39,23 @@ class EvidenceNode:
     parent_ids: tuple[str, ...] = ()
     timestamp_utc: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"))
 
+    def __post_init__(self) -> None:
+        if not self.node_id or not self.provenance_id or not self.authority:
+            raise ValueError("evidence node identifiers and authority are required")
+        _validate_finite(self.payload)
+
     def canonical_bytes(self) -> bytes:
-        return rfc8785.dumps({
-            "authority": self.authority,
-            "node_id": self.node_id,
-            "parent_ids": list(self.parent_ids),
-            "payload": self.payload,
-            "provenance_id": self.provenance_id,
-            "timestamp_utc": self.timestamp_utc,
-            "validation_status": self.validation_status,
-        })
+        return rfc8785.dumps(
+            {
+                "authority": self.authority,
+                "node_id": self.node_id,
+                "parent_ids": list(self.parent_ids),
+                "payload": self.payload,
+                "provenance_id": self.provenance_id,
+                "timestamp_utc": self.timestamp_utc,
+                "validation_status": self.validation_status,
+            }
+        )
 
     @property
     def payload_hash(self) -> str:
@@ -71,3 +99,7 @@ class EvidenceLedger:
 
     def get(self, node_id: str) -> EvidenceNode:
         return self._nodes[node_id]
+
+    def snapshot(self) -> Mapping[str, EvidenceNode]:
+        """Return a detached, read-only view of the current evidence graph."""
+        return MappingProxyType(copy.deepcopy(self._nodes))

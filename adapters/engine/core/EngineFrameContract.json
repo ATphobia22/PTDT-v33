@@ -1,1 +1,1 @@
-{"schema":"ptdt.engine.frame.v1","coordinate_reference":"EPSG:4978","vertical_reference":"NAVD88","evidence":"RFC8785-SHA256","transport":["grpc","websocket"],"payload":"float32-depth-buffer"}
+{"schema":"ptdt.engine.frame.v2","coordinate_reference":"EPSG:2966","vertical_reference":"NAVD88","evidence":"RFC8785-SHA256","authority":"immutable-snapshot","transport":["grpc","websocket","local-fixture"],"payload":"float32-depth-buffer","required":["frame_id","authority_snapshot_id","timestamp_utc","crs","vertical_datum","render_origin","content_hash","validation_status"]}
