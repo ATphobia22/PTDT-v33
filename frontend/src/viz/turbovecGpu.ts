@@ -11,6 +11,12 @@ export const STORAGE_OFFSET_ALIGNMENT_DEFAULT = 256;
 export const RGBA_STRIDE_BYTES = 16;
 export const OUT_STRIDE_BYTES = 4;
 
+function copyFloat32ForGpu(data: Float32Array): Float32Array<ArrayBuffer> {
+  const copy = new Float32Array(new ArrayBuffer(data.byteLength));
+  copy.set(data);
+  return copy;
+}
+
 export function assertBufferOffsetAlign(offset: number, align: number, label: string): void {
   if (offset % align !== 0) {
     throw new Error(`WebGPU alignment: ${label} offset ${offset} not multiple of ${align}`);
@@ -65,7 +71,7 @@ let cache: DeviceCache | null = null;
 
 /** AoS interleave — matches WGSL array<vec4<f32>> coalesced loads. */
 export function interleaveRGBA(
-  red: Float32Array, nir: Float32Array, green: Float32Array, blue: Float32Array
+  red: Float32Array, nir: Float32Array, green: Float32Array, blue: Float32Array,
 ): Float32Array {
   const n = red.length;
   const out = new Float32Array(n * 4);
@@ -170,7 +176,7 @@ export async function compactTurboVecGpu(input: TurboVecInput): Promise<TurboVec
   const paramBuf = device.createBuffer({ size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
   device.queue.writeBuffer(paramBuf, 0, paramData);
   const rgbaBuf = device.createBuffer({ size: rgba.byteLength, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
-  device.queue.writeBuffer(rgbaBuf, 0, rgba);
+  device.queue.writeBuffer(rgbaBuf, 0, copyFloat32ForGpu(rgba));
   const outBuf = device.createBuffer({ size: n * 4, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
   const readBuf = device.createBuffer({ size: n * 4, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
   const uploadMs = performance.now() - tUpload0;
@@ -263,7 +269,7 @@ export interface TurboVecVarianceReport {
 
 export async function benchTurboVecVariance(
   input: Omit<TurboVecInput, 'profile'>,
-  runs = 5
+  runs = 5,
 ): Promise<TurboVecVarianceReport> {
   await compactTurboVecGpu({ ...input, profile: false });
   const samples: TurboVecProfile[] = [];
