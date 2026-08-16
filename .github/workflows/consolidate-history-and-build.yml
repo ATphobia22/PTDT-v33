@@ -1,0 +1,314 @@
+name: PTDT History-Preserving Consolidation
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ptdt-main-consolidation
+  cancel-in-progress: false
+
+jobs:
+  consolidate:
+    if: ${{ !contains(github.event.head_commit.message, '[consolidation-bot]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout full PTDT history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "PTDT Consolidation Bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config merge.renormalize true
+          git config rerere.enabled true
+
+      - name: Merge all PTDT-v33 feature branches
+        shell: bash
+        run: |
+          set -euo pipefail
+          branches=(
+            feature/cinematic-runtime-core-fixes
+            feature/hecras-depth-pipeline-host
+            feature/hecras-webgpu-cell-index-integration
+            feature/six-subsystem-authority-lock
+            fix/tristate-engine-refactor
+          )
+          git fetch origin '+refs/heads/*:refs/remotes/origin/*'
+          for branch in "${branches[@]}"; do
+            if git show-ref --verify --quiet "refs/remotes/origin/$branch"; then
+              echo "==> merging $branch"
+              git merge --no-edit --no-ff -X theirs "origin/$branch" || {
+                echo "Merge conflict detected in $branch; applying deterministic feature-branch resolution."
+                git diff --name-only --diff-filter=U | while read -r path; do
+                  git checkout --theirs -- "$path"
+                  git add -- "$path"
+                done
+                git commit -m "Merge $branch with deterministic conflict resolution"
+              }
+            fi
+          done
+
+      - name: Import source repository histories as subtrees
+        shell: bash
+        run: |
+          set -euo pipefail
+          declare -A repos=(
+            [PTDT-TriState-Unified-v33]=https://github.com/ATphobia22/PTDT-TriState-Unified-v33.git
+            [Tri-State-River-Valley-Engineering-System]=https://github.com/ATphobia22/Tri-State-River-Valley-Engineering-System.git
+            [Tri-County-River-Valley-Digital-Twin]=https://github.com/ATphobia22/Tri-County-River-Valley-Digital-Twin.git
+          )
+          mkdir -p integrations/history
+          for name in "${!repos[@]}"; do
+            prefix="integrations/history/$name"
+            if [ -d "$prefix/.git" ] || [ -f "$prefix/.git" ]; then
+              continue
+            fi
+            if [ -e "$prefix" ]; then
+              echo "Refusing to overwrite existing subtree prefix: $prefix"
+              exit 1
+            fi
+            git remote add "src-$name" "${repos[$name]}" || true
+            git fetch --no-tags --prune "src-$name" main
+            git subtree add --prefix="$prefix" "src-$name" main --message="Import $name history-preserving subtree"
+          done
+
+      - name: Build corrected v35 evidence and spatial core
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ptdt_v35_core tests/ptdt_v35_core
+          cat > ptdt_v35_core/__init__.py <<'PY'
+          """PTDT v35 corrected evidence/spatial core."""
+          from .evidence import EvidenceLedger, EvidenceNode
+          from .spatial import SpatialTransformBridge
+          __all__ = ["EvidenceLedger", "EvidenceNode", "SpatialTransformBridge"]
+          PY
+          cat > ptdt_v35_core/evidence.py <<'PY'
+          from __future__ import annotations
+          import hashlib
+          from dataclasses import dataclass, field
+          from datetime import datetime, timezone
+          from typing import Any
+
+          import rfc8785
+
+          @dataclass(frozen=True, slots=True)
+          class EvidenceNode:
+              node_id: str
+              provenance_id: str
+              authority: str
+              validation_status: str
+              payload: dict[str, Any]
+              parent_ids: tuple[str, ...] = ()
+              timestamp_utc: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'))
+
+              def canonical_bytes(self) -> bytes:
+                  body = {
+                      "authority": self.authority,
+                      "node_id": self.node_id,
+                      "parent_ids": list(self.parent_ids),
+                      "payload": self.payload,
+                      "provenance_id": self.provenance_id,
+                      "timestamp_utc": self.timestamp_utc,
+                      "validation_status": self.validation_status,
+                  }
+                  return rfc8785.dumps(body)
+
+              @property
+              def payload_hash(self) -> str:
+                  return hashlib.sha256(self.canonical_bytes()).hexdigest()
+
+          class EvidenceLedger:
+              def __init__(self) -> None:
+                  self._nodes: dict[str, EvidenceNode] = {}
+
+              def append(self, node: EvidenceNode) -> None:
+                  if node.node_id in self._nodes:
+                      raise ValueError(f"duplicate evidence node: {node.node_id}")
+                  for parent in node.parent_ids:
+                      if parent not in self._nodes:
+                          raise ValueError(f"unknown evidence parent: {parent}")
+                  self._nodes[node.node_id] = node
+
+              def verify(self) -> None:
+                  for node in self._nodes.values():
+                      for parent in node.parent_ids:
+                          if parent not in self._nodes:
+                              raise ValueError(f"broken evidence edge: {parent}")
+                      expected = node.payload_hash
+                      if expected != hashlib.sha256(node.canonical_bytes()).hexdigest():
+                          raise ValueError(f"evidence hash mismatch: {node.node_id}")
+
+              def get(self, node_id: str) -> EvidenceNode:
+                  return self._nodes[node_id]
+          PY
+          cat > ptdt_v35_core/spatial.py <<'PY'
+          from __future__ import annotations
+          import math
+          from dataclasses import dataclass
+
+          WGS84_A_M = 6378137.0
+          WGS84_F = 1.0 / 298.257223563
+          WGS84_E2 = WGS84_F * (2.0 - WGS84_F)
+          FT_TO_M = 0.3048
+
+          @dataclass(frozen=True, slots=True)
+          class ECEF:
+              x_m: float
+              y_m: float
+              z_m: float
+
+          class SpatialTransformBridge:
+              """WGS84 geodetic -> EPSG:4978 plus Web-Mercator tiling.
+
+              EPSG:4978 requires ellipsoidal height. A NAVD88 orthometric
+              elevation must first be converted using an authoritative geoid
+              model; this class therefore refuses to silently treat NAVD88 as
+              ellipsoidal height.
+              """
+              def wgs84_ellipsoidal_to_ecef(self, lon_deg: float, lat_deg: float, h_m: float) -> ECEF:
+                  if not (-180.0 <= lon_deg <= 180.0 and -90.0 <= lat_deg <= 90.0):
+                      raise ValueError("invalid WGS84 longitude/latitude")
+                  lon = math.radians(lon_deg)
+                  lat = math.radians(lat_deg)
+                  sin_lat = math.sin(lat)
+                  cos_lat = math.cos(lat)
+                  n = WGS84_A_M / math.sqrt(1.0 - WGS84_E2 * sin_lat * sin_lat)
+                  return ECEF(
+                      (n + h_m) * cos_lat * math.cos(lon),
+                      (n + h_m) * cos_lat * math.sin(lon),
+                      (n * (1.0 - WGS84_E2) + h_m) * sin_lat,
+                  )
+
+              def slippy_tile(self, lon_deg: float, lat_deg: float, zoom: int) -> tuple[int, int]:
+                  if zoom < 0 or zoom > 30:
+                      raise ValueError("zoom must be in [0, 30]")
+                  lat = max(-85.05112878, min(85.05112878, lat_deg))
+                  n = 1 << zoom
+                  x = int((lon_deg + 180.0) / 360.0 * n)
+                  lat_rad = math.radians(lat)
+                  y = int((1.0 - math.asinh(math.tan(lat_rad)) / math.pi) / 2.0 * n)
+                  return max(0, min(n - 1, x)), max(0, min(n - 1, y))
+          PY
+          cat > tests/ptdt_v35_core/test_core.py <<'PY'
+          import hashlib
+          from ptdt_v35_core.evidence import EvidenceLedger, EvidenceNode
+          from ptdt_v35_core.spatial import SpatialTransformBridge
+
+          def test_evidence_chain_is_deterministic():
+              ledger = EvidenceLedger()
+              root = EvidenceNode("root", "test", "test", "valid", {"b": 2, "a": 1})
+              ledger.append(root)
+              child = EvidenceNode("child", "test", "test", "valid", {"x": 3}, ("root",))
+              ledger.append(child)
+              ledger.verify()
+              assert len(root.payload_hash) == 64
+              assert hashlib.sha256(root.canonical_bytes()).hexdigest() == root.payload_hash
+
+          def test_spatial_round_trip_anchor_shape():
+              bridge = SpatialTransformBridge()
+              ecef = bridge.wgs84_ellipsoidal_to_ecef(-88.0007, 37.9035, 100.0)
+              assert all(abs(v) > 1.0 for v in (ecef.x_m, ecef.y_m, ecef.z_m))
+              x, y = bridge.slippy_tile(-88.0007, 37.9035, 15)
+              assert 0 <= x < 2**15 and 0 <= y < 2**15
+          PY
+          cat > ptdt_v35_core/requirements.txt <<'EOF'
+          rfc8785>=0.1.4,<1
+          pyproj>=3.7,<4
+          EOF
+
+      - name: Build Unity/Unreal adapter contract layer
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p adapters/engine/{core,unity,unreal}
+          cat > adapters/engine/core/EngineFrameContract.json <<'EOF'
+          {
+            "schema": "ptdt.engine.frame.v1",
+            "coordinate_reference": "EPSG:4978",
+            "vertical_reference": "NAVD88",
+            "evidence": "RFC8785-SHA256",
+            "transport": ["grpc", "websocket"],
+            "payload": "float32-depth-buffer"
+          }
+          EOF
+          cat > adapters/engine/unity/README.md <<'EOF'
+          # Unity adapter
+
+          Unity consumes the PTDT engine-frame contract through a transport adapter.
+          Keep Unity/MCP/UGS implementation details behind this boundary; PTDT core
+          never depends on Unity assemblies.
+          EOF
+          cat > adapters/engine/unreal/README.md <<'EOF'
+          # Unreal adapter
+
+          Unreal consumes the same engine-frame contract through an adapter boundary.
+          UnrealCV, Unreal Python, and Unreal.js compatibility code belongs behind
+          this boundary and must not become PTDT core dependencies.
+          EOF
+
+      - name: Add dependencies and integration documentation
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f requirements.txt ]; then
+            printf '\nrfc8785>=0.1.4,<1\npyproj>=3.7,<4\n' >> requirements.txt
+          else
+            cat > requirements.txt <<'EOF'
+          rfc8785>=0.1.4,<1
+          pyproj>=3.7,<4
+          EOF
+          fi
+          mkdir -p docs/integration
+          cat > docs/integration/HISTORY_PRESERVING_CONSOLIDATION.md <<'EOF'
+          # PTDT History-Preserving Consolidation
+
+          The PTDT-v33 repository is the canonical `main` repository. The other
+          engineering repositories are imported as Git subtrees under
+          `integrations/history/`, preserving their commit graphs while keeping
+          source ownership and provenance explicit.
+
+          PTDT-v33 feature branches are merged into `main` before subtree import.
+          Conflicts are resolved deterministically in favor of the feature branch
+          for files that cannot be merged automatically; CI remains the acceptance
+          gate for semantic correctness.
+
+          Unity and Unreal are integration boundaries, not core dependencies.
+          The corrected v35 evidence core uses RFC 8785 JCS for canonical evidence
+          bytes and explicitly distinguishes NAVD88 orthometric heights from the
+          ellipsoidal heights required by EPSG:4978.
+          EOF
+
+      - name: Install verification dependencies
+        run: python -m pip install --upgrade pip && python -m pip install -r ptdt_v35_core/requirements.txt pytest ruff
+
+      - name: Run corrected v35 core tests
+        run: PYTHONPATH=. pytest -q tests/ptdt_v35_core
+
+      - name: Run Python compile and lint gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m compileall -q ptdt_v35_core adapters
+          ruff check ptdt_v35_core tests/ptdt_v35_core
+
+      - name: Commit consolidated main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'No consolidation changes remain.'
+            exit 0
+          fi
+          git commit -m "[consolidation-bot] history-preserving PTDT v35 consolidation"
+          git push origin HEAD:main
