@@ -34,7 +34,7 @@ jobs:
           local = s.project_to_local(ProjectedPoint(s.origin_e + 10, s.origin_n + 20, BFE_NAVD88_FT))
           assert abs(local.x_m - 10) < 1e-9 and abs(local.y_m - 20) < 1e-9
           PY
-      - name: Import FastAPI app
+      - name: FastAPI contract checks
         run: |
           python - <<'PY'
           from fastapi.testclient import TestClient
@@ -48,8 +48,8 @@ jobs:
           assert body.get("datum") == "NAVD88"
           assert body.get("crs") == "EPSG:2966"
           PY
-      - name: v35 core and clearance tests
-        run: pytest -q tests/test_v35_core.py
+      - name: v35 core and integration tests
+        run: pytest -q tests/test_v35_core.py tests/test_transport_integrations.py
       - name: Compile gRPC contract
         run: |
           mkdir -p /tmp/ptdt_grpc
