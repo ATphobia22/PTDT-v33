@@ -61,8 +61,8 @@ jobs:
         run: PYTHONPATH=. pytest -q tests/ptdt_v35_core
       - name: Lint and compile adapters/core
         run: |
-          python -m compileall -q ptdt_v35_core
-          ruff check ptdt_v35_core tests/ptdt_v35_core
+          python -m compileall -q ptdt_v35_core adapters/engine/core
+          ruff check ptdt_v35_core tests/ptdt_v35_core adapters/engine/core
 
   engine-contracts:
     runs-on: ubuntu-latest
@@ -76,11 +76,25 @@ jobs:
           python - <<'PY'
           import json
           from pathlib import Path
+          from adapters.engine.core.scene_state import SceneState
           p = Path('adapters/engine/core/EngineFrameContract.json')
           c = json.loads(p.read_text())
-          assert c['schema'] == 'ptdt.engine.frame.v1'
-          assert c['coordinate_reference'] == 'EPSG:4978'
+          assert c['schema'] == 'ptdt.engine.frame.v2'
+          assert c['coordinate_reference'] == 'EPSG:2966'
+          assert c['vertical_reference'] == 'NAVD88'
           assert c['evidence'] == 'RFC8785-SHA256'
+          assert 'authority_snapshot_id' in c['required']
           assert Path('adapters/engine/unity/PTDTEngineFrame.cs').exists()
           assert Path('adapters/engine/unreal/PTDTEngineFrame.hpp').exists()
+          state = SceneState.from_mapping({
+              'frame_id': 'ci',
+              'authority_snapshot_id': 'snapshot',
+              'timestamp_utc': '2026-08-16T15:00:00Z',
+              'crs': 'EPSG:2966',
+              'vertical_datum': 'NAVD88',
+              'render_origin': [0.0, 0.0, 0.0],
+              'content_hash': 'a' * 64,
+              'validation_status': 'VALID',
+          })
+          assert state.to_mapping()['vertical_datum'] == 'NAVD88'
           PY
