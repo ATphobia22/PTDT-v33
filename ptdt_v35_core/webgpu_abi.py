@@ -1,9 +1,8 @@
 from __future__ import annotations
 
+import struct
 from collections.abc import Sequence
 from dataclasses import dataclass
-import struct
-
 
 _HEADER_STRUCT = struct.Struct("<4I")
 
