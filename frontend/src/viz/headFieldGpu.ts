@@ -11,6 +11,12 @@ export interface HeadFieldUpload {
   status: "OK" | "STALE" | "FAILED";
 }
 
+function copyFloat32ForGpu(data: Float32Array): Float32Array<ArrayBuffer> {
+  const copy = new Float32Array(new ArrayBuffer(data.byteLength));
+  copy.set(data);
+  return copy;
+}
+
 export class HeadFieldGpuManager {
   readonly device: GPUDevice;
   headTexture: GPUTexture | null = null;
@@ -44,18 +50,19 @@ export class HeadFieldGpuManager {
     });
     const bytesPerRowUnpadded = payload.width * 4;
     const bytesPerRow = Math.ceil(bytesPerRowUnpadded / 256) * 256;
+    const uploadData = copyFloat32ForGpu(payload.heads);
     if (bytesPerRow === bytesPerRowUnpadded) {
       this.device.queue.writeTexture(
         { texture: this.headTexture },
-        payload.heads,
+        uploadData,
         { bytesPerRow, rowsPerImage: payload.height },
         { width: payload.width, height: payload.height, depthOrArrayLayers: 1 },
       );
     } else {
-      const padded = new Float32Array((bytesPerRow / 4) * payload.height);
+      const padded = new Float32Array(new ArrayBuffer((bytesPerRow / 4) * payload.height * 4));
       for (let y = 0; y < payload.height; y++) {
         padded.set(
-          payload.heads.subarray(y * payload.width, (y + 1) * payload.width),
+          uploadData.subarray(y * payload.width, (y + 1) * payload.width),
           y * (bytesPerRow / 4),
         );
       }
