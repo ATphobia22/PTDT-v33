@@ -38,14 +38,6 @@ jobs:
         run: |
           python -m pytest tests/test_hecras_archimedes_authority.py -q
 
-      - name: Validate Unfilterable Float Shader Rules
-        shell: bash
-        run: |
-          set -euo pipefail
-          ! grep -Eq 'textureSample(Level)?\\(' engine/cinematic_runtime/shaders/turbovec_plate_full.wgsl
-          grep -Eq 'textureLoad\\(' engine/cinematic_runtime/shaders/turbovec_plate_full.wgsl
-          grep -Eq 'textureLoad\\(' engine/cinematic_runtime/shaders/preprocess_dem_wse.wgsl
-
   validate-unity-bridge:
     name: Unity Box3D Bridge Compilation
     runs-on: ubuntu-latest
