@@ -8,6 +8,31 @@ Vertical datum: **NAVD88**. Horizontal CRS: **EPSG:2966** (Indiana East).
 
 ---
 
+## v35 Photorealistic Spatial Scene Core
+
+PTDT treats spatial visualization as a **multi-representation derived product** while keeping PostGIS/evidence and canonical SceneState authoritative.
+
+```text
+Evidence/PostGIS → SceneState → PTDT SpatialTile
+                                  │
+       ┌──────────────┬───────────┼───────────────┐
+       ▼              ▼           ▼               ▼
+      MVT            I3S       OpenUSD        Reality Capture
+       │              │           │          Photo-SLAM / 3DGS / 4DGS
+   MapLibre        3D GIS    Houdini/Unity/      Open3D
+                               Unreal
+                                  │
+                                WebGPU
+```
+
+Every derived tile records CRS, vertical datum, epoch, provenance, confidence, and a deterministic content hash. Procedural assets are explicitly derived/procedural and cannot silently replace authoritative survey or engineering geometry.
+
+**Routing correction:** OSRM remains a path solver; route safety is driven by dynamic road hazard state (elevation, water surface, depth, velocity, closure state, road class, uncertainty). BFE remains an engineering attribute and is not a universal road-closure threshold.
+
+See `docs/architecture/PTDT_V35_PHOTOREALISTIC_SCENE.md`, `schemas/ptdt_spatial_tile.schema.json`, and `docs/integration/OPEN_SOURCE_3D_STACK.md`.
+
+---
+
 ## Locked engineering constants
 
 | Quantity | Value | Notes |
@@ -21,35 +46,6 @@ Vertical datum: **NAVD88**. Horizontal CRS: **EPSG:2966** (Indiana East).
 | LOMA clearance | +2.2 ft | LAG − BFE (natural high ground) |
 
 **Operations:** J.T. Myers **stage** triggers (dock 54.93 → house 58.45–58.75 ft) are gage-datum — see `data/property_flood_triggers.json`.
-
----
-
-## Architecture (presentation vs authority)
-
-```
-USGS / NOAA / DEM / HEC-RAS / MODFLOW / Tucker heritage
-              │
-              ▼
-     PTDT Authoritative State  (NAVD88 · EPSG:2966)
-              │
-          Canonical SceneState
-       ┌──────┬──────┬──────────┐
-       ▼      ▼      ▼          ▼
-   MapLibre  WebGPU OpenUSD   Engine Adapters
-       │      │      │          │
-       └──────┴──────┴──────────┘
-                    │
-              gRPC/WebSocket
-               + local fixture
-```
-
-| Layer | Role | Mutates hydro? |
-|---|---|---|
-| Sovereign API | Datum, spatial, invariants, RAS extent | No (read + seal) |
-| MapLibre + deck.gl | Presentation map / extrusions | **No** |
-| TurboVec WebGPU | Band indices (NDVI/NDWI/EVI/SAVI) | **No** |
-| Box3D Unity | Derived physics / VFX | **No** |
-| Unity / Unreal adapters | Validated SceneState consumers | **No** |
 
 ---
 
@@ -95,7 +91,37 @@ docker compose up --build
 ```
 
 CI: `.github/workflows/sovereign-ci.yml`  
-Security/SBOM: `.github/workflows/security-supply-chain.yml`
+Security/SBOM: `.github/workflows/security-supply-chain.yml`  
+Spatial scene verification: `.github/workflows/ptdt-v35-spatial-verification.yml`
+
+---
+
+## Architecture (presentation vs authority)
+
+```text
+USGS / NOAA / DEM / HEC-RAS / MODFLOW / Tucker heritage
+              │
+              ▼
+     PTDT Authoritative State  (NAVD88 · EPSG:2966)
+              │
+          Canonical SceneState
+       ┌──────┬──────┬──────────┐
+       ▼      ▼      ▼          ▼
+   MapLibre  WebGPU OpenUSD   Engine Adapters
+       │      │      │          │
+       └──────┴──────┴──────────┘
+                    │
+              gRPC/WebSocket
+               + local fixture
+```
+
+| Layer | Role | Mutates hydro? |
+|---|---|---|
+| Sovereign API | Datum, spatial, invariants, RAS extent | No (read + seal) |
+| MapLibre + deck.gl | Presentation map / extrusions | **No** |
+| TurboVec WebGPU | Band indices (NDVI/NDWI/EVI/SAVI) | **No** |
+| Box3D Unity | Derived physics / VFX | **No** |
+| Unity / Unreal adapters | Validated SceneState consumers | **No** |
 
 ---
 
@@ -120,7 +146,11 @@ Security/SBOM: `.github/workflows/security-supply-chain.yml`
 |---|---|
 | Keyless architecture | `docs/superpowers/specs/2026-08-16-keyless-open-source-ptdt-design.md` |
 | Keyless provider matrix | `docs/integration/KEYLESS_PROVIDER_MATRIX.md` |
-| Keyless implementation plan | `docs/superpowers/plans/2026-08-16-keyless-v35-all-suggestions.md` |
+| Photorealistic spatial architecture | `docs/architecture/PTDT_V35_PHOTOREALISTIC_SCENE.md` |
+| Open-source 3D stack | `docs/integration/OPEN_SOURCE_3D_STACK.md` |
+| Spatial tile schema | `schemas/ptdt_spatial_tile.schema.json` |
+| Photorealistic spatial design | `docs/superpowers/specs/2026-08-16-photorealistic-spatial-scene-core-design.md` |
+| Photorealistic spatial implementation plan | `docs/superpowers/plans/2026-08-16-photorealistic-spatial-scene-core.md` |
 | Precision lock & inconsistencies | `docs/ptdt-v33/PRECISION_LOCK_AND_INCONSISTENCIES.md` |
 | Material Truth package | `docs/ptdt-v33/MATERIAL_TRUTH_PACKAGE.md` |
 | Engineering invariants | `docs/ptdt-v33/ENGINEERING_INVARIANTS.md` |
