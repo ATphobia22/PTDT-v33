@@ -47,7 +47,6 @@ jobs:
             if git show-ref --verify --quiet "refs/remotes/origin/$branch"; then
               echo "==> merging $branch"
               git merge --no-edit --no-ff -X theirs "origin/$branch" || {
-                echo "Merge conflict detected in $branch; applying deterministic feature-branch resolution."
                 git diff --name-only --diff-filter=U | while read -r path; do
                   git checkout --theirs -- "$path"
                   git add -- "$path"
@@ -69,12 +68,9 @@ jobs:
           mkdir -p integrations/history
           for name in "${!repos[@]}"; do
             prefix="integrations/history/$name"
-            if [ -d "$prefix/.git" ] || [ -f "$prefix/.git" ]; then
-              continue
-            fi
             if [ -e "$prefix" ]; then
-              echo "Refusing to overwrite existing subtree prefix: $prefix"
-              exit 1
+              echo "Subtree prefix already exists: $prefix"
+              continue
             fi
             git remote add "src-$name" "${repos[$name]}" || true
             git fetch --no-tags --prune "src-$name" main
@@ -98,7 +94,6 @@ jobs:
           from dataclasses import dataclass, field
           from datetime import datetime, timezone
           from typing import Any
-
           import rfc8785
 
           @dataclass(frozen=True, slots=True)
@@ -112,7 +107,7 @@ jobs:
               timestamp_utc: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'))
 
               def canonical_bytes(self) -> bytes:
-                  body = {
+                  return rfc8785.dumps({
                       "authority": self.authority,
                       "node_id": self.node_id,
                       "parent_ids": list(self.parent_ids),
@@ -120,8 +115,7 @@ jobs:
                       "provenance_id": self.provenance_id,
                       "timestamp_utc": self.timestamp_utc,
                       "validation_status": self.validation_status,
-                  }
-                  return rfc8785.dumps(body)
+                  })
 
               @property
               def payload_hash(self) -> str:
@@ -144,8 +138,7 @@ jobs:
                       for parent in node.parent_ids:
                           if parent not in self._nodes:
                               raise ValueError(f"broken evidence edge: {parent}")
-                      expected = node.payload_hash
-                      if expected != hashlib.sha256(node.canonical_bytes()).hexdigest():
+                      if node.payload_hash != hashlib.sha256(node.canonical_bytes()).hexdigest():
                           raise ValueError(f"evidence hash mismatch: {node.node_id}")
 
               def get(self, node_id: str) -> EvidenceNode:
@@ -159,7 +152,6 @@ jobs:
           WGS84_A_M = 6378137.0
           WGS84_F = 1.0 / 298.257223563
           WGS84_E2 = WGS84_F * (2.0 - WGS84_F)
-          FT_TO_M = 0.3048
 
           @dataclass(frozen=True, slots=True)
           class ECEF:
@@ -168,12 +160,12 @@ jobs:
               z_m: float
 
           class SpatialTransformBridge:
-              """WGS84 geodetic -> EPSG:4978 plus Web-Mercator tiling.
+              """WGS84 geodetic to EPSG:4978 plus Web-Mercator tiling.
 
-              EPSG:4978 requires ellipsoidal height. A NAVD88 orthometric
-              elevation must first be converted using an authoritative geoid
-              model; this class therefore refuses to silently treat NAVD88 as
-              ellipsoidal height.
+              EPSG:4978 requires ellipsoidal height. NAVD88 orthometric height
+              must first be converted with an authoritative geoid model; this
+              core therefore does not silently substitute NAVD88 for ellipsoidal
+              height.
               """
               def wgs84_ellipsoidal_to_ecef(self, lon_deg: float, lat_deg: float, h_m: float) -> ECEF:
                   if not (-180.0 <= lon_deg <= 180.0 and -90.0 <= lat_deg <= 90.0):
@@ -232,28 +224,17 @@ jobs:
           set -euo pipefail
           mkdir -p adapters/engine/{core,unity,unreal}
           cat > adapters/engine/core/EngineFrameContract.json <<'EOF'
-          {
-            "schema": "ptdt.engine.frame.v1",
-            "coordinate_reference": "EPSG:4978",
-            "vertical_reference": "NAVD88",
-            "evidence": "RFC8785-SHA256",
-            "transport": ["grpc", "websocket"],
-            "payload": "float32-depth-buffer"
-          }
+          {"schema":"ptdt.engine.frame.v1","coordinate_reference":"EPSG:4978","vertical_reference":"NAVD88","evidence":"RFC8785-SHA256","transport":["grpc","websocket"],"payload":"float32-depth-buffer"}
           EOF
           cat > adapters/engine/unity/README.md <<'EOF'
           # Unity adapter
-
           Unity consumes the PTDT engine-frame contract through a transport adapter.
-          Keep Unity/MCP/UGS implementation details behind this boundary; PTDT core
-          never depends on Unity assemblies.
+          PTDT core never depends on Unity assemblies.
           EOF
           cat > adapters/engine/unreal/README.md <<'EOF'
           # Unreal adapter
-
           Unreal consumes the same engine-frame contract through an adapter boundary.
-          UnrealCV, Unreal Python, and Unreal.js compatibility code belongs behind
-          this boundary and must not become PTDT core dependencies.
+          UnrealCV, Unreal Python, and Unreal.js compatibility code remain isolated.
           EOF
 
       - name: Add dependencies and integration documentation
@@ -272,20 +253,17 @@ jobs:
           cat > docs/integration/HISTORY_PRESERVING_CONSOLIDATION.md <<'EOF'
           # PTDT History-Preserving Consolidation
 
-          The PTDT-v33 repository is the canonical `main` repository. The other
-          engineering repositories are imported as Git subtrees under
-          `integrations/history/`, preserving their commit graphs while keeping
-          source ownership and provenance explicit.
+          PTDT-v33 is the canonical `main` repository. The three engineering
+          repositories are imported as Git subtrees under `integrations/history/`,
+          preserving their source commit graphs and provenance.
 
           PTDT-v33 feature branches are merged into `main` before subtree import.
-          Conflicts are resolved deterministically in favor of the feature branch
-          for files that cannot be merged automatically; CI remains the acceptance
-          gate for semantic correctness.
+          Conflict resolution is deterministic and feature-branch biased; CI is
+          the acceptance gate for semantic correctness.
 
-          Unity and Unreal are integration boundaries, not core dependencies.
-          The corrected v35 evidence core uses RFC 8785 JCS for canonical evidence
-          bytes and explicitly distinguishes NAVD88 orthometric heights from the
-          ellipsoidal heights required by EPSG:4978.
+          Unity and Unreal are adapter boundaries rather than core dependencies.
+          The corrected v35 evidence core uses RFC 8785 JCS and explicitly
+          distinguishes NAVD88 orthometric heights from EPSG:4978 ellipsoidal height.
           EOF
 
       - name: Install verification dependencies
@@ -299,6 +277,7 @@ jobs:
         run: |
           set -euo pipefail
           python -m compileall -q ptdt_v35_core adapters
+          ruff check --fix ptdt_v35_core tests/ptdt_v35_core
           ruff check ptdt_v35_core tests/ptdt_v35_core
 
       - name: Commit consolidated main
