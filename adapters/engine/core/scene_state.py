@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Any, Mapping
+from typing import Any
 
 import rfc8785
 
@@ -23,7 +24,7 @@ class SceneState:
     validation_status: str
 
     @classmethod
-    def from_mapping(cls, payload: Mapping[str, Any]) -> "SceneState":
+    def from_mapping(cls, payload: Mapping[str, Any]) -> SceneState:
         required = (
             "frame_id",
             "authority_snapshot_id",
