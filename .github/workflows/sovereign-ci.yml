@@ -51,8 +51,8 @@ jobs:
           assert body.get("datum") == "NAVD88"
           assert body.get("crs") == "EPSG:2966"
           PY
-      - name: v35 core and integration tests
-        run: pytest -q tests/test_v35_core.py tests/test_transport_integrations.py
+      - name: v35 core, provider, and SceneState tests
+        run: pytest -q tests/test_v35_core.py tests/test_transport_integrations.py tests/ptdt_v35_core tests/core/test_providers.py tests/engine/test_scene_state.py
       - name: Compile gRPC contract
         run: |
           mkdir -p /tmp/ptdt_grpc
@@ -60,7 +60,7 @@ jobs:
           test -s /tmp/ptdt_grpc/spatial_stream_pb2.py
           test -s /tmp/ptdt_grpc/spatial_stream_pb2_grpc.py
       - name: Python syntax scan
-        run: python -m compileall -q backend ptdt_v35_core tests
+        run: python -m compileall -q backend core ptdt_v35_core adapters tests
       - name: Docker build
         if: github.event_name == 'push'
         run: docker build -t ptdt-api:ci .
