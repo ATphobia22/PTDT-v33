@@ -59,10 +59,10 @@ jobs:
         run: python -m pip install -r ptdt_v35_core/requirements.txt pytest ruff
       - name: Test v35 core
         run: PYTHONPATH=. pytest -q tests/ptdt_v35_core
-      - name: Lint and compile adapters/core
-        run: |
-          python -m compileall -q ptdt_v35_core adapters/engine/core
-          ruff check ptdt_v35_core tests/ptdt_v35_core adapters/engine/core
+      - name: Compile adapters/core
+        run: python -m compileall -q ptdt_v35_core adapters/engine/core
+      - name: Ruff adapters/core
+        run: ruff check --output-format=github ptdt_v35_core tests/ptdt_v35_core adapters/engine/core
 
   engine-contracts:
     runs-on: ubuntu-latest

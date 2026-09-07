@@ -4,6 +4,12 @@
  * bytesPerRow must be 256-byte aligned. Unstructured meshes need rasterization.
  */
 
+function copyFloat32ForGpu(data: Float32Array): Float32Array<ArrayBuffer> {
+  const copy = new Float32Array(new ArrayBuffer(data.byteLength));
+  copy.set(data);
+  return copy;
+}
+
 export function milliToFloatWse(wseMilli: number[]): Float32Array {
   const out = new Float32Array(wseMilli.length);
   for (let i = 0; i < wseMilli.length; i++) {
@@ -33,11 +39,12 @@ export function uploadWseTexture(
     );
   }
   const padW = paddedWidthForR32Float(width);
-  let data = wseFloat;
+  const source = copyFloat32ForGpu(wseFloat);
+  let data = source;
   if (padW !== width) {
-    const padded = new Float32Array(padW * height);
+    const padded = new Float32Array(new ArrayBuffer(padW * height * 4));
     for (let y = 0; y < height; y++) {
-      padded.set(wseFloat.subarray(y * width, (y + 1) * width), y * padW);
+      padded.set(source.subarray(y * width, (y + 1) * width), y * padW);
     }
     data = padded;
   }
